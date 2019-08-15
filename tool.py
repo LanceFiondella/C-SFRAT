@@ -52,7 +52,6 @@ class Ui_MainWindow(object):
         
         self.init_tabs()
         
-        self.gridLayout_2.addWidget(self.tabWidget, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         
         self.init_menubar()
@@ -87,6 +86,8 @@ class Ui_MainWindow(object):
         self.init_tab5()
         self.init_tab6()
 
+        self.gridLayout_2.addWidget(self.tabWidget, 0, 0, 1, 1)
+
     def init_tab1(self):
         # faults tab
         self.tab1_fault = QtWidgets.QWidget()
@@ -119,23 +120,57 @@ class Ui_MainWindow(object):
         self.horizontalLayout.addLayout(self.table_layout)
         self.tableView.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)  # set read only
 
-        # graph
         self.graph_file = QtWidgets.QVBoxLayout()
         self.graph_file.setObjectName("graph_file")
         self.fault_graph_label = QtWidgets.QLabel(self.tab1_fault)
         self.fault_graph_label.setObjectName("fault_graph_label")
         self.graph_file.addWidget(self.fault_graph_label)
+
+        # MVF graph
         # self.fault_graph = QtWidgets.QGraphicsView(self.tab1_fault)
         self.fault_graph = PlotCanvas(width=5, height=4)
         # self.fault_graph.plot()
-        
+
+        # intensity graph
+        self.fault_intensity_graph = PlotCanvas(width=5, height=4)
+
+        # graph tabs
+        self.fault_graph_tabs = QtWidgets.QTabWidget()
+        self.fault_graph_tabs.setAutoFillBackground(False)
+        self.fault_graph_tabs.setTabShape(QtWidgets.QTabWidget.Rounded)
+        self.fault_graph_tabs.setUsesScrollButtons(False)
+        self.fault_graph_tabs.setObjectName("fault_graph_tabs")
+
+        self.fault_graph_mvf_tab = QtWidgets.QWidget()
+        self.fault_graph_mvf_tab.setObjectName("fault_graph_mvf_tab")
+
+        self.fault_graph_intensity_tab = QtWidgets.QWidget()
+        self.fault_graph_intensity_tab.setObjectName("fault_graph_intensity_tab")
+
+        self.fault_graph_tabs.addTab(self.fault_graph_mvf_tab, "")
+        self.fault_graph_tabs.addTab(self.fault_graph_intensity_tab, "")
+
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.MinimumExpanding)    # want graph and table to both stretch
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.fault_graph_tabs.sizePolicy().hasHeightForWidth())
+        self.fault_graph_tabs.setSizePolicy(sizePolicy)
+
+        self.graph_file.addWidget(self.fault_graph_tabs)
+
+        self.fault_mvf_layout = QtWidgets.QHBoxLayout(self.fault_graph_mvf_tab)
+        self.fault_intensity_layout = QtWidgets.QHBoxLayout(self.fault_graph_intensity_tab)
+
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.fault_graph.sizePolicy().hasHeightForWidth())
         self.fault_graph.setSizePolicy(sizePolicy)
         self.fault_graph.setObjectName("fault_graph")
-        self.graph_file.addWidget(self.fault_graph)
+        self.fault_mvf_layout.addWidget(self.fault_graph)
+        self.fault_intensity_layout.addWidget(self.fault_intensity_graph)
+
+
         self.selected_file_label = QtWidgets.QLabel(self.tab1_fault)
         self.selected_file_label.setObjectName("selected_file_label")
         self.graph_file.addWidget(self.selected_file_label)
@@ -307,9 +342,11 @@ class Ui_MainWindow(object):
         # self.tab2_estimation_button.clicked.connect(self.open_estimation_window)
         self.tab2_estimation_button.clicked.connect(self.run_estimation)
 
+        # graphs
         self.tab2_layout.addLayout(self.tab2_vertical, 0, 2, 4, 1)
         # self.graphicsView_8 = QtWidgets.QGraphicsView(self.tab2_est)
         self.est_graph = PlotCanvas(width=5, height=4)
+        self.est_intensity_graph = PlotCanvas(width=5, height=4)
 
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(1)
@@ -317,7 +354,36 @@ class Ui_MainWindow(object):
         sizePolicy.setHeightForWidth(self.est_graph.sizePolicy().hasHeightForWidth())
         self.est_graph.setSizePolicy(sizePolicy)
         self.est_graph.setObjectName("est_graph")
-        self.tab2_layout.addWidget(self.est_graph, 1, 0, 5, 1)
+
+        # graph tabs
+        self.est_graph_tabs = QtWidgets.QTabWidget()
+        self.est_graph_tabs.setAutoFillBackground(False)
+        self.est_graph_tabs.setTabShape(QtWidgets.QTabWidget.Rounded)
+        self.est_graph_tabs.setUsesScrollButtons(False)
+        self.est_graph_tabs.setObjectName("est_graph_tabs")
+
+        self.est_graph_mvf_tab = QtWidgets.QWidget()
+        self.est_graph_mvf_tab.setObjectName("est_graph_mvf_tab")
+
+        self.est_graph_intensity_tab = QtWidgets.QWidget()
+        self.est_graph_intensity_tab.setObjectName("est_graph_intensity_tab")
+
+        self.est_graph_tabs.addTab(self.est_graph_mvf_tab, "")
+        self.est_graph_tabs.addTab(self.est_graph_intensity_tab, "")
+
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.MinimumExpanding)    # want graph and table to both stretch
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.est_graph_tabs.sizePolicy().hasHeightForWidth())
+        self.est_graph_tabs.setSizePolicy(sizePolicy)
+
+        self.est_mvf_layout = QtWidgets.QHBoxLayout(self.est_graph_mvf_tab)
+        self.est_intensity_layout = QtWidgets.QHBoxLayout(self.est_graph_intensity_tab)
+
+        self.est_mvf_layout.addWidget(self.est_graph)
+        self.est_intensity_layout.addWidget(self.est_intensity_graph)
+
+        self.tab2_layout.addWidget(self.est_graph_tabs, 1, 0, 5, 1)
         self.tabWidget.addTab(self.tab2_est, "")
 
     def init_tab3(self):
@@ -526,6 +592,7 @@ class Ui_MainWindow(object):
                 
                 # plot fault graph
                 self.fault_graph.fault_plot()
+                self.fault_intensity_graph.fault_intensity_plot()
 
                 #print(raw_imported_data)
             #    if mytext.count(';') <= mytext.count('\t'):
@@ -547,6 +614,7 @@ class Ui_MainWindow(object):
         if (gv.has_data):
             print("*** Starting estimation thread... ***")
             self.est_graph.loading_plot()
+            self.est_intensity_graph.loading_plot()
             covariate.main()
             gv.estimation_ran = True    # set flag that says estimation step has been run
 
@@ -574,7 +642,8 @@ class Ui_MainWindow(object):
     def est_geometric_SRM_slot(self):
         if (gv.has_data and gv.estimation_ran):
             covariate.model_fitting("geometric")
-            self.est_graph.estimation_plot()
+            self.est_graph.estimation_plot()                # plot tabs on both plots
+            self.est_intensity_graph.estimation_intensity_plot()
             self.tab2_llf_line_edit.setText("{:0.5f}".format(gv.llf_val))
             self.tab2_aic_line_edit.setText("{:0.5f}".format(gv.aic_val))
             self.tab2_bic_line_edit.setText("{:0.5f}".format(gv.bic_val))
@@ -584,6 +653,7 @@ class Ui_MainWindow(object):
         if (gv.has_data and gv.estimation_ran):
             covariate.model_fitting("nb2")
             self.est_graph.estimation_plot()
+            self.est_intensity_graph.estimation_intensity_plot()
             self.tab2_llf_line_edit.setText("{:0.5f}".format(gv.llf_val))
             self.tab2_aic_line_edit.setText("{:0.5f}".format(gv.aic_val))
             self.tab2_bic_line_edit.setText("{:0.5f}".format(gv.bic_val))
@@ -593,6 +663,7 @@ class Ui_MainWindow(object):
         if (gv.has_data and gv.estimation_ran):
             covariate.model_fitting("dw2")
             self.est_graph.estimation_plot()
+            self.est_intensity_graph.estimation_intensity_plot()
             self.tab2_llf_line_edit.setText("{:0.5f}".format(gv.llf_val))
             self.tab2_aic_line_edit.setText("{:0.5f}".format(gv.aic_val))
             self.tab2_bic_line_edit.setText("{:0.5f}".format(gv.bic_val))
@@ -625,6 +696,8 @@ class Ui_MainWindow(object):
         self.fault_graph_label.setText(_translate("MainWindow", "Graph"))
         self.selected_file_label.setText(_translate("MainWindow", "Selected file:"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab1_fault), _translate("MainWindow", "Fault data"))
+        self.fault_graph_tabs.setTabText(self.fault_graph_tabs.indexOf(self.fault_graph_mvf_tab), _translate("MainWindow", "MVF"))   # MainWindow?
+        self.fault_graph_tabs.setTabText(self.fault_graph_tabs.indexOf(self.fault_graph_intensity_tab), _translate("MainWindow", "Intensity"))   # MainWindow?
         # self.est_graph_label.setText(_translate("MainWindow", "Graph area"))
         # self.est_gof_label.setText(_translate("MainWindow", "Goodness-of-fit measures"))
         # self.est_LLF_label.setText(_translate("MainWindow", "LLF"))
@@ -647,6 +720,8 @@ class Ui_MainWindow(object):
         # self.est_list.setSortingEnabled(__sortingEnabled)
         # self.est_estimation_button.setText(_translate("MainWindow", "Estimation"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab2_est), _translate("MainWindow", "Estimation"))
+        self.est_graph_tabs.setTabText(self.est_graph_tabs.indexOf(self.est_graph_mvf_tab), _translate("MainWindow", "MVF"))   # MainWindow?
+        self.est_graph_tabs.setTabText(self.est_graph_tabs.indexOf(self.est_graph_intensity_tab), _translate("MainWindow", "Intensity"))   # MainWindow?
         self.tab2_graph_label.setText(_translate("MainWindow", "Graph area"))
         self.tab2_gof_label.setText(_translate("MainWindow", "Goodness-of-fit measures"))
         self.tab2_llf_label.setText(_translate("MainWindow", "LLF"))
@@ -713,13 +788,25 @@ class PlotCanvas(FigureCanvas):
         # self.fitted_plot, = self.ax.plot(data_x, gv.mvf_list, 'ro')
         self.fault_fig.set_xlabel("calendar time")
         self.fault_fig.set_ylabel("number of failures")
-        self.fault_fig.grid()
+        self.fault_fig.grid(True)
         #ax.set_title('PyQt Matplotlib Example')
         self.draw()     # re-draws figurem allows graph to change
         self.show()     # displays current figure
 
         # self.plot_on(self.failure_step)
         # self.plot_off(self.fitted_plot)
+
+    def fault_intensity_plot(self):
+        # histogram
+        x = gv.failure_times
+        y = gv.kVec
+        self.fault_intensity_fig = self.figure.add_subplot(111)
+        self.fault_hist = self.fault_intensity_fig.bar(x, height=y)
+        self.fault_intensity_fig.set_xlabel("time")
+        self.fault_intensity_fig.set_ylabel("intensity")
+        self.fault_intensity_fig.grid(True)
+        self.draw()
+        self.show()
 
     def estimation_plot(self):
         data_y = gv.kVec_cumulative
@@ -729,13 +816,30 @@ class PlotCanvas(FigureCanvas):
         self.est_step, = self.est_fig.step(data_x, data_y, 'b', where="post")        # step function
         # self.failure_step.set_alpha(0)
         # print(self.failure_step.get_alpha())
-        self.geometric_plot, = self.est_fig.plot(data_x, gv.mvf_list, 'ro')
+        self.geometric_plot, = self.est_fig.plot(data_x, gv.mvf_list, 'ro-')
+        self.est_fig.set_ylim([0, None])
         self.est_fig.set_xlabel("calendar time")
         self.est_fig.set_ylabel("number of failures")
         self.est_fig.grid(True)
         #ax.set_title('PyQt Matplotlib Example')
         self.draw()     # re-draws figurem allows graph to change
         self.show()     # displays current figure
+        self.flush_events()
+
+    def estimation_intensity_plot(self):
+        # histogram
+        x = gv.failure_times
+        y = gv.kVec
+        self.est_intensity_fig = self.figure.add_subplot(111)
+        self.est_intensity_fig.clear()
+        self.est_hist = self.est_intensity_fig.bar(x, height=y)
+        
+        self.est_intensity_plot, = self.est_intensity_fig.plot(x, gv.intensity_list, 'ro-')
+        self.est_intensity_fig.set_xlabel("time")
+        self.est_intensity_fig.set_ylabel("intensity")
+        self.est_intensity_fig.grid(True)
+        self.draw()
+        self.show()
         self.flush_events()
 
     def reliability_plot(self):

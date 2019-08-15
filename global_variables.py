@@ -5,6 +5,7 @@ raw_imported_data = []  # raw imported data from csv, list of strings
 failure_times = []
 kVec_cumulative = []
 mvf_list = []
+intensity_list = []
 llf_val = 0.0
 aic_val = 0.0
 bic_val = 0.0

@@ -326,6 +326,15 @@ def parse_raw_data(raw_data):
     #return list(filter(None, float_data))   # remove empty elements
     return float_data
 
+def intensity_fit(mvf_list):
+    # first = np.array([mvf_list[0]])
+    # difference = np.array(np.diff(mvf_list))
+    # return np.concatenate(first, difference)  # want the same size as list that was input
+    print(mvf_list[0])
+    difference = [mvf_list[i+1]-mvf_list[i] for i in range(len(mvf_list)-1)]
+    print(difference, type(difference))
+    return [mvf_list[0]] + difference
+
 def model_fitting(srm="geometric"):
     # select which hazard function to use
     if (srm == "nb2"):
@@ -356,6 +365,9 @@ def model_fitting(srm="geometric"):
 
     gv.sse_val = SSE(gv.mvf_list, gv.kVec_cumulative)
 
+    gv.intensity_list = intensity_fit(gv.mvf_list)
+    print("intensity values:", gv.intensity_list)
+
 # i don't think we want to use a main function for this file,
 # it should all be called in a main file i think. maybe it shouldn't be the main ui file?
 def main():
@@ -382,7 +394,7 @@ def main():
 
     #---Apply optimization method to solve for model parameters---#
 
-    print(B)
+    # print(B)
 
     sol = scipy.optimize.fsolve(fd,x0=B)      # runtime < 1 second
     print('Optimized solution:', sol)
