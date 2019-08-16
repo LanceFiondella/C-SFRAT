@@ -81,8 +81,8 @@ class Ui_MainWindow(object):
         
         self.init_tab1()
         self.init_tab2()
-        self.init_tab3()
-        self.init_tab4()
+        # self.init_tab3()
+        # self.init_tab4()
         self.init_tab5()
         self.init_tab6()
 
@@ -692,8 +692,8 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.table_area_label.setText(_translate("MainWindow", "Table area"))
-        self.fault_graph_label.setText(_translate("MainWindow", "Graph"))
+        self.table_area_label.setText(_translate("MainWindow", "Imported data table"))
+        self.fault_graph_label.setText(_translate("MainWindow", "Imported data graph"))
         self.selected_file_label.setText(_translate("MainWindow", "Selected file:"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab1_fault), _translate("MainWindow", "Fault data"))
         self.fault_graph_tabs.setTabText(self.fault_graph_tabs.indexOf(self.fault_graph_mvf_tab), _translate("MainWindow", "MVF"))   # MainWindow?
@@ -722,7 +722,7 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab2_est), _translate("MainWindow", "Estimation"))
         self.est_graph_tabs.setTabText(self.est_graph_tabs.indexOf(self.est_graph_mvf_tab), _translate("MainWindow", "MVF"))   # MainWindow?
         self.est_graph_tabs.setTabText(self.est_graph_tabs.indexOf(self.est_graph_intensity_tab), _translate("MainWindow", "Intensity"))   # MainWindow?
-        self.tab2_graph_label.setText(_translate("MainWindow", "Graph area"))
+        self.tab2_graph_label.setText(_translate("MainWindow", "Estimation graph"))
         self.tab2_gof_label.setText(_translate("MainWindow", "Goodness-of-fit measures"))
         self.tab2_llf_label.setText(_translate("MainWindow", "LLF"))
         self.tab2_aic_label.setText(_translate("MainWindow", "AIC"))
@@ -735,18 +735,18 @@ class Ui_MainWindow(object):
         # self.tab2_neg_binomial_radio_button.setText(_translate("MainWindow", "Negative binomial"))
         # self.tab2_weibull_radio_button.setText(_translate("MainWindow", "Discrete Weibull"))
         self.tab2_estimation_button.setText(_translate("MainWindow", "Start estimation"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab3), _translate("MainWindow", "Statistical test"))
-        self.label_39.setText(_translate("MainWindow", "Graph area"))
-        self.label_37.setText(_translate("MainWindow", "Selected SRMs"))
-        self.checkBox_6.setText(_translate("MainWindow", "Geometric"))
-        self.checkBox_7.setText(_translate("MainWindow", "Negative binomial (order 2)"))
-        self.checkBox_8.setText(_translate("MainWindow", "Discrete Weibull (order 2)"))
-        self.checkBox_9.setText(_translate("MainWindow", "Negative binomial"))
-        self.checkBox_10.setText(_translate("MainWindow", "Discrete Weibull"))
-        self.label_38.setText(_translate("MainWindow", "Graphical display"))
-        self.radioButton_12.setText(_translate("MainWindow", "Mean value function"))
-        self.radioButton_13.setText(_translate("MainWindow", "Intensity"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab4), _translate("MainWindow", "Mean value/intensity"))
+        # self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab3), _translate("MainWindow", "Statistical test"))
+        # self.label_39.setText(_translate("MainWindow", "Graph area"))
+        # self.label_37.setText(_translate("MainWindow", "Selected SRMs"))
+        # self.checkBox_6.setText(_translate("MainWindow", "Geometric"))
+        # self.checkBox_7.setText(_translate("MainWindow", "Negative binomial (order 2)"))
+        # self.checkBox_8.setText(_translate("MainWindow", "Discrete Weibull (order 2)"))
+        # self.checkBox_9.setText(_translate("MainWindow", "Negative binomial"))
+        # self.checkBox_10.setText(_translate("MainWindow", "Discrete Weibull"))
+        # self.label_38.setText(_translate("MainWindow", "Graphical display"))
+        # self.radioButton_12.setText(_translate("MainWindow", "Mean value function"))
+        # self.radioButton_13.setText(_translate("MainWindow", "Intensity"))
+        # self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab4), _translate("MainWindow", "Mean value/intensity"))
         self.label_27.setText(_translate("MainWindow", "Graph area"))
         self.label_28.setText(_translate("MainWindow", "Selected SRMs"))
         self.checkBox.setText(_translate("MainWindow", "Geometric"))
@@ -758,7 +758,7 @@ class Ui_MainWindow(object):
         self.radioButton_5.setText(_translate("MainWindow", "Mean value function"))
         self.radioButton_6.setText(_translate("MainWindow", "Intensity"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab5), _translate("MainWindow", "Reliability/prediction"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab6), _translate("MainWindow", "Validation"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab6), _translate("MainWindow", "Optimal effort allocation"))
         self.menuf.setTitle(_translate("MainWindow", "File"))
         self.menuSettings.setTitle(_translate("MainWindow", "Settings"))
         self.actionOpen.setText(_translate("MainWindow", "Open"))
@@ -813,14 +813,15 @@ class PlotCanvas(FigureCanvas):
         data_x = gv.failure_times
         self.est_fig = self.figure.add_subplot(111)
         self.est_fig.clear()         # clear old plot before new one is drawn
-        self.est_step, = self.est_fig.step(data_x, data_y, 'b', where="post")        # step function
+        self.est_step, = self.est_fig.step(data_x, data_y, 'b', where="post", label="imported fault data")        # step function
         # self.failure_step.set_alpha(0)
         # print(self.failure_step.get_alpha())
-        self.geometric_plot, = self.est_fig.plot(data_x, gv.mvf_list, 'ro-')
+        self.geometric_plot, = self.est_fig.plot(data_x, gv.mvf_list, 'ro-', label="fitted data")
         self.est_fig.set_ylim([0, None])
         self.est_fig.set_xlabel("calendar time")
         self.est_fig.set_ylabel("number of failures")
         self.est_fig.grid(True)
+        self.est_fig.legend(loc="upper left")
         #ax.set_title('PyQt Matplotlib Example')
         self.draw()     # re-draws figurem allows graph to change
         self.show()     # displays current figure
@@ -832,12 +833,13 @@ class PlotCanvas(FigureCanvas):
         y = gv.kVec
         self.est_intensity_fig = self.figure.add_subplot(111)
         self.est_intensity_fig.clear()
-        self.est_hist = self.est_intensity_fig.bar(x, height=y)
+        self.est_hist = self.est_intensity_fig.bar(x, height=y, label="imported fault data")
         
-        self.est_intensity_plot, = self.est_intensity_fig.plot(x, gv.intensity_list, 'ro-')
+        self.est_intensity_plot, = self.est_intensity_fig.plot(x, gv.intensity_list, 'ro-', label="fitted data")
         self.est_intensity_fig.set_xlabel("time")
         self.est_intensity_fig.set_ylabel("intensity")
         self.est_intensity_fig.grid(True)
+        self.est_fig.legend(loc="upper right")
         self.draw()
         self.show()
         self.flush_events()
@@ -857,7 +859,7 @@ class PlotCanvas(FigureCanvas):
     def loading_plot(self):
         self.est_fig = self.figure.add_subplot(111)
         self.est_fig.clear()         # clear old plot before new one is drawn
-        self.est_loading = self.est_fig.text(0.5, 0.5, "Figure loading...", horizontalalignment="center", verticalalignment="center")        # text function
+        self.est_loading = self.est_fig.text(0.5, 0.5, "Running estimation...", horizontalalignment="center", verticalalignment="center")        # text function
         self.draw()     # re-draws figurem allows graph to change
         self.show()     # displays current figure
         self.flush_events()

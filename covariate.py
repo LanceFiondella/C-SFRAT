@@ -330,9 +330,9 @@ def intensity_fit(mvf_list):
     # first = np.array([mvf_list[0]])
     # difference = np.array(np.diff(mvf_list))
     # return np.concatenate(first, difference)  # want the same size as list that was input
-    print(mvf_list[0])
+    # print(mvf_list[0])
     difference = [mvf_list[i+1]-mvf_list[i] for i in range(len(mvf_list)-1)]
-    print(difference, type(difference))
+    # print(difference, type(difference))
     return [mvf_list[0]] + difference
 
 def model_fitting(srm="geometric"):
