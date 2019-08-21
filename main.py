@@ -10,7 +10,6 @@ from ui.mainWindow import MainWindow
 
 
 def main(debug):
-    log.info("Hello From Main")
     app = QApplication(sys.argv)
     mainWindow = MainWindow(debug)
     sys.exit(app.exec_())
@@ -28,7 +27,7 @@ if __name__ == "__main__":
         # if using verbose output set logging to display level and message
         # print anything level debug or higher
         log.basicConfig(format="%(levelname)s: %(message)s", level=log.DEBUG)
-        log.info("Using Verbose output.")
+        log.info("Using verbose output.")
     if args.debug:
         debug = True
     else:
