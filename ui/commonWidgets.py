@@ -30,6 +30,7 @@ class PlotAndTable(QTabWidget):
     def setupPlotTab(self):
         # Creating plot widget
         self.plotWidget = PlotWidget()
+        self.figure = self.plotWidget.figure
         self.addTab(self.plotWidget, 'Plot')
 
     def setupTableTab(self):

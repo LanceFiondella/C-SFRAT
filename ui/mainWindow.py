@@ -22,6 +22,13 @@
 # plot view submenu? (points, lines)
 # pay attention to how scaling/strecting works, minimum sizes for UI elements
 # naming conventions for excel/csv
+# less classes? example: self._main.tabs.tab1.sideMenu.sheetSelect.addItems(self.data.sheetNames)
+# figure out access modifiers, public/private variables, properties
+# use logging object, removes matplotlib debug messages in debug mode
+# can't change sheets during calculations?
+# loading multiple different files needs to REPLACE sheets in list, not just add
+# PLOT METHOD CAN CHANGE: don't hard code post, only for step functions
+# change column header names if they don't have any
 #------------------------------------------------------------------------#
 
 # PyQt5 imports for UI elements
@@ -38,21 +45,22 @@ from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
 # For handling debug output
-import logging as log 
+import logging
 
 # Local imports
 from ui.commonWidgets import PlotWidget, PlotAndTable
 from core.dataClass import Data
+from core.graphSettings import PlotSettings
 
 # math that does covariate calculations
-import covariate
+# import covariate
 
 # global variables
-import global_variables as gv
+# import global_variables as gv
 
 # for importing csv failure data
-import csv, codecs, threading
-import os
+# import csv, codecs, threading
+# import os
 
 
 class MainWindow(QMainWindow):
@@ -76,19 +84,28 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self._main)
 
         # set debug mode?
+        self.debug = debug
+
         # set data
         self.data = Data()
+        self.plotSettings = PlotSettings()
+
+        self.dataLoaded = False
+
+        self.ax = self._main.tabs.tab1.plotAndTable.figure.add_subplot(111)
 
         # signal connections
         self.importFileSignal.connect(self.importFile)
+        self._main.tabs.tab1.sideMenu.viewChangedSignal.connect(self.setDataView)
 
         self.initUI()
-        log.info("UI loaded.")
+        logging.info("UI loaded.")
 
     def closeEvent(self, event):
         '''
         description to be created at a later time
         '''
+        logging.info("Covariate Tool application closed.")
         qApp.quit()
 
     def initUI(self):
@@ -99,8 +116,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
         self.statusBar().showMessage("")
-        self.viewType = "view"                  # not sure what this means
-        self.index = 0
+        self.viewType = "view"
+        self.dataViewIndex = 0
         self.show()
 
     def runModels(self, modelDetails):
@@ -117,27 +134,57 @@ class MainWindow(QMainWindow):
 
     def importFile(self):
         '''
-        description to be created at a later time
+        Import selected file
         '''
-        pass
+        self._main.tabs.tab1.sideMenu.sheetSelect.clear()   # clear sheet names from previous file
+        self._main.tabs.tab1.sideMenu.sheetSelect.addItems(self.data.sheetNames)    # add sheet names from new file
+
+        self.setDataView("view", self.dataViewIndex)
 
     def changeSheet(self, index):
         '''
-        description to be created at a later time
+        Change the current sheet displayed
+
+        Args:
+            index : index of the sheet
         '''
-        pass
+        self.data.currentSheet = index
+        self.setDataView("view", self.dataViewIndex)
+        self._main.tabs.tab1.plotAndTable.figure.canvas.draw()
 
     def setDataView(self, viewType, index):
         '''
-        description to be created at a later time
+        Set the data to be displayed. 
+        Called whenever a menu item is changed
+
+        Args:
+            viewType: string that determines view
+            index: index of the dataview list
         '''
-        pass
+        if self.data.getData() is not None:
+            if viewType == "view":
+                self.setRawDataView(index)
+            elif viewType == "trend":
+                self.setTrendTest(index)
+            elif viewType == "sheet":
+                self.changeSheet(index)
+            self.viewType = viewType
+            self.dataViewIndex = index
 
     def setRawDataView(self, index):
         '''
-        description to be created at a later time
+        Changes plot between MVF and intensity
         '''
-        pass
+        self._main.tabs.tab1.plotAndTable.tableWidget.setModel(self.data.getDataModel())
+        dataframe = self.data.getData()
+        if index == 0:
+            # MVF
+            self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe["cumulative"], title="MVF", xLabel="time", yLabel="failures")
+        if index == 1:
+            # Intensity
+            self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe.iloc[:, 1], title="Intensity", xLabel="time", yLabel="failures")
+
+        self._main.tabs.tab1.plotAndTable.figure.canvas.draw()
 
     def setTrendTest(self, index):
         '''
@@ -149,13 +196,18 @@ class MainWindow(QMainWindow):
         '''
         description to be created at a later time
         '''
-        pass
+        self.plotSettings.style = style
+        self.plotSettings.plotType = plotType
+        self.updateUI()
 
     def updateUI(self):
         '''
-        description to be created at a later time
+        Change Plot, Table and SideMenu
+        when the state of the Data object changes
+
+        Should be called explicitly
         '''
-        pass
+        self.setDataView(self.viewType, self.dataViewIndex)
 
     def setupMenu(self):
         '''
@@ -189,20 +241,20 @@ class MainWindow(QMainWindow):
         viewPoints = QAction("Show Points", self, checkable=True)
         viewPoints.setShortcut("Ctrl+P")
         viewPoints.setStatusTip("Data shown as points on graphs")
-        viewPoints.triggered.connect(lambda: self.setPlotStyle(style='o', plotType="plot"))
+        viewPoints.triggered.connect(self.setPointsView)
         viewStyle.addAction(viewPoints)
         # lines
         viewLines = QAction("Show Lines", self, checkable=True)
         viewLines.setShortcut("Ctrl+L")
         viewLines.setStatusTip("Data shown as lines on graphs")
-        viewLines.triggered.connect(lambda: self.setPlotStyle(style='-'))
+        viewLines.triggered.connect(self.setLineView)
         viewStyle.addAction(viewLines)
         # points and lines
         viewBoth = QAction("Show Points and Lines", self, checkable=True)
         viewBoth.setShortcut("Ctrl+B")
         viewBoth.setStatusTip("Data shown as points and lines on graphs")
         viewBoth.setChecked(True)
-        viewBoth.triggered.connect(lambda: self.setPlotStyle(style='-o'))
+        viewBoth.triggered.connect(self.setLineAndPointsView)
         viewStyle.addAction(viewBoth)
         # add actions to view menu
         viewMenu.addActions(viewStyle.actions())
@@ -213,25 +265,53 @@ class MainWindow(QMainWindow):
         mvf.setShortcut("Ctrl+M")
         mvf.setStatusTip("Graphs display MVF of data")
         mvf.setChecked(True)
-        # mvf.triggered.connect()
+        mvf.triggered.connect(self.setMVFView)
         graphStyle.addAction(mvf)
         # intensity
         intensity = QAction("Intensity Graph", self, checkable=True)
         intensity.setShortcut("Ctrl+I")
         intensity.setStatusTip("Graphs display failure intensity")
-        # intensity.triggered.connect()
+        intensity.triggered.connect(self.setIntensityView)
         graphStyle.addAction(intensity)
         # add actions to view menu
         viewMenu.addSeparator()
         viewMenu.addActions(graphStyle.actions())
 
+    #region Menu actions
     def fileOpened(self):
         files = QFileDialog.getOpenFileName(self, "Open profile", "", filter=("Data Files (*.csv *.xls *.xlsx)"))
         # if a file was loaded
         if files[0]:
             self.data.importFile(files[0])      # imports loaded file
-        self.importFileSignal.emit()            # emits signal that file was imported successfully
-        log.info("Data loaded from {0}".format(files[0]))
+            self.dataLoaded = True
+            logging.info("Data loaded from {0}".format(files[0]))
+            self.importFileSignal.emit()            # emits signal that file was imported successfully
+
+    def setLineView(self):
+        self.setPlotStyle(style='-')
+        logging.info("Plot style set to line view.")
+
+    def setPointsView(self):
+        self.setPlotStyle(style='o', plotType='plot')
+        logging.info("Plot style set to points view.")
+    
+    def setLineAndPointsView(self):
+        self.setPlotStyle(style='-o')
+        logging.info("Plot style set to line and points view.")
+
+    def setMVFView(self):
+        self.dataViewIndex = 0
+        logging.info("Data plots set to MVF view.")
+        if self.dataLoaded:
+            self.setRawDataView(self.dataViewIndex)
+
+    def setIntensityView(self):
+        self.dataViewIndex = 1
+        logging.info("Data plots set to intensity view.")
+        if self.dataLoaded:
+            self.setRawDataView(self.dataViewIndex)
+    #endregion
+
 
 class MainWidget(QWidget):
     '''
@@ -305,6 +385,10 @@ class SideMenu(QVBoxLayout):
     '''
     Side menu for tab 1
     '''
+
+    # signals
+    viewChangedSignal = pyqtSignal(str, int)    # should this be before init?
+
     def __init__(self):
         super().__init__()
         self.setupSideMenu()
@@ -326,6 +410,9 @@ class SideMenu(QVBoxLayout):
         self.addWidget(self.runButton)
 
         self.addStretch(1)
+
+        # signals
+        self.sheetSelect.currentIndexChanged.connect(self.sheetChanged)
 
     def setupSheetGroup(self):
         sheetGroupLayout = QVBoxLayout()
@@ -359,6 +446,9 @@ class SideMenu(QVBoxLayout):
         metricsGroupLayout.addWidget(self.metricsList)
 
         return metricsGroupLayout
+
+    def sheetChanged(self):
+        self.viewChangedSignal.emit("sheet", self.sheetSelect.currentIndex())
 #endregion
 
 #region Tab 2

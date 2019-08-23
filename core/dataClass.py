@@ -1,5 +1,5 @@
 
-import logging as log
+import logging
 import os.path
 
 import pandas as pd
@@ -20,6 +20,9 @@ class Data:
         self.sheetNames = ["None"]
         self._currentSheet = 0
         self.dataSet = {"None": None}
+        self._numCovariates = 0
+        self.header = True
+        # covariate metric names
 
     @property
     def currentSheet(self):
@@ -29,17 +32,31 @@ class Data:
     def currentSheet(self, index):
         if index < len(self.sheetNames) and index >= 0:
             self._currentSheet = index
-            log.info("Current sheet index set to {0}".format(index))
+            logging.info("Current sheet index set to {0}.".format(index))
         else:
             self._currentSheet = 0
-            log.info("Cannot set sheet to index {0} since the data does not contain a sheet with that index. Sheet index instead set to 0.".format(index))
+            logging.info("Cannot set sheet to index {0} since the data does not contain a sheet with that index. Sheet index instead set to 0.".format(index))
+
+    @property
+    def numCovariates(self):
+        self._numCovariates = len(self.dataSet[self.sheetNames[self._currentSheet]].columns) - 3
+        logging.debug("{0} covariates.".format(self._numCovariates))
+        return self._numCovariates
+
+    # @numCovariates.setter
+    # def numCovariates(self):
+    #     pass
+
+    # def setNumCovariates(self, data):
+    #     # -2 columns for failure times and number of failures
+    #     numCov = len(self.dataSet[self.sheetNames[self._currentSheet]].columns) - 2
+    #     self.numCovariates = numCov
 
     def setData(self, dataSet):
         '''
         Processes raw sheet data into data required by models
 
         failure times | number of failures | metric 1 | metric 2 | ...
-            * names of metrics MUST be strings (cannot contain exclusively numbers) *
 
         Column titles not required, data assumed to be in this format
 
@@ -47,32 +64,38 @@ class Data:
             dataSet : dictionary of raw data imported in importFile()
         '''
         for sheet, data in dataSet.items():
-            print(sheet)
-            print(data.info())
-            # dataSet[sheet] = self.processRawData(data)
-            dataSet[sheet] = data
+            # self.numCovariates[sheet] = self.setNumCovariates()
+            dataSet[sheet] = self.processRawData(data)
+            # logging.debug("Sheet {0}: {1} covariate(s).".format(sheet, self.numCovariates[sheet]))
         self.dataSet = dataSet
-        print(self.dataSet)
 
     # data not processed, currently
     def processRawData(self, data):
         '''
-        Process raw data
+        Adds column for cumulative failures
         Args:
             data : raw pandas dataframe
         Returns:
             data : processed pandas dataframe
         '''
-        print(data)
-        data.iloc[:, 0] = pd.to_numeric(data.iloc[:, 0], errors="ignore")
-        print(data)
+        # check if cumulative failures are included in data??
+        # print(data)
+        data["cumulative"] = data.iloc[:, 1].cumsum()   # add column for cumulative failures
+        # print(data)
         return data
 
     def getData(self):
-         '''
-         Returns dataframe corresponding to the currentSheet index
-         '''
-         return self.dataSet[self.sheetNames[self._currentSheet]]
+        '''
+        Returns dataframe corresponding to the currentSheet index
+        '''
+        return self.dataSet[self.sheetNames[self._currentSheet]]
+
+    def getDataModel(self):
+        '''
+        Returns PandasModel for the current dataFrame to be displayed
+        on a QTableWidget
+        '''
+        return PandasModel(self.getData())
 
     def importFile(self, fname):
         '''
@@ -119,12 +142,14 @@ class Data:
             df_header = pd.read_excel(fname, nrows=rows)
         # has a header if datatypes of loaded dataframes are different 
         header = tuple(df.dtypes) != tuple(df_header.dtypes)
-        log.debug("Data table has header.")
+        self.header = header
         return header
 
 
+# need to edit to fit our data
 class PandasModel(QtCore.QAbstractTableModel):
     def __init__(self, data, parent=None):
+        QtCore.QAbstractTableModel.__init__(self, parent)
         self._data = data
 
     def rowCount(self, parent=None):
