@@ -20,8 +20,9 @@ class Data:
         self.sheetNames = ["None"]
         self._currentSheet = 0
         self.dataSet = {"None": None}
-        self._numCovariates = 0
-        self.header = True
+        # self._numCovariates = 0
+        self.numCovariates = 0
+        self.containsHeader = True
         # covariate metric names
 
     @property
@@ -37,20 +38,20 @@ class Data:
             self._currentSheet = 0
             logging.info("Cannot set sheet to index {0} since the data does not contain a sheet with that index. Sheet index instead set to 0.".format(index))
 
-    @property
-    def numCovariates(self):
-        self._numCovariates = len(self.dataSet[self.sheetNames[self._currentSheet]].columns) - 3
-        logging.debug("{0} covariates.".format(self._numCovariates))
-        return self._numCovariates
+    # @property
+    # def numCovariates(self):
+    #     self._numCovariates = len(self.dataSet[self.sheetNames[self._currentSheet]].columns) - 3
+    #     logging.debug("{0} covariates.".format(self._numCovariates))
+    #     return self._numCovariates
 
     # @numCovariates.setter
     # def numCovariates(self):
     #     pass
 
-    # def setNumCovariates(self, data):
-    #     # -2 columns for failure times and number of failures
-    #     numCov = len(self.dataSet[self.sheetNames[self._currentSheet]].columns) - 2
-    #     self.numCovariates = numCov
+    def setNumCovariates(self):
+        # -3 columns for failure times, number of failures, and cumulative failures
+        numCov = len(self.dataSet[self.sheetNames[self._currentSheet]].columns) - 3
+        self.numCovariates = numCov
 
     def setData(self, dataSet):
         '''
@@ -64,9 +65,12 @@ class Data:
             dataSet : dictionary of raw data imported in importFile()
         '''
         for sheet, data in dataSet.items():
-            # self.numCovariates[sheet] = self.setNumCovariates()
             dataSet[sheet] = self.processRawData(data)
-            # logging.debug("Sheet {0}: {1} covariate(s).".format(sheet, self.numCovariates[sheet]))
+            numCov = self.initialNumCovariates(data)
+            if self.containsHeader:
+                self.metricsUnnamed(data, numCov)
+            else:
+                self.renameHeader(data, numCov)
         self.dataSet = dataSet
 
     # data not processed, currently
@@ -80,9 +84,41 @@ class Data:
         '''
         # check if cumulative failures are included in data??
         # print(data)
-        data["cumulative"] = data.iloc[:, 1].cumsum()   # add column for cumulative failures
+        data["Cumulative"] = data.iloc[:, 1].cumsum()   # add column for cumulative failures
         # print(data)
         return data
+
+    def metricsUnnamed(self, data, numCov):
+        '''
+        If data contains a header, but at least one column is unnamed.
+        Renames column 1 to "Time" if unnamed,
+        Renames column 2 to "Failures" if unnamed,
+        Renames columns 3 through X to "MetricX" individually if unnamed
+        '''
+        if "Unnamed: " in str(data.columns[0]):
+            data.rename(columns={data.columns[0]:"Time"}, inplace=True)
+        if "Unnamed: " in str(data.columns[1]):
+            data.rename(columns={data.columns[1]:"Failures"}, inplace=True)
+        for i in range(numCov):
+            if "Unnamed: " in str(data.columns[i+2]):
+                data.rename(columns={data.columns[i+2]:"Metric{0}".format(i+1)}, inplace=True)
+
+    def initialNumCovariates(self, data):
+        '''
+        Calculates the number of covariates on a given sheet
+        '''
+        numCov = len(data.columns) - 3
+        # logging.debug("{0} covariates.".format(self._numCovariates))
+        return numCov
+
+    def renameHeader(self, data, numCov):
+        '''
+        Renames column headers if covariate metrics are unnamed
+        '''
+        data.rename(columns={data.columns[0]:"Time"}, inplace=True)
+        data.rename(columns={data.columns[1]:"Failures"}, inplace=True)
+        for i in range(numCov):
+            data.rename(columns={data.columns[i+2]:"Metric{0}".format(i+1)}, inplace=True)
 
     def getData(self):
         '''
@@ -123,6 +159,7 @@ class Data:
         self.sheetNames = list(data.keys())
         self._currentSheet = 0
         self.setData(data)
+        self.setNumCovariates()
 
     def hasHeader(self, fname, extension, rows=2):
         '''
@@ -142,7 +179,7 @@ class Data:
             df_header = pd.read_excel(fname, nrows=rows)
         # has a header if datatypes of loaded dataframes are different 
         header = tuple(df.dtypes) != tuple(df_header.dtypes)
-        self.header = header
+        self.containsHeader = header
         return header
 
 

@@ -1,35 +1,29 @@
-#-----------------------------------------------------------------------#
+#-----------------------------------------------------------------------------------#
 # TODO:
-# simplify ui code, make into separate methods/classes
 # how will table data be entered?
 #   ignore first line? only parse floats?
-# what file should be the "main" file? should the main ui file
-#   call the functions?
 # make sure everything that needs to be is a np array, not list
 # select hazard function
 # MSE vs SSE?
-# make some of the covariate variables global? reduce the number
-#   of parameters needed to pass to methods
 # checking on other datasets
 # using only a subset of metrics
 # making UI easier to use for someone who doesn't understand the math
 # status bar?
-# options selected from menubar like in SFRAT?
+# options selected from menubar like in SFRAT
 # protection levels
-# graph should always be on same side (right)
+# graph should always be on same side (right)?
 # setting status tips
 # dialog asking if you want to quit?
-# plot view submenu? (points, lines)
 # pay attention to how scaling/strecting works, minimum sizes for UI elements
 # naming conventions for excel/csv
-# less classes? example: self._main.tabs.tab1.sideMenu.sheetSelect.addItems(self.data.sheetNames)
+# less classes?
+#   example: self._main.tabs.tab1.sideMenu.sheetSelect.addItems(self.data.sheetNames)
 # figure out access modifiers, public/private variables, properties
 # use logging object, removes matplotlib debug messages in debug mode
-# can't change sheets during calculations?
-# loading multiple different files needs to REPLACE sheets in list, not just add
-# PLOT METHOD CAN CHANGE: don't hard code post, only for step functions
+# changing sheets during calculations?
 # change column header names if they don't have any
-#------------------------------------------------------------------------#
+# numCovariates - property?
+#------------------------------------------------------------------------------------#
 
 # PyQt5 imports for UI elements
 from PyQt5.QtWidgets import QMainWindow, qApp, QMessageBox, QWidget, QTabWidget, \
@@ -179,7 +173,7 @@ class MainWindow(QMainWindow):
         dataframe = self.data.getData()
         if index == 0:
             # MVF
-            self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe["cumulative"], title="MVF", xLabel="time", yLabel="failures")
+            self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe["Cumulative"], title="MVF", xLabel="time", yLabel="failures")
         if index == 1:
             # Intensity
             self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe.iloc[:, 1], title="Intensity", xLabel="time", yLabel="failures")
