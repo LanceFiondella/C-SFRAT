@@ -23,6 +23,9 @@
 # changing sheets during calculations?
 # change column header names if they don't have any
 # numCovariates - property?
+# do Model abstract peroperties do anything?
+# figure out "if self.data.getData() is not None"
+#   just need self.dataLoaded?
 #------------------------------------------------------------------------------------#
 
 # PyQt5 imports for UI elements
@@ -134,6 +137,7 @@ class MainWindow(QMainWindow):
         self._main.tabs.tab1.sideMenu.sheetSelect.addItems(self.data.sheetNames)    # add sheet names from new file
 
         self.setDataView("view", self.dataViewIndex)
+        self.setMetricsList()
 
     def changeSheet(self, index):
         '''
@@ -145,6 +149,13 @@ class MainWindow(QMainWindow):
         self.data.currentSheet = index
         self.setDataView("view", self.dataViewIndex)
         self._main.tabs.tab1.plotAndTable.figure.canvas.draw()
+        self.setMetricsList()
+
+    def setMetricsList(self):
+        self._main.tabs.tab1.sideMenu.metricsList.clear()
+        if self.dataLoaded:
+            dataframe = self.data.getData()
+            self._main.tabs.tab1.sideMenu.metricsList.addItems(dataframe.columns.values[2:-1])
 
     def setDataView(self, viewType, index):
         '''
@@ -435,7 +446,7 @@ class SideMenu(QVBoxLayout):
 
         # TEMPORARY
         # will later dynamically add metric names (if given)
-        self.metricsList.addItems(["Metric 1", "Metric 2", "Metric 3"])
+        # self.metricsList.addItems(["Metric 1", "Metric 2", "Metric 3"])
         self.metricsList.setSelectionMode(QAbstractItemView.MultiSelection)     # able to select multiple metrics
         metricsGroupLayout.addWidget(self.metricsList)
 

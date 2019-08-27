@@ -227,17 +227,6 @@ def LLF(h, betas, covariate_data, n, kVec):
 
     return firstTerm + secondTerm + thirdTerm - fourthTerm
 
-def LLF_new(h, omega, betas, covariate_data, n):
-    covariate_num = len(betas)
-    data_product = np.product([np.multiply(covariate_data[j], betas[j]) for j in range(covariate_num)])
-    exponent = np.exp(data_product)
-
-    first_term = -1 * omega - np.power(np.power((1 - h), exponent), n)
-
-
-
-
-
 def calc_omega(h, betas, covariate_data, n, total_failures):
     # can clean this up to use less loops, probably
     covariate_num = len(betas)
