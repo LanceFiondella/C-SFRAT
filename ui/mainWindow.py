@@ -48,16 +48,7 @@ import logging
 from ui.commonWidgets import PlotWidget, PlotAndTable
 from core.dataClass import Data
 from core.graphSettings import PlotSettings
-
-# math that does covariate calculations
-# import covariate
-
-# global variables
-# import global_variables as gv
-
-# for importing csv failure data
-# import csv, codecs, threading
-# import os
+import models
 
 
 class MainWindow(QMainWindow):
@@ -94,6 +85,7 @@ class MainWindow(QMainWindow):
         # signal connections
         self.importFileSignal.connect(self.importFile)
         self._main.tabs.tab1.sideMenu.viewChangedSignal.connect(self.setDataView)
+        self._main.tabs.tab1.sideMenu.runModelSignal.connect(self.runModels)
 
         self.initUI()
         logging.info("UI loaded.")
@@ -137,7 +129,7 @@ class MainWindow(QMainWindow):
         self._main.tabs.tab1.sideMenu.sheetSelect.addItems(self.data.sheetNames)    # add sheet names from new file
 
         self.setDataView("view", self.dataViewIndex)
-        self.setMetricsList()
+        # self.setMetricList()
 
     def changeSheet(self, index):
         '''
@@ -149,13 +141,15 @@ class MainWindow(QMainWindow):
         self.data.currentSheet = index
         self.setDataView("view", self.dataViewIndex)
         self._main.tabs.tab1.plotAndTable.figure.canvas.draw()
-        self.setMetricsList()
+        self.setMetricList()
 
-    def setMetricsList(self):
-        self._main.tabs.tab1.sideMenu.metricsList.clear()
+    def setMetricList(self):
+        self._main.tabs.tab1.sideMenu.metricListWidget.clear()
         if self.dataLoaded:
             dataframe = self.data.getData()
-            self._main.tabs.tab1.sideMenu.metricsList.addItems(dataframe.columns.values[2:-1])
+            self._main.tabs.tab1.sideMenu.metricListWidget.addItems(dataframe.columns.values[2:-1])
+            logging.info("{0} covariate metrics on this sheet: {1}".format(self.data.numCovariates,
+                                                                    dataframe.columns.values[2:-1]))
 
     def setDataView(self, viewType, index):
         '''
@@ -393,6 +387,7 @@ class SideMenu(QVBoxLayout):
 
     # signals
     viewChangedSignal = pyqtSignal(str, int)    # should this be before init?
+    runModelSignal = pyqtSignal(dict)
 
     def __init__(self):
         super().__init__()
@@ -412,12 +407,13 @@ class SideMenu(QVBoxLayout):
         self.addWidget(self.metricsGroup)
 
         self.runButton = QPushButton("Run Estimation")
+        self.runButton.clicked.connect(self.emitRunModelsSignal)
         self.addWidget(self.runButton)
 
         self.addStretch(1)
 
         # signals
-        self.sheetSelect.currentIndexChanged.connect(self.sheetChanged)
+        self.sheetSelect.currentIndexChanged.connect(self.emitSheetChangedSignal)
 
     def setupSheetGroup(self):
         sheetGroupLayout = QVBoxLayout()
@@ -430,29 +426,46 @@ class SideMenu(QVBoxLayout):
 
     def setupModelsGroup(self):
         modelGroupLayout = QVBoxLayout()
-        self.modelList = QListWidget()
+        self.modelListWidget = QListWidget()
 
         # TEMPORARY
         # will later dynamically add model names
-        self.modelList.addItems(["Geometric", "Negative Binomial (Order 2)", "Discrete Weibull (Order 2)"])
-        self.modelList.setSelectionMode(QAbstractItemView.MultiSelection)       # able to select multiple models
-        modelGroupLayout.addWidget(self.modelList)
+        self.modelListWidget.addItems([model.name for model in models.modelList.values()])
+        logging.info("Models loaded: {0}".format([model.name for model in models.modelList.values()]))
+        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)       # able to select multiple models
+        modelGroupLayout.addWidget(self.modelListWidget)
 
         return modelGroupLayout
 
     def setupMetricsGroup(self):
         metricsGroupLayout = QVBoxLayout()
-        self.metricsList = QListWidget()
-
-        # TEMPORARY
-        # will later dynamically add metric names (if given)
-        # self.metricsList.addItems(["Metric 1", "Metric 2", "Metric 3"])
-        self.metricsList.setSelectionMode(QAbstractItemView.MultiSelection)     # able to select multiple metrics
-        metricsGroupLayout.addWidget(self.metricsList)
+        self.metricListWidget = QListWidget()   # metric names added dynamically from data when loaded
+        self.metricListWidget.setSelectionMode(QAbstractItemView.MultiSelection)     # able to select multiple metrics
+        metricsGroupLayout.addWidget(self.metricListWidget)
 
         return metricsGroupLayout
 
-    def sheetChanged(self):
+    def emitRunModelsSignal(self):
+        '''
+        Method called when Run Estimation button pressed.
+        Signal that tells models to run (runModelSignal) is
+        only emitted if at least one model and at least one
+        metric is selected.
+        '''
+        logging.info("Run button pressed.")
+        # get model names as strings
+        selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
+        # get model classes from models folder
+        modelsToRun = [model for model in models.modelList.values() if model.name in selectedModelNames]
+        # get metric names, used to index dataframe columns
+        selectedMetricNames = [item.text() for item in self.metricListWidget.selectedItems()]
+        # only emit the run signal if at least one model and at least one metric chosen
+        if selectedModelNames and selectedMetricNames:
+            self.runModelSignal.emit({"modelsToRun": modelsToRun,
+                                  "metrics": selectedMetricNames})
+            logging.info("Run models signal emitted. Models = {0}, metrics = {1}".format(selectedModelNames, selectedMetricNames))
+
+    def emitSheetChangedSignal(self):
         self.viewChangedSignal.emit("sheet", self.sheetSelect.currentIndex())
 #endregion
 
