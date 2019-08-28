@@ -8,6 +8,9 @@ class NegativeBinomial2(Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def run(self):
+        pass
+
     def calcHazard(self):
         pass
 

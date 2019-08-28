@@ -21,11 +21,16 @@
 # figure out access modifiers, public/private variables, properties
 # use logging object, removes matplotlib debug messages in debug mode
 # changing sheets during calculations?
+#   think the solution is to load the data once, and then continue using that same data
+#   until calculations are completed
 # change column header names if they don't have any
 # numCovariates - property?
 # do Model abstract peroperties do anything?
 # figure out "if self.data.getData() is not None"
 #   just need self.dataLoaded?
+# more descriptions of what's happening as estimations are running (ComputeWidget)
+# predict points? (commonWidgets)
+# naming "hazard functions" instead of models
 #------------------------------------------------------------------------------------#
 
 # PyQt5 imports for UI elements
@@ -45,7 +50,7 @@ import matplotlib.pyplot as plt
 import logging
 
 # Local imports
-from ui.commonWidgets import PlotWidget, PlotAndTable
+from ui.commonWidgets import PlotWidget, PlotAndTable, ComputeWidget, TaskThread
 from core.dataClass import Data
 from core.graphSettings import PlotSettings
 import models
@@ -68,6 +73,8 @@ class MainWindow(QMainWindow):
         self.top = 100
         self.width = 1080
         self.height = 720
+        self.minWidth = 800
+        self.minHeight = 600
         self._main = MainWidget()
         self.setCentralWidget(self._main)
 
@@ -104,6 +111,7 @@ class MainWindow(QMainWindow):
         self.setupMenu()
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
+        self.setMinimumSize(self.minWidth, self.minHeight)
         self.statusBar().showMessage("")
         self.viewType = "view"
         self.dataViewIndex = 0
@@ -111,9 +119,18 @@ class MainWindow(QMainWindow):
 
     def runModels(self, modelDetails):
         '''
-        description to be created at a later time
+        Run selected models using selected metrics
+
+        Args:
+            modelDetails : dictionary of models and metrics to use for calculations
         '''
-        pass
+        modelsToRun = modelDetails["modelsToRun"]
+        metricNames = modelDetails["metricNames"]
+        if self.data:
+            self.computeWidget = ComputeWidget(modelsToRun, metricNames, self.data)
+            # DON'T WANT TO DISPLAY RESULTS IN ANOTHER WINDOW
+            # WANT TO DISPLAY ON TAB 2/3
+            self.computeWidget.results.connect(self.displayResults)
 
     def displayResults(self, results):
         '''
@@ -430,8 +447,9 @@ class SideMenu(QVBoxLayout):
 
         # TEMPORARY
         # will later dynamically add model names
-        self.modelListWidget.addItems([model.name for model in models.modelList.values()])
-        logging.info("Models loaded: {0}".format([model.name for model in models.modelList.values()]))
+        loadedModels = [model.name for model in models.modelList.values()]
+        self.modelListWidget.addItems(loadedModels)
+        logging.info("{0} model(s) loaded: {1}".format(len(loadedModels), loadedModels))
         self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)       # able to select multiple models
         modelGroupLayout.addWidget(self.modelListWidget)
 
@@ -454,16 +472,27 @@ class SideMenu(QVBoxLayout):
         '''
         logging.info("Run button pressed.")
         # get model names as strings
+        
         selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
+        print(self.metricListWidget.currentRow())
         # get model classes from models folder
         modelsToRun = [model for model in models.modelList.values() if model.name in selectedModelNames]
-        # get metric names, used to index dataframe columns
+        # get selected metric names (IMPORTANT: returned in order they were clicked)
         selectedMetricNames = [item.text() for item in self.metricListWidget.selectedItems()]
+        # sorts metric names in their order from the data file (left to right)
+        metricNames = [self.metricListWidget.item(i).text() for i in range(self.metricListWidget.count()) if self.metricListWidget.item(i).text() in selectedMetricNames]
         # only emit the run signal if at least one model and at least one metric chosen
         if selectedModelNames and selectedMetricNames:
             self.runModelSignal.emit({"modelsToRun": modelsToRun,
-                                  "metrics": selectedMetricNames})
+                                  "metricNames": metricNames})
             logging.info("Run models signal emitted. Models = {0}, metrics = {1}".format(selectedModelNames, selectedMetricNames))
+        else:
+            logging.warning("No data found. Data must be loaded in CSV or Excel format.")
+            msgBox = QMessageBox()
+            msgBox.setIcon(QMessageBox.Warning)
+            msgBox.setText("No data found")
+            msgBox.setInformativeText("Please load failure data as a .csv file or an Excel workbook (.xls, xlsx).")
+            msgBox.exec_()
 
     def emitSheetChangedSignal(self):
         self.viewChangedSignal.emit("sheet", self.sheetSelect.currentIndex())

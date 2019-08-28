@@ -5,6 +5,8 @@ import sympy as sym
 from sympy import symbols, diff, exp, lambdify, DeferredVector, factorial, Symbol, Idx, IndexedBase
 import scipy.optimize
 
+import logging
+
 class Model(ABC):
     def __init__(self, *args, **kwargs):
         '''
@@ -12,8 +14,22 @@ class Model(ABC):
 
         Keyword Args:
             data: Pandas dataframe with all required columns
+            metrics: list of selected metric names
         '''
-        self.data = kwargs["data"]
+        self.data = kwargs["data"]                  # dataframe
+        self.metricNames = kwargs["metricNames"]    # selected metric names (strings)
+        self.t = self.data.iloc[:, 0].values               # failure times, from first column of dataframe
+        self.n = self.data.iloc[:, 1].values               # number of failures, from second column of dataframe
+        self.cumulativeFailures = self.data["Cumulative"].values
+        self.totalFailures = self.cumulativeFailures[-1]
+        # list of arrays or array of arrays?
+        self.covariateData = [self.data[name].values for name in self.metricNames]
+
+        # logging
+        logging.info("Failure times: {0}".format(self.t))
+        logging.info("Number of failures: {0}".format(self.n))
+        logging.info("Cumulative failures: {0}".format(self.cumulativeFailures))
+        logging.info("Total failures: {0}".format(self.totalFailures))
 
     ##############################################
     #Properties/Members all models must implement#
@@ -40,6 +56,13 @@ class Model(ABC):
     ################################################
     @abstractmethod
     def calcHazard(self):
+        pass
+
+    @abstractmethod
+    def run(self):
+        '''
+        main method that calls others
+        '''
         pass
 
     def initialEstimates(self):
