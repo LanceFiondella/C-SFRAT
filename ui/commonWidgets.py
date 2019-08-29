@@ -49,12 +49,13 @@ class ComputeWidget(QWidget):
         layout = QVBoxLayout(self)
         
         # set fixed window size (width, height)
-        self.setFixedSize(250, 150)
+        self.setFixedSize(350, 200)
 
         self.progressBar = QProgressBar(self)
-        self.progressBar.setRange(0, len(modelsToRun))
+        self.progressBar.setMaximum(len(modelsToRun))
         self.label = QLabel()
         self.label.setText("Computing results...\nModels completed: {0}".format(0))
+        self.modelCount = 0
 
         layout.addWidget(self.label)
         layout.addWidget(self.progressBar)
@@ -70,8 +71,9 @@ class ComputeWidget(QWidget):
 
 
     def modelFinished(self):
-        self.progressBar.setValue(self.progressBar.value() + 1)
-        self.label.setText("Computing results...\nModels completed: {0}".format(self.progressBar.value() + 1))
+        self.modelCount += 1
+        self.progressBar.setValue(self.modelCount)
+        self.label.setText("Computing results...\nModels completed: {0}".format(self.modelCount))
 
     def onFinished(self, result):
         self.results.emit(result)
@@ -93,7 +95,7 @@ class TaskThread(QThread):
         result = {}
         for model in self.modelsToRun:
             m = model(data=self.data.getData(), metricNames=self.metricNames)
-            # m.findParams(self.predictPoints)
+            m.runEstimation()
             result[m.name] = m
             self.modelFinished.emit()
         self.taskFinished.emit(result)

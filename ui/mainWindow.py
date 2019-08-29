@@ -31,6 +31,8 @@
 # more descriptions of what's happening as estimations are running (ComputeWidget)
 # predict points? (commonWidgets)
 # naming "hazard functions" instead of models
+# fsolve doesn't return if converged, so it's not updated for models
+#   should try other scipy functions
 #------------------------------------------------------------------------------------#
 
 # PyQt5 imports for UI elements
@@ -62,9 +64,9 @@ class MainWindow(QMainWindow):
 
     # debug mode?
     def __init__(self, debug=False):
-        '''
+        """
         description to be created at a later time
-        '''
+        """
         super().__init__()
 
         # setup main window parameters
@@ -98,16 +100,16 @@ class MainWindow(QMainWindow):
         logging.info("UI loaded.")
 
     def closeEvent(self, event):
-        '''
+        """
         description to be created at a later time
-        '''
+        """
         logging.info("Covariate Tool application closed.")
         qApp.quit()
 
     def initUI(self):
-        '''
+        """
         description to be created at a later time
-        '''
+        """
         self.setupMenu()
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
@@ -118,12 +120,12 @@ class MainWindow(QMainWindow):
         self.show()
 
     def runModels(self, modelDetails):
-        '''
+        """
         Run selected models using selected metrics
 
         Args:
             modelDetails : dictionary of models and metrics to use for calculations
-        '''
+        """
         modelsToRun = modelDetails["modelsToRun"]
         metricNames = modelDetails["metricNames"]
         if self.data:
@@ -133,15 +135,15 @@ class MainWindow(QMainWindow):
             self.computeWidget.results.connect(self.displayResults)
 
     def displayResults(self, results):
-        '''
+        """
         description to be created at a later time
-        '''
+        """
         pass
 
     def importFile(self):
-        '''
+        """
         Import selected file
-        '''
+        """
         self._main.tabs.tab1.sideMenu.sheetSelect.clear()   # clear sheet names from previous file
         self._main.tabs.tab1.sideMenu.sheetSelect.addItems(self.data.sheetNames)    # add sheet names from new file
 
@@ -149,12 +151,12 @@ class MainWindow(QMainWindow):
         # self.setMetricList()
 
     def changeSheet(self, index):
-        '''
+        """
         Change the current sheet displayed
 
         Args:
             index : index of the sheet
-        '''
+        """
         self.data.currentSheet = index
         self.setDataView("view", self.dataViewIndex)
         self._main.tabs.tab1.plotAndTable.figure.canvas.draw()
@@ -169,14 +171,14 @@ class MainWindow(QMainWindow):
                                                                     dataframe.columns.values[2:-1]))
 
     def setDataView(self, viewType, index):
-        '''
+        """
         Set the data to be displayed. 
         Called whenever a menu item is changed
 
         Args:
             viewType: string that determines view
             index: index of the dataview list
-        '''
+        """
         if self.data.getData() is not None:
             if viewType == "view":
                 self.setRawDataView(index)
@@ -188,9 +190,9 @@ class MainWindow(QMainWindow):
             self.dataViewIndex = index
 
     def setRawDataView(self, index):
-        '''
+        """
         Changes plot between MVF and intensity
-        '''
+        """
         self._main.tabs.tab1.plotAndTable.tableWidget.setModel(self.data.getDataModel())
         dataframe = self.data.getData()
         if index == 0:
@@ -203,32 +205,32 @@ class MainWindow(QMainWindow):
         self._main.tabs.tab1.plotAndTable.figure.canvas.draw()
 
     def setTrendTest(self, index):
-        '''
+        """
         description to be created at a later time
-        '''
+        """
         pass
 
     def setPlotStyle(self, style='-o', plotType="step"):
-        '''
+        """
         description to be created at a later time
-        '''
+        """
         self.plotSettings.style = style
         self.plotSettings.plotType = plotType
         self.updateUI()
 
     def updateUI(self):
-        '''
+        """
         Change Plot, Table and SideMenu
         when the state of the Data object changes
 
         Should be called explicitly
-        '''
+        """
         self.setDataView(self.viewType, self.dataViewIndex)
 
     def setupMenu(self):
-        '''
+        """
         description to be created at a later time
-        '''
+        """
         self.menu = self.menuBar()      # initialize menu bar
 
         # ---- File menu
@@ -330,9 +332,9 @@ class MainWindow(QMainWindow):
 
 
 class MainWidget(QWidget):
-    '''
+    """
     description to be created at a later time
-    '''
+    """
     def __init__(self):
         super().__init__()
         self.initUI()
@@ -398,9 +400,9 @@ class Tab1(QWidget):
     #     return plotAndTableLayout
 
 class SideMenu(QVBoxLayout):
-    '''
+    """
     Side menu for tab 1
-    '''
+    """
 
     # signals
     viewChangedSignal = pyqtSignal(str, int)    # should this be before init?
@@ -464,17 +466,16 @@ class SideMenu(QVBoxLayout):
         return metricsGroupLayout
 
     def emitRunModelsSignal(self):
-        '''
+        """
         Method called when Run Estimation button pressed.
         Signal that tells models to run (runModelSignal) is
         only emitted if at least one model and at least one
         metric is selected.
-        '''
+        """
         logging.info("Run button pressed.")
         # get model names as strings
         
         selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
-        print(self.metricListWidget.currentRow())
         # get model classes from models folder
         modelsToRun = [model for model in models.modelList.values() if model.name in selectedModelNames]
         # get selected metric names (IMPORTANT: returned in order they were clicked)
@@ -492,6 +493,7 @@ class SideMenu(QVBoxLayout):
             msgBox.setIcon(QMessageBox.Warning)
             msgBox.setText("No data found")
             msgBox.setInformativeText("Please load failure data as a .csv file or an Excel workbook (.xls, xlsx).")
+            msgBox.setWindowTitle("Warning")
             msgBox.exec_()
 
     def emitSheetChangedSignal(self):

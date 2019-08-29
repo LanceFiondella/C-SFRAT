@@ -2,34 +2,38 @@ from abc import ABC, abstractmethod, abstractproperty
 
 import numpy as np
 import sympy as sym
-from sympy import symbols, diff, exp, lambdify, DeferredVector, factorial, Symbol, Idx, IndexedBase
+from sympy import symbols, exp, lambdify, DeferredVector, factorial, Symbol, Idx, IndexedBase
 import scipy.optimize
 
 import logging
 
 class Model(ABC):
     def __init__(self, *args, **kwargs):
-        '''
+        """
         Initialize Model
 
         Keyword Args:
             data: Pandas dataframe with all required columns
             metrics: list of selected metric names
-        '''
+        """
         self.data = kwargs["data"]                  # dataframe
         self.metricNames = kwargs["metricNames"]    # selected metric names (strings)
-        self.t = self.data.iloc[:, 0].values               # failure times, from first column of dataframe
-        self.n = self.data.iloc[:, 1].values               # number of failures, from second column of dataframe
+        self.t = self.data.iloc[:, 0].values            # failure times, from first column of dataframe
+        self.failures = self.data.iloc[:, 1].values     # number of failures, from second column of dataframe
+        self.n = len(self.failures)                     # number of discrete time segments
         self.cumulativeFailures = self.data["Cumulative"].values
         self.totalFailures = self.cumulativeFailures[-1]
         # list of arrays or array of arrays?
         self.covariateData = [self.data[name].values for name in self.metricNames]
+        self.numCovariates = len(self.covariateData)
 
         # logging
         logging.info("Failure times: {0}".format(self.t))
-        logging.info("Number of failures: {0}".format(self.n))
+        logging.info("Number of time segments: {0}".format(self.n))
+        logging.info("Failures: {0}".format(self.failures))
         logging.info("Cumulative failures: {0}".format(self.cumulativeFailures))
         logging.info("Total failures: {0}".format(self.totalFailures))
+        logging.info("Number of covariates: {0}".format(self.numCovariates))
 
     ##############################################
     #Properties/Members all models must implement#
@@ -37,19 +41,19 @@ class Model(ABC):
     @property
     @abstractmethod
     def name(self):
-        '''
+        """
         Name of model (string)
-        '''
+        """
         return "Generic Model"
 
     @property
     @abstractmethod
     def converged(self):
-        '''
+        """
         Indicates whether model has converged (Bool)
         Must be set after parameters are calculated
-        '''
-        return True
+        """
+        return False
 
     ################################################
     #Methods that must be implemented by all models#
@@ -58,88 +62,91 @@ class Model(ABC):
     def calcHazard(self):
         pass
 
+    # @abstractmethod
+    # def modelFitting(self):
+    #     pass
+
     @abstractmethod
-    def run(self):
-        '''
-        main method that calls others
-        '''
+    def runEstimation(self):
+        """
+        main method that calls others; called by TaskThread
+        """
         pass
 
     def initialEstimates(self):
-        pass
+        return np.random.uniform(0.0, 0.1, self.numCovariates + 1)
 
-    def LLF_sym(self, n, numCovariates, covariateData, kVec):
+    def LLF_sym(self):
         #Equation (30)
         x = DeferredVector('x')
         second = []
         prodlist = []
-        for i in range(n):
-            sum1=1
-            sum2=1
+        for i in range(self.n):
+            sum1 = 1
+            sum2 = 1
             TempTerm1 = 1
-            for j in range(1, numCovariates + 1):
-                    TempTerm1 = TempTerm1 * exp(covariateData[j - 1][i] * x[j])
+            for j in range(1, self.numCovariates + 1):
+                    TempTerm1 = TempTerm1 * exp(self.covariateData[j - 1][i] * x[j])
             #print('Test: ', TempTerm1)
-            sum1=1-((1-x[0]) ** (TempTerm1))
+            sum1 = 1 - ((1-x[0]) ** (TempTerm1))
             for k in range(i):
                 TempTerm2 = 1
-                for j in range(1, numCovariates + 1):
-                        TempTerm2 = TempTerm2 * exp(covariateData[j - 1][k] * x[j])
+                for j in range(1, self.numCovariates + 1):
+                        TempTerm2 = TempTerm2 * exp(self.covariateData[j - 1][k] * x[j])
                 #print ('Test:', TempTerm2)
-                sum2 = sum2*((1-x[0])**(TempTerm2))
+                sum2 = sum2 * ((1 - x[0])**(TempTerm2))
             #print ('Sum2:', sum2)
             second.append(sum2)
             prodlist.append(sum1*sum2)
 
-        firstTerm = -sum(kVec) #Verified
-        secondTerm = sum(kVec)*sym.log(sum(kVec)/sum(prodlist))
+        firstTerm = -sum(self.failures) #Verified
+        secondTerm = sum(self.failures)*sym.log(sum(self.failures)/sum(prodlist))
         logTerm = [] #Verified
-        for i in range(n):
-            logTerm.append(kVec[i]*sym.log(prodlist[i]))
+        for i in range(self.n):
+            logTerm.append(self.failures[i]*sym.log(prodlist[i]))
         thirdTerm = sum(logTerm)
         factTerm = [] #Verified
-        for i in range(n):
-            factTerm.append(sym.log(factorial(kVec[i])))
+        for i in range(self.n):
+            factTerm.append(sym.log(factorial(self.failures[i])))
         fourthTerm = sum(factTerm)
 
         f = firstTerm + secondTerm + thirdTerm - fourthTerm
         return f, x
 
-    def convertSym(self, x, bh):
-        lambdify(x, bh, "numpy")
+    def convertSym(self, x, bh, target):
+        return lambdify(x, bh, target)
 
-    def LLF(self, h, betas, covariate_data, n, kVec):
+    def LLF(self, h, betas):
         # can clean this up to use less loops, probably
-        covariate_num = len(betas)
         second = []
         prodlist = []
-        for i in range(n):
-            sum1=1
-            sum2=1
+        for i in range(self.n):
+            sum1 = 1
+            sum2 = 1
             TempTerm1 = 1
-            for j in range(covariate_num):
-                    TempTerm1 = TempTerm1 * np.exp(covariate_data[j][i] * betas[j])
+            for j in range(self.numCovariates):
+                    TempTerm1 = TempTerm1 * np.exp(self.covariateData[j][i] * betas[j])
             #print('Test: ', TempTerm1)
-            sum1=1-((1 - h[i]) ** (TempTerm1))
+            sum1 = 1 - ((1 - h[i]) ** (TempTerm1))
             for k in range(i):
                 TempTerm2 = 1
-                for j in range(covariate_num):
-                        TempTerm2 = TempTerm2 * np.exp(covariate_data[j][k] * betas[j])
+                for j in range(self.numCovariates):
+                        TempTerm2 = TempTerm2 * np.exp(self.covariateData[j][k] * betas[j])
                 #print ('Test:', TempTerm2)
                 sum2 = sum2*((1 - h[i])**(TempTerm2))
             #print ('Sum2:', sum2)
             second.append(sum2)
             prodlist.append(sum1*sum2)
 
-        firstTerm = -sum(kVec) #Verified
-        secondTerm = sum(kVec)*np.log(sum(kVec)/sum(prodlist))
+        firstTerm = -sum(self.failures) #Verified
+        secondTerm = sum(self.failures)*np.log(sum(self.failures)/sum(prodlist))
         logTerm = [] #Verified
-        for i in range(n):
-            logTerm.append(kVec[i]*np.log(prodlist[i]))
+        for i in range(self.n):
+            logTerm.append(self.failures[i]*np.log(prodlist[i]))
         thirdTerm = sum(logTerm)
         factTerm = [] #Verified
-        for i in range(n):
-            factTerm.append(np.log(np.math.factorial(kVec[i])))
+        for i in range(self.n):
+            factTerm.append(np.log(np.math.factorial(self.failures[i])))
         fourthTerm = sum(factTerm)
 
         return firstTerm + secondTerm + thirdTerm - fourthTerm
@@ -147,25 +154,24 @@ class Model(ABC):
     def optimizeSolution(self, fd, B):
         return scipy.optimize.fsolve(fd, x0=B)
 
-    def calcOmega(self, h, betas, covariateData, n, totalFailures):
+    def calcOmega(self, h, betas):
         # can clean this up to use less loops, probably
-        covariate_num = len(betas)
         prodlist = []
-        for i in range(n):
-            sum1=1
-            sum2=1
+        for i in range(self.n):
+            sum1 = 1
+            sum2 = 1
             TempTerm1 = 1
-            for j in range(covariate_num):
-                    TempTerm1 = TempTerm1 * np.exp(covariateData[j][i] * betas[j])
-            sum1=1-((1 - h[i]) ** (TempTerm1))
+            for j in range(self.numCovariates):
+                    TempTerm1 = TempTerm1 * np.exp(self.covariateData[j][i] * betas[j])
+            sum1 = 1-((1 - h[i]) ** (TempTerm1))
             for k in range(i):
                 TempTerm2 = 1
-                for j in range(covariate_num):
-                        TempTerm2 = TempTerm2 * np.exp(covariateData[j][k] * betas[j])
+                for j in range(self.numCovariates):
+                        TempTerm2 = TempTerm2 * np.exp(self.covariateData[j][k] * betas[j])
                 sum2 = sum2*((1 - h[i])**(TempTerm2))
             prodlist.append(sum1*sum2)
         denominator = sum(prodlist)
-        numerator = totalFailures
+        numerator = self.totalFailures
         # print("numerator =", numerator, "denominator =", denominator)
 
         return numerator / denominator
@@ -173,80 +179,56 @@ class Model(ABC):
     def calcP(self):
         pass
 
-    def AIC(self, h, betas, covariate_data, n, kVec):
+    def AIC(self, h, betas):
         p = 5   # why?
-        return 2 * p - np.multiply(2, self.LLF(h, betas, covariate_data, n, kVec))
+        return 2 * p - np.multiply(2, self.LLF(h, betas))
 
-    def BIC(self, h, betas, covariate_data, n, kVec):
+    def BIC(self, h, betas):
         p = 5   # why?
-        return p * np.log(n) - 2 * self.LLF(h, betas, covariate_data, n, kVec)
+        return p * np.log(self.n) - 2 * self.LLF(h, betas)
 
-    def MVF(self, h, omega, betas, covariate_data, n):
+    def MVF(self, h, omega, betas, stop):
         # can clean this up to use less loops, probably
-        covariate_num = len(betas)
         prodlist = []
-        for i in range(n + 1):
-            sum1=1
-            sum2=1
+        for i in range(stop + 1):     # CHANGED THIS FROM self.n + 1 !!!
+            sum1 = 1
+            sum2 = 1
             TempTerm1 = 1
-            for j in range(covariate_num):
-                    TempTerm1 = TempTerm1 * np.exp(covariate_data[j][i] * betas[j])
-            sum1=1-((1 - h[i]) ** (TempTerm1))
+            for j in range(self.numCovariates):
+                    TempTerm1 = TempTerm1 * np.exp(self.covariateData[j][i] * betas[j])
+            sum1 = 1-((1 - h[i]) ** (TempTerm1))
             for k in range(i):
                 TempTerm2 = 1
-                for j in range(covariate_num):
-                        TempTerm2 = TempTerm2 * np.exp(covariate_data[j][k] * betas[j])
-                sum2 = sum2*((1 - h[i])**(TempTerm2))
-            prodlist.append(sum1*sum2)
+                for j in range(self.numCovariates):
+                        TempTerm2 = TempTerm2 * np.exp(self.covariateData[j][k] * betas[j])
+                sum2 = sum2 * ((1 - h[i])**(TempTerm2))
+            prodlist.append(sum1 * sum2)
         return omega * sum(prodlist)
 
-    def MVF_all(self, h, omega, betas, covariate_data, n):
-        mvf_list = np.array([self.MVF(h, omega, betas, covariate_data, k) for k in range(n)])
-        return mvf_list
+    def MVF_all(self, h, omega, betas):
+        mvfList = np.array([self.MVF(h, omega, betas, k) for k in range(self.n)])
+        return mvfList
     
     def SSE(self, fitted, actual):
         sub = np.subtract(fitted, actual)
-        sse_error = np.sum(np.power(sub, 2))
-        return sse_error
+        sseError = np.sum(np.power(sub, 2))
+        return sseError
 
-    def intensity_fit(self, mvfList):
-        # first = np.array([mvf_list[0]])
-        # difference = np.array(np.diff(mvf_list))
-        # return np.concatenate(first, difference)  # want the same size as list that was input
-        # print(mvf_list[0])
+    def intensityFit(self, mvfList):
         difference = [mvfList[i+1]-mvfList[i] for i in range(len(mvfList)-1)]
-        # print(difference, type(difference))
         return [mvfList[0]] + difference
 
-    def model_fitting(srm="geometric"):
-        # select which hazard function to use
-        if (srm == "nb2"):
-            # negative binomial (order 2)
-            h = nb2_hazard
-        elif (srm == "dw2"):
-            # discrete weibull (order 2)
-            h = dw2_hazard
-        elif (srm == "nb"):
-            # negative binomial
-            h = nb_hazard
-        elif (srm == "dw"):
-            # discrete weibull
-            h = dw_hazard
-        else:
-            # geometric is default
-            h = geometric_hazard
-
-        omega = calcOmega(h, betas, cov_sdata, n, total_failures)
-        print("calculated omega =", omega)
-        # omega = 41.627
-        llf_val = LLF(h, betas, cov_data, n, kVec)      # log likelihood value
-        aic_val = AIC(h, betas, cov_data, n, kVec)
-        bic_val = BIC(h, betas, cov_data, n, kVec)
-        mvf_list = MVF_all(h, omega, betas, cov_data, n)
+    def modelFitting(self, hazard, betas):
+        omega = self.calcOmega(hazard, betas)
+        logging.info("Calculated omega: {0}".format(omega))
+        self.llfVal = self.LLF(hazard, betas)      # log likelihood value
+        self.aicVal = self.AIC(hazard, betas)
+        self.bicVal = self.BIC(hazard, betas)
+        self.mvfList = self.MVF_all(hazard, omega, betas)
         
-        print("MVF values:", mvf_list)
+        logging.info("MVF values: {0}".format(self.mvfList))
 
-        sse_val = SSE(mvf_list, kVec_cumulative)
+        self.sseVal = self.SSE(self.mvfList, self.cumulativeFailures)
 
-        intensity_list = intensity_fit(mvf_list)
-        print("intensity values:", intensity_list)
+        self.intensityList = self.intensityFit(self.mvfList)
+        logging.info("Intensity values: {0}".format(self.intensityList))

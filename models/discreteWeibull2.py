@@ -1,5 +1,7 @@
 from core.model import Model
-
+import logging
+import numpy as np
+from sympy import diff
 
 class DiscreteWeibull2(Model):
     name = "Discrete Weibull (Order 2)"
@@ -8,13 +10,25 @@ class DiscreteWeibull2(Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def run(self):
-        pass
+    def calcHazard(self, b):
+        return [1 - np.power(b, (np.square(i) - np.square(i - 1))) for i in range(1, self.n+1)]
 
-    def calcHazard(self):
-        pass
+    def runEstimation(self):
+        initial = self.initialEstimates()
+        logging.info("Initial estimates: {0}".format(initial))
+        f, x = self.LLF_sym()
+        bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
+        logging.info("Log-likelihood differentiated.")
+        logging.info("Converting symbolic equation to numpy...")
+        fd = self.convertSym(x, bh, "numpy")
+        logging.info("Symbolic equation converted.")
+        sol = self.optimizeSolution(fd, initial)
+        logging.info("Optimized solution: {0}".format(sol))
 
-
+        b = sol[0]
+        betas = sol[1:]
+        hazard = self.calcHazard(b)
+        self.modelFitting(hazard, betas)
 
 if __name__ == "__main__":
     dw = DiscreteWeibull2()
