@@ -33,6 +33,10 @@
 # naming "hazard functions" instead of models
 # fsolve doesn't return if converged, so it's not updated for models
 #   should try other scipy functions
+# make tab 2 like tab 1
+#   side menu with plot/table on right
+#   definitely need a side menu to select the hazard functions
+# names of tabs in tab 2?
 #------------------------------------------------------------------------------------#
 
 # PyQt5 imports for UI elements
@@ -87,14 +91,21 @@ class MainWindow(QMainWindow):
         self.data = Data()
         self.plotSettings = PlotSettings()
 
+        # flags
         self.dataLoaded = False
+        self.estimationComplete = False
 
+        # tab 1 plot and table
         self.ax = self._main.tabs.tab1.plotAndTable.figure.add_subplot(111)
+        # tab 2 plot and table
+        self.ax2 = self._main.tabs.tab2.plotAndTable.figure.add_subplot(111)
 
         # signal connections
         self.importFileSignal.connect(self.importFile)
         self._main.tabs.tab1.sideMenu.viewChangedSignal.connect(self.setDataView)
-        self._main.tabs.tab1.sideMenu.runModelSignal.connect(self.runModels)
+        self._main.tabs.tab1.sideMenu.runModelSignal.connect(self.runModels)    # run models when signal is received
+        self._main.tabs.tab1.sideMenu.runModelSignal.connect(self._main.tabs.tab2.sideMenu.addSelectedModels)    # fill tab 2 models group with selected models
+        # connect tab2 list changed to refreshing tab 2 plot
 
         self.initUI()
         logging.info("UI loaded.")
@@ -132,13 +143,17 @@ class MainWindow(QMainWindow):
             self.computeWidget = ComputeWidget(modelsToRun, metricNames, self.data)
             # DON'T WANT TO DISPLAY RESULTS IN ANOTHER WINDOW
             # WANT TO DISPLAY ON TAB 2/3
-            self.computeWidget.results.connect(self.displayResults)
+            self.computeWidget.results.connect(self.onEstimationComplete)     # signal emitted when estimation complete
 
-    def displayResults(self, results):
+    def onEstimationComplete(self, results):
         """
         description to be created at a later time
         """
-        pass
+        self.estimationComplete = True
+        self.estimationResults = results
+        # set initial model selected
+        # set plot
+        print(results)
 
     def importFile(self):
         """
@@ -198,11 +213,22 @@ class MainWindow(QMainWindow):
         if index == 0:
             # MVF
             self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe["Cumulative"], title="MVF", xLabel="time", yLabel="failures")
+            if self.estimationComplete:
+                self.changePlot2()
         if index == 1:
             # Intensity
             self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe.iloc[:, 1], title="Intensity", xLabel="time", yLabel="failures")
+            if self.estimationComplete:
+                self.changePlot2()
 
+        # redraw figures
         self._main.tabs.tab1.plotAndTable.figure.canvas.draw()
+        self._main.tabs.tab2.plotAndTable.figure.canvas.draw()
+
+    def changePlot2(self):
+        # self.ax2 = self.plotSettings.generatePlot(self.ax2, )
+        # self.ax2 = self.plotSettings.generatePlot(self.ax2, )
+        pass
 
     def setTrendTest(self, index):
         """
@@ -362,18 +388,6 @@ class Tabs(QTabWidget):
 
         self.resize(300, 200)
 
-    # def setupTab1(self):
-    #     self.tab1 = QWidget()
-
-    # def setupTab2(self):
-    #     pass
-
-    # def setupTab3(self):
-    #     pass
-
-    def runModels(self):
-        pass
-
 #region Tab 1
 class Tab1(QWidget):
     def __init__(self):
@@ -383,7 +397,7 @@ class Tab1(QWidget):
     def setupTab1(self):
         self.horizontalLayout = QHBoxLayout()       # main layout
 
-        self.sideMenu = SideMenu()
+        self.sideMenu = SideMenu1()
         self.horizontalLayout.addLayout(self.sideMenu, 25)
 
         # self.plotGroup = QGroupBox("Plot and Table of Imported Data")
@@ -399,7 +413,7 @@ class Tab1(QWidget):
     #     plotAndTableLayout.addWidget(self.plotAndTable)
     #     return plotAndTableLayout
 
-class SideMenu(QVBoxLayout):
+class SideMenu1(QVBoxLayout):
     """
     Side menu for tab 1
     """
@@ -487,6 +501,15 @@ class SideMenu(QVBoxLayout):
             self.runModelSignal.emit({"modelsToRun": modelsToRun,
                                   "metricNames": metricNames})
             logging.info("Run models signal emitted. Models = {0}, metrics = {1}".format(selectedModelNames, selectedMetricNames))
+        elif self.modelListWidget.count() > 0 and self.metricListWidget.count() > 0:
+            # data loaded but not selected
+            logging.warning("Must select at least one model and at least one metric.")
+            msgBox = QMessageBox()
+            msgBox.setIcon(QMessageBox.Warning)
+            msgBox.setText("Model or metric not selected")
+            msgBox.setInformativeText("Please select at least one model and at least one metric.")
+            msgBox.setWindowTitle("Warning")
+            msgBox.exec_()
         else:
             logging.warning("No data found. Data must be loaded in CSV or Excel format.")
             msgBox = QMessageBox()
@@ -509,6 +532,7 @@ class Tab2(QWidget):
     def setupTab2(self):
         self.horizontalLayout = QHBoxLayout()       # main layout
 
+        '''
         self.plotGroup = QGroupBox("Model Results")
         self.plotGroup.setLayout(self.setupPlotGroup())
         self.horizontalLayout.addWidget(self.plotGroup, 60)
@@ -516,7 +540,12 @@ class Tab2(QWidget):
         self.tableGroup = QGroupBox("Table of Predictions")
         self.tableGroup.setLayout(self.setupTableGroup())
         self.horizontalLayout.addWidget(self.tableGroup, 40)
+        '''
 
+        self.sideMenu = SideMenu2()
+        self.horizontalLayout.addLayout(self.sideMenu, 25)
+        self.plotAndTable = PlotAndTable()
+        self.horizontalLayout.addWidget(self.plotAndTable, 75)
         self.setLayout(self.horizontalLayout)
 
     def setupPlotGroup(self):
@@ -530,6 +559,52 @@ class Tab2(QWidget):
         self.table = QTableView()
         tableLayout.addWidget(self.table)
         return tableLayout
+
+class SideMenu2(QVBoxLayout):
+    """
+    Side menu for tab 2
+    """
+
+    # signals
+    # modelChangedSignal = pyqtSignal(str)    # changes based on selection of models in tab 2
+
+    def __init__(self):
+        super().__init__()
+        self.setupSideMenu()
+
+    def setupSideMenu(self):
+        self.modelsGroup = QGroupBox("Select Model(s)")
+        self.modelsGroup.setLayout(self.setupModelsGroup())
+        self.addWidget(self.modelsGroup)
+
+        self.addStretch(1)
+
+        # signals
+        # self.sheetSelect.currentIndexChanged.connect(self.emitSheetChangedSignal)
+
+    def setupModelsGroup(self):
+        modelGroupLayout = QVBoxLayout()
+        self.modelListWidget = QListWidget()
+        modelGroupLayout.addWidget(self.modelListWidget)
+        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)       # able to select multiple models
+        self.modelListWidget.itemSelectionChanged.connect(self.modelSelectionChanged)
+
+        return modelGroupLayout
+
+    def modelSelectionChanged(self):
+        """
+        slot for model selection changed signal
+        stores currently selected model names
+        """
+        self.selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
+        print(self.selectedModelNames)
+
+    def addSelectedModels(self, modelDetails):
+        modelsRan = modelDetails["modelsToRun"]
+        # metricNames = modelDetails["metricNames"]
+
+        loadedModels = [model.name for model in modelsRan]
+        self.modelListWidget.addItems(loadedModels)
 #endregion
 
 #region Tab 3
