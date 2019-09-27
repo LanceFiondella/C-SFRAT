@@ -37,6 +37,7 @@
 #   side menu with plot/table on right
 #   definitely need a side menu to select the hazard functions
 # names of tabs in tab 2?
+# self.viewType is never updated, we don't use updateUI()
 #------------------------------------------------------------------------------------#
 
 # PyQt5 imports for UI elements
@@ -90,6 +91,10 @@ class MainWindow(QMainWindow):
         # set data
         self.data = Data()
         self.plotSettings = PlotSettings()
+        self.selectedModelNames = []
+
+        # self.estimationResults
+        # self.currentModel
 
         # flags
         self.dataLoaded = False
@@ -105,6 +110,7 @@ class MainWindow(QMainWindow):
         self._main.tabs.tab1.sideMenu.viewChangedSignal.connect(self.setDataView)
         self._main.tabs.tab1.sideMenu.runModelSignal.connect(self.runModels)    # run models when signal is received
         self._main.tabs.tab1.sideMenu.runModelSignal.connect(self._main.tabs.tab2.sideMenu.addSelectedModels)    # fill tab 2 models group with selected models
+        self._main.tabs.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2)
         # connect tab2 list changed to refreshing tab 2 plot
 
         self.initUI()
@@ -151,6 +157,9 @@ class MainWindow(QMainWindow):
         """
         self.estimationComplete = True
         self.estimationResults = results
+        self._main.tabs.tab1.sideMenu.runButton.setEnabled(True)    # re-enable button, can run another estimation
+        # self.setDataView("view", self.dataViewIndex)
+        self.updateUI()
         # set initial model selected
         # set plot
         print(results)
@@ -210,25 +219,61 @@ class MainWindow(QMainWindow):
         """
         self._main.tabs.tab1.plotAndTable.tableWidget.setModel(self.data.getDataModel())
         dataframe = self.data.getData()
+        self.plotSettings.plotType = "step"
+
         if index == 0:
             # MVF
-            self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe["Cumulative"], title="MVF", xLabel="time", yLabel="failures")
-            if self.estimationComplete:
-                self.changePlot2()
+            self.createMVFPlot(dataframe)
         if index == 1:
             # Intensity
-            self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe.iloc[:, 1], title="Intensity", xLabel="time", yLabel="failures")
-            if self.estimationComplete:
-                self.changePlot2()
+            self.createIntensityPlot(dataframe)
 
         # redraw figures
+        self.ax2.legend()
         self._main.tabs.tab1.plotAndTable.figure.canvas.draw()
         self._main.tabs.tab2.plotAndTable.figure.canvas.draw()
 
-    def changePlot2(self):
-        # self.ax2 = self.plotSettings.generatePlot(self.ax2, )
-        # self.ax2 = self.plotSettings.generatePlot(self.ax2, )
-        pass
+    def createMVFPlot(self, dataframe):
+        """
+        called by setDataView
+        """
+        self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe["Cumulative"], title="MVF", xLabel="time", yLabel="failures")
+        if self.estimationComplete:
+            self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe.iloc[:, 0], dataframe["Cumulative"], title="MVF", xLabel="time", yLabel="failures")
+            self.plotSettings.plotType = "plot"
+            # for model in self.estimationResults.values():
+            #     # add line for model if selected
+            #     if model.name in self.selectedModelNames:
+            #         self.plotSettings.addLine(self.ax2, model.t, model.mvfList, model.name)
+
+
+
+            for modelName in self.selectedModelNames:
+                # add line for model if selected
+                model = self.estimationResults[modelName]
+                self.plotSettings.addLine(self.ax2, model.t, model.mvfList, model.name)
+
+    def createIntensityPlot(self, dataframe):
+        """
+        called by setDataView
+        """
+        self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe.iloc[:, 1], title="Intensity", xLabel="time", yLabel="failures")
+        if self.estimationComplete:
+            self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe.iloc[:, 0], dataframe.iloc[:, 1], title="Intensity", xLabel="time", yLabel="failures")
+            self.plotSettings.plotType = "plot"
+            # for model in self.estimationResults.values():
+            #     # add line for model if selected
+            #     if model.name in self.selectedModelNames:
+            #         self.plotSettings.addLine(self.ax2, model.t, model.intensityList, model.name)
+
+            for modelName in self.selectedModelNames:
+                # add line for model if selected
+                model = self.estimationResults[modelName]
+                self.plotSettings.addLine(self.ax2, model.t, model.intensityList, model.name)
+
+    def changePlot2(self, selectedModels):
+        self.selectedModelNames = selectedModels
+        self.updateUI()
 
     def setTrendTest(self, index):
         """
@@ -498,6 +543,7 @@ class SideMenu1(QVBoxLayout):
         metricNames = [self.metricListWidget.item(i).text() for i in range(self.metricListWidget.count()) if self.metricListWidget.item(i).text() in selectedMetricNames]
         # only emit the run signal if at least one model and at least one metric chosen
         if selectedModelNames and selectedMetricNames:
+            self.runButton.setEnabled(False)    # disable button until estimation complete
             self.runModelSignal.emit({"modelsToRun": modelsToRun,
                                   "metricNames": metricNames})
             logging.info("Run models signal emitted. Models = {0}, metrics = {1}".format(selectedModelNames, selectedMetricNames))
@@ -566,7 +612,7 @@ class SideMenu2(QVBoxLayout):
     """
 
     # signals
-    # modelChangedSignal = pyqtSignal(str)    # changes based on selection of models in tab 2
+    modelChangedSignal = pyqtSignal(list)    # changes based on selection of models in tab 2
 
     def __init__(self):
         super().__init__()
@@ -587,24 +633,23 @@ class SideMenu2(QVBoxLayout):
         self.modelListWidget = QListWidget()
         modelGroupLayout.addWidget(self.modelListWidget)
         self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)       # able to select multiple models
-        self.modelListWidget.itemSelectionChanged.connect(self.modelSelectionChanged)
+        self.modelListWidget.itemSelectionChanged.connect(self.emitModelChangedSignal)
 
         return modelGroupLayout
 
-    def modelSelectionChanged(self):
-        """
-        slot for model selection changed signal
-        stores currently selected model names
-        """
-        self.selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
-        print(self.selectedModelNames)
-
     def addSelectedModels(self, modelDetails):
+        self.modelListWidget.clear()
         modelsRan = modelDetails["modelsToRun"]
         # metricNames = modelDetails["metricNames"]
 
         loadedModels = [model.name for model in modelsRan]
         self.modelListWidget.addItems(loadedModels)
+
+    def emitModelChangedSignal(self):
+        selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
+        logging.info("Selected models: {0}".format(selectedModelNames))
+        self.modelChangedSignal.emit(selectedModelNames)
+
 #endregion
 
 #region Tab 3

@@ -225,6 +225,9 @@ class Model(ABC):
         self.aicVal = self.AIC(hazard, betas)
         self.bicVal = self.BIC(hazard, betas)
         self.mvfList = self.MVF_all(hazard, omega, betas)
+
+        print("llf =", self.llfVal)
+        print("aic =", self.aicVal)
         
         logging.info("MVF values: {0}".format(self.mvfList))
 
