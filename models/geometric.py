@@ -4,7 +4,6 @@ import numpy as np
 from sympy import diff
 
 class Geometric(Model):
-
     name = "Geometric"
     converged = False
 

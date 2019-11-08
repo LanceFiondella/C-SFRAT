@@ -38,6 +38,7 @@
 #   definitely need a side menu to select the hazard functions
 # names of tabs in tab 2?
 # self.viewType is never updated, we don't use updateUI()
+# sometimes metric list doesn't load until interacted with
 #------------------------------------------------------------------------------------#
 
 # PyQt5 imports for UI elements
@@ -275,6 +276,7 @@ class MainWindow(QMainWindow):
         self.selectedModelNames = selectedModels
         self.updateUI()
 
+
     def setTrendTest(self, index):
         """
         description to be created at a later time
@@ -288,6 +290,7 @@ class MainWindow(QMainWindow):
         self.plotSettings.style = style
         self.plotSettings.plotType = plotType
         self.updateUI()
+        # self.setDataView("view", self.dataViewIndex)
 
     def updateUI(self):
         """
