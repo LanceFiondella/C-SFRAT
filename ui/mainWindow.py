@@ -163,7 +163,7 @@ class MainWindow(QMainWindow):
         self.updateUI()
         # set initial model selected
         # set plot
-        print(results)
+        logging.info("Estimation results: {0}".format(results))
 
     def importFile(self):
         """
@@ -182,7 +182,7 @@ class MainWindow(QMainWindow):
         Args:
             index : index of the sheet
         """
-        self.data.currentSheet = index
+        self.data.currentSheet = index      # store 
         self.setDataView("view", self.dataViewIndex)
         self._main.tabs.tab1.plotAndTable.figure.canvas.draw()
         self.setMetricList()
@@ -207,12 +207,14 @@ class MainWindow(QMainWindow):
         if self.data.getData() is not None:
             if viewType == "view":
                 self.setRawDataView(index)
+                self.dataViewIndex = index  # was at the end of elif statements, but would change mvf/intensity view
+                                            # unintentionally when changing sheets
             elif viewType == "trend":
                 self.setTrendTest(index)
             elif viewType == "sheet":
                 self.changeSheet(index)
-            self.viewType = viewType
-            self.dataViewIndex = index
+            #self.viewType = viewType
+                # removed since it would change the sheet displayed when changing display settings
 
     def setRawDataView(self, index):
         """
@@ -222,10 +224,10 @@ class MainWindow(QMainWindow):
         dataframe = self.data.getData()
         self.plotSettings.plotType = "step"
 
-        if index == 0:
+        if self.dataViewIndex == 0:     # changed from index to self.dataViewIndex
             # MVF
             self.createMVFPlot(dataframe)
-        if index == 1:
+        if self.dataViewIndex == 1:     # changed from index to self.dataViewIndex
             # Intensity
             self.createIntensityPlot(dataframe)
 
@@ -622,7 +624,7 @@ class SideMenu2(QVBoxLayout):
         self.setupSideMenu()
 
     def setupSideMenu(self):
-        self.modelsGroup = QGroupBox("Select Model(s)")
+        self.modelsGroup = QGroupBox("Select Model Results")
         self.modelsGroup.setLayout(self.setupModelsGroup())
         self.addWidget(self.modelsGroup)
 
@@ -665,7 +667,68 @@ class Tab3(QWidget):
         self.horizontalLayout = QHBoxLayout()       # main layout
 
         self.table = QTableView()
+        # self.table = PandasModel()
+            # ^^^^ self.data.dataSet["key"]
+            # only created after estimation is run, dataframe contains results
+            # or maybe from Model class? in which case it wouldn't be a pandas dataframe??
         self.horizontalLayout.addWidget(self.table)
 
         self.setLayout(self.horizontalLayout)
+
+# from https://stackoverflow.com/questions/28660287/sort-qtableview-in-pyqt5
+#   can try to adapt to fit our data
+
+# class PandasModel(QAbstractTableModel):
+
+#     def __init__(self, data, parent=None):
+#         """
+
+#         :param data: a pandas dataframe
+#         :param parent: 
+#         """
+#         QAbstractTableModel.__init__(self, parent)
+#         self._data = data
+#         # self.headerdata = data.columns
+
+
+#     def rowCount(self, parent=None):
+#         return len(self._data.values)
+
+#     def columnCount(self, parent=None):
+#         return self._data.columns.size
+
+#     def data(self, index, role=QtCore.Qt.DisplayRole):
+#         if index.isValid():
+#             if role == QtCore.Qt.DisplayRole:
+#                 return str(self._data.values[index.row()][index.column()])
+#         return None
+
+#     def headerData(self, rowcol, orientation, role):
+#         # print(self._data.columns[rowcol])
+#         # print(self._data.index[rowcol])
+#         if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+#             return self._data.columns[rowcol]
+#         if orientation == QtCore.Qt.Vertical and role == QtCore.Qt.DisplayRole:
+#             return self._data.index[rowcol]
+#         return None
+
+#     def flags(self, index):
+#         flags = super(self.__class__, self).flags(index)
+#         flags |= QtCore.Qt.ItemIsEditable
+#         flags |= QtCore.Qt.ItemIsSelectable
+#         flags |= QtCore.Qt.ItemIsEnabled
+#         flags |= QtCore.Qt.ItemIsDragEnabled
+#         flags |= QtCore.Qt.ItemIsDropEnabled
+#         return flags
+
+#     def sort(self, Ncol, order):
+#         """Sort table by given column number.
+#         """
+#         try:
+#             self.layoutAboutToBeChanged.emit()
+#             self._data = self._data.sort_values(self._data.columns[Ncol], ascending=not order)
+#             self.layoutChanged.emit()
+#         except Exception as e:
+#             print(e)
+
 #endregion

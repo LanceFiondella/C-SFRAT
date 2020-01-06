@@ -19,9 +19,7 @@ class PlotWidget(QWidget):
         plotLayout = QVBoxLayout()
         self.figure = Figure(tight_layout={"pad": 2.0})
         self.plotFigure = FigureCanvas(self.figure)
-        toolbar = NavigationToolbar(self.plotFigure, self)
         plotLayout.addWidget(self.plotFigure, 1)
-        plotLayout.addWidget(toolbar)
         self.setLayout(plotLayout)
 
 class PlotAndTable(QTabWidget):
