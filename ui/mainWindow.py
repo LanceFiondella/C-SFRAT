@@ -46,7 +46,7 @@ from PyQt5.QtWidgets import QMainWindow, qApp, QMessageBox, QWidget, QTabWidget,
                             QHBoxLayout, QVBoxLayout, QTableView, QLabel, \
                             QLineEdit, QGroupBox, QComboBox, QListWidget, \
                             QPushButton, QAction, QActionGroup, QAbstractItemView, \
-                            QFileDialog
+                            QFileDialog, QCheckBox, QScrollArea, QGridLayout
 from PyQt5.QtCore import pyqtSignal
 
 # Matplotlib imports for graphs/plots
@@ -436,6 +436,9 @@ class Tabs(QTabWidget):
         self.tab3 = Tab3()
         self.addTab(self.tab3, "Model Comparison")
 
+        self.tab4 = Tab4()
+        self.addTab(self.tab4, "Effort Allocation")
+
         self.resize(300, 200)
 
 #region Tab 1
@@ -730,5 +733,61 @@ class Tab3(QWidget):
 #             self.layoutChanged.emit()
 #         except Exception as e:
 #             print(e)
+
+#endregion
+
+#region tab4_test
+class Tab4(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setupTab4()
+
+    def setupTab4(self):
+        self.mainLayout = QHBoxLayout() # main tab layout
+        self.scrollArea = QScrollArea() # allows dynamic number of rows depending on number of covariates
+        self.scrollWidget = QWidget()
+
+        self.setupLayouts(30)   # create initial number of rows  
+
+        self.gridLayout.addWidget(QLabel("Metric"), 0, 0)
+        self.gridLayout.addWidget(QLabel("Cost"), 0, 1)
+        self.gridLayout.addWidget(QLabel("Allocation"), 0, 2)
+        self.gridLayout.addWidget(QLabel("%"), 0, 3)
+        self.gridLayout.addWidget(QLabel("Total"), 0, 4)
+
+    def setupLayouts(self, numCovariates):
+        """
+        Creates effort allocation layout and elements depending
+        on the number of covariates in data.
+        """
+        self.gridLayout = QGridLayout() 
+
+        self.covLabels = [0 for i in range(numCovariates)]
+        self.costLineEdits = [0 for i in range(numCovariates)]
+        self.allocationCheckBoxes = [0 for i in range(numCovariates)]
+        self.percentageLineEdits = [0 for i in range(numCovariates)]
+        self.totalLineEdits = [0 for i in range(numCovariates)]
+
+        for i in range(numCovariates):
+            self.addRow(i)
+
+        self.scrollWidget.setLayout(self.gridLayout)
+        self.scrollArea.setWidget(self.scrollWidget)
+        self.mainLayout.addWidget(self.scrollArea)
+        self.setLayout(self.mainLayout)
+
+    def addRow(self, i):
+        self.covLabels[i] = QLabel("C{0}".format(i))
+        self.costLineEdits[i] = QLineEdit()
+        self.allocationCheckBoxes[i] = QCheckBox()
+        self.percentageLineEdits[i] = QLineEdit()
+        self.totalLineEdits[i] = QLineEdit()
+
+        # starts at second row, first is for labels
+        self.gridLayout.addWidget(self.covLabels[i], i + 1, 0)              # column 1
+        self.gridLayout.addWidget(self.costLineEdits[i], i + 1, 1)          # column 2
+        self.gridLayout.addWidget(self.allocationCheckBoxes[i], i + 1, 2)   # column 3
+        self.gridLayout.addWidget(self.percentageLineEdits[i], i + 1, 3)    # column 4
+        self.gridLayout.addWidget(self.totalLineEdits[i], i + 1, 4)         # column 5
 
 #endregion
