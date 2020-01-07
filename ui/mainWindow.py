@@ -554,11 +554,11 @@ class SideMenu1(QVBoxLayout):
             logging.info("Run models signal emitted. Models = {0}, metrics = {1}".format(selectedModelNames, selectedMetricNames))
         elif self.modelListWidget.count() > 0 and self.metricListWidget.count() > 0:
             # data loaded but not selected
-            logging.warning("Must select at least one model and at least one metric.")
+            logging.warning("Must select at least one model.")
             msgBox = QMessageBox()
             msgBox.setIcon(QMessageBox.Warning)
-            msgBox.setText("Model or metric not selected")
-            msgBox.setInformativeText("Please select at least one model and at least one metric.")
+            msgBox.setText("Model not selected")
+            msgBox.setInformativeText("Please select at least one model.")
             msgBox.setWindowTitle("Warning")
             msgBox.exec_()
         else:

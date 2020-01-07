@@ -35,9 +35,9 @@ class Model(ABC):
         logging.info("Total failures: {0}".format(self.totalFailures))
         logging.info("Number of covariates: {0}".format(self.numCovariates))
 
-    ##############################################
-    #Properties/Members all models must implement#
-    ##############################################
+    ################################################
+    # Properties/Members all models must implement #
+    ################################################
     @property
     @abstractmethod
     def name(self):
@@ -55,9 +55,17 @@ class Model(ABC):
         """
         return False
 
-    ################################################
-    #Methods that must be implemented by all models#
-    ################################################
+    # @property
+    # @abstractmethod
+    # def estimateRange(self):
+    #     """
+    #     Define ranges for root finding initial values
+    #     """
+    #     return [0.0, 0.1]
+
+    ##################################################
+    # Methods that must be implemented by all models #
+    ##################################################
     @abstractmethod
     def calcHazard(self):
         pass
@@ -74,10 +82,13 @@ class Model(ABC):
         pass
 
     def initialEstimates(self):
-        return np.random.uniform(0.0, 0.1, self.numCovariates + 1)
+        return np.random.uniform(0.0, 0.1, self.numCovariates + 1)  # (low, high, size)
+                                                                    # size is numCovariates + 1 to have initial estimate for b
 
-    def LLF_sym(self):
-        #Equation (30)
+    def LLF_sym(self, hazard):
+        # x[0] = b
+        # x[1:] = beta1, beta2, ..
+
         x = DeferredVector('x')
         second = []
         prodlist = []
@@ -86,15 +97,15 @@ class Model(ABC):
             sum2 = 1
             TempTerm1 = 1
             for j in range(1, self.numCovariates + 1):
-                    TempTerm1 = TempTerm1 * exp(self.covariateData[j - 1][i] * x[j])
+                TempTerm1 = TempTerm1 * exp(self.covariateData[j - 1][i] * x[j])
             #print('Test: ', TempTerm1)
-            sum1 = 1 - ((1-x[0]) ** (TempTerm1))
+            sum1 = 1 - ((1 - (hazard(i, x[0]))) ** (TempTerm1))
             for k in range(i):
                 TempTerm2 = 1
                 for j in range(1, self.numCovariates + 1):
-                        TempTerm2 = TempTerm2 * exp(self.covariateData[j - 1][k] * x[j])
+                    TempTerm2 = TempTerm2 * exp(self.covariateData[j - 1][k] * x[j])
                 #print ('Test:', TempTerm2)
-                sum2 = sum2 * ((1 - x[0])**(TempTerm2))
+                sum2 = sum2 * ((1 - (hazard(i, x[0])))**(TempTerm2))
             #print ('Sum2:', sum2)
             second.append(sum2)
             prodlist.append(sum1*sum2)
@@ -113,6 +124,18 @@ class Model(ABC):
         f = firstTerm + secondTerm + thirdTerm - fourthTerm
         return f, x
 
+    def LLF_sym2(self):
+        # x[0] = h
+        # x[1:] = beta1..
+
+        x = DeferredVector('x')
+        # term 1 of 4
+        for i in range(self.n):
+            # exponential
+            for j in range(self.numCovariates):
+                term1exp = self.covariateData[j][i] * x[j + 1]
+            (1 - (1 - x[0]) * exp(term1exp))
+
     def convertSym(self, x, bh, target):
         return lambdify(x, bh, target)
 
@@ -125,13 +148,13 @@ class Model(ABC):
             sum2 = 1
             TempTerm1 = 1
             for j in range(self.numCovariates):
-                    TempTerm1 = TempTerm1 * np.exp(self.covariateData[j][i] * betas[j])
+                TempTerm1 = TempTerm1 * np.exp(self.covariateData[j][i] * betas[j])
             #print('Test: ', TempTerm1)
             sum1 = 1 - ((1 - h[i]) ** (TempTerm1))
             for k in range(i):
                 TempTerm2 = 1
                 for j in range(self.numCovariates):
-                        TempTerm2 = TempTerm2 * np.exp(self.covariateData[j][k] * betas[j])
+                    TempTerm2 = TempTerm2 * np.exp(self.covariateData[j][k] * betas[j])
                 #print ('Test:', TempTerm2)
                 sum2 = sum2*((1 - h[i])**(TempTerm2))
             #print ('Sum2:', sum2)
@@ -206,7 +229,7 @@ class Model(ABC):
         return omega * sum(prodlist)
 
     def MVF_all(self, h, omega, betas):
-        mvfList = np.array([self.MVF(h, omega, betas, k) for k in range(self.n)])
+        mvfList = np.array([self.MVF(h, self.omega, betas, k) for k in range(self.n)])
         return mvfList
     
     def SSE(self, fitted, actual):
@@ -241,12 +264,12 @@ class Model(ABC):
     '''
 
     def modelFitting(self, hazard, betas):
-        omega = self.calcOmega(hazard, betas)
-        logging.info("Calculated omega: {0}".format(omega))
+        self.omega = self.calcOmega(hazard, betas)
+        logging.info("Calculated omega: {0}".format(self.omega))
         self.llfVal = self.LLF(hazard, betas)      # log likelihood value
         self.aicVal = self.AIC(hazard, betas)
         self.bicVal = self.BIC(hazard, betas)
-        self.mvfList = self.MVF_all(hazard, omega, betas)
+        self.mvfList = self.MVF_all(hazard, self.omega, betas)
 
         print("llf =", self.llfVal)
         print("aic =", self.aicVal)

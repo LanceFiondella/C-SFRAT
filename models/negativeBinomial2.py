@@ -13,10 +13,16 @@ class NegativeBinomial2(Model):
     def calcHazard(self, b):
         return [(i * np.square(b))/(1 + b * (i - 1)) for i in range(1, self.n + 1)]
 
+    def hazardFunction(self, i, b):
+        # b = symbols("b")   
+        f = (i * b**2)/(1 + b * (i - 1))
+        return f
+
     def runEstimation(self):
+        print("-------- NEGATIVE BINOMIAL (ORDER 2) --------")
         initial = self.initialEstimates()
         logging.info("Initial estimates: {0}".format(initial))
-        f, x = self.LLF_sym()
+        f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
         bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
         logging.info("Log-likelihood differentiated.")
         logging.info("Converting symbolic equation to numpy...")
@@ -29,6 +35,10 @@ class NegativeBinomial2(Model):
         betas = sol[1:]
         hazard = self.calcHazard(b)
         self.modelFitting(hazard, betas)
+
+        logging.info("Omega: {0}".format(self.omega))
+        logging.info("Betas: {0}".format(betas))
+        logging.info("b: {0}".format(b))
 
 if __name__ == "__main__":
     nb = NegativeBinomial2()
