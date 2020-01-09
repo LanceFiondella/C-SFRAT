@@ -1,7 +1,8 @@
-from core.model import Model
 import logging
 import numpy as np
 from sympy import diff
+
+from core.model import Model
 
 class NegativeBinomial2(Model):
     name = "Negative Binomial (Order 2)"

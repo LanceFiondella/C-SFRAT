@@ -1,7 +1,8 @@
-from core.model import Model
 import logging
 import numpy as np
 from sympy import diff
+
+from core.model import Model
 
 class DiscreteWeibull2(Model):
     name = "Discrete Weibull (Order 2)"

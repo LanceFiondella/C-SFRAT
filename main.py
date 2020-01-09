@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
 
 import argparse  # to handle command line arguments
-from PyQt5.QtWidgets import QApplication  # for UI
-from PyQt5.QtCore import Qt  # for UI
 import logging # to handle debug output
 import sys
+
+from PyQt5.QtWidgets import QApplication  # for UI
+from PyQt5.QtCore import Qt  # for UI
 
 from ui.mainWindow import MainWindow
 
 # log = logging.getLogger("ui.mainWindow")
 
 def main(debug):
+    """
+    Description to be created at a later time.
+
+    Args
+        debug : 
+    """
     logging.info("Starting Covariate Tool application.")
     app = QApplication(sys.argv)
     mainWindow = MainWindow(debug)

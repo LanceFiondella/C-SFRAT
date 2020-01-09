@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from PyQt5.QtCore import QSettings
-from core.dataClass import PandasModel
 
+from core.dataClass import PandasModel
 
 class PlotSettings:
     def __init__(self):

@@ -110,7 +110,7 @@ class MainWindow(QMainWindow):
         self.importFileSignal.connect(self.importFile)
         self._main.tabs.tab1.sideMenu.viewChangedSignal.connect(self.setDataView)
         self._main.tabs.tab1.sideMenu.runModelSignal.connect(self.runModels)    # run models when signal is received
-        self._main.tabs.tab1.sideMenu.runModelSignal.connect(self._main.tabs.tab2.sideMenu.addSelectedModels)    # fill tab 2 models group with selected models
+        # self._main.tabs.tab1.sideMenu.runModelSignal.connect(self._main.tabs.tab2.sideMenu.addSelectedModels)    # fill tab 2 models group with selected models
         self._main.tabs.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2)
         # connect tab2 list changed to refreshing tab 2 plot
 
@@ -147,6 +147,10 @@ class MainWindow(QMainWindow):
         modelsToRun = modelDetails["modelsToRun"]
         metricNames = modelDetails["metricNames"]
         if self.data:
+            self.estimationComplete = False # estimation not complete since it just started running
+            self._main.tabs.tab2.sideMenu.modelListWidget.clear()   # clear tab 2 list containing 
+                                                                    # previously computed models,
+                                                                    # only added when calculations complete
             self.computeWidget = ComputeWidget(modelsToRun, metricNames, self.data)
             # DON'T WANT TO DISPLAY RESULTS IN ANOTHER WINDOW
             # WANT TO DISPLAY ON TAB 2/3
@@ -155,6 +159,9 @@ class MainWindow(QMainWindow):
     def onEstimationComplete(self, results):
         """
         description to be created at a later time
+
+        Args:
+            results (dict): contains model objects
         """
         self.estimationComplete = True
         self.estimationResults = results
@@ -163,6 +170,11 @@ class MainWindow(QMainWindow):
         self.updateUI()
         # set initial model selected
         # set plot
+        for model in results:
+            print(model)
+        names = [model for model in results]
+
+        self._main.tabs.tab2.sideMenu.addSelectedModels(names)
         logging.info("Estimation results: {0}".format(results))
 
     def importFile(self):
@@ -455,7 +467,7 @@ class Tab1(QWidget):
 
         # self.plotGroup = QGroupBox("Plot and Table of Imported Data")
         # self.plotGroup.setLayout(self.setupPlotGroup())
-        self.plotAndTable = PlotAndTable()
+        self.plotAndTable = PlotAndTable("Plot", "Table")
         self.horizontalLayout.addWidget(self.plotAndTable, 75)
 
         self.setLayout(self.horizontalLayout)
@@ -598,7 +610,7 @@ class Tab2(QWidget):
 
         self.sideMenu = SideMenu2()
         self.horizontalLayout.addLayout(self.sideMenu, 25)
-        self.plotAndTable = PlotAndTable()
+        self.plotAndTable = PlotAndTable("Plot", "Prediction Table")
         self.horizontalLayout.addWidget(self.plotAndTable, 75)
         self.setLayout(self.horizontalLayout)
 
@@ -645,13 +657,22 @@ class SideMenu2(QVBoxLayout):
 
         return modelGroupLayout
 
-    def addSelectedModels(self, modelDetails):
-        self.modelListWidget.clear()
-        modelsRan = modelDetails["modelsToRun"]
+    def addSelectedModels(self, modelNames):
+        """
+
+
+        Args:
+            modelNames (list): list of strings, name of each model
+        """
+
+        #self.modelListWidget.clear()
+        # modelsRan = modelDetails["modelsToRun"]
         # metricNames = modelDetails["metricNames"]
 
-        loadedModels = [model.name for model in modelsRan]
-        self.modelListWidget.addItems(loadedModels)
+        # loadedModels = [model.name for model in modelsRan]
+        # self.modelListWidget.addItems(loadedModels)
+
+        self.modelListWidget.addItems(modelNames)
 
     def emitModelChangedSignal(self):
         selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
@@ -747,7 +768,7 @@ class Tab4(QWidget):
         self.scrollArea = QScrollArea() # allows dynamic number of rows depending on number of covariates
         self.scrollWidget = QWidget()
 
-        self.setupLayouts(30)   # create initial number of rows  
+        self.setupLayouts(3)   # create initial number of rows  
 
         self.gridLayout.addWidget(QLabel("Metric"), 0, 0)
         self.gridLayout.addWidget(QLabel("Cost"), 0, 1)

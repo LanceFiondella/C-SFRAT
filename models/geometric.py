@@ -1,7 +1,8 @@
-from core.model import Model
 import logging
 import numpy as np
 from sympy import diff
+
+from core.model import Model
 
 class Geometric(Model):
     name = "Geometric"
@@ -9,7 +10,7 @@ class Geometric(Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
+
     def calcHazard(self, b):
         return [b for i in range(self.n)]
 

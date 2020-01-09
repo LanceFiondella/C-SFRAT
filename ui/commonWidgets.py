@@ -23,20 +23,34 @@ class PlotWidget(QWidget):
         self.setLayout(plotLayout)
 
 class PlotAndTable(QTabWidget):
-    def __init__(self):
-        super().__init__()
-        self.setupPlotTab()
-        self.setupTableTab()
+    """
+    A widget containing a plot on tab 1, and a table on tab 2.
+    Inherited from QTabWidget.
 
-    def setupPlotTab(self):
+
+    """
+    def __init__(self, plotTabLabel, tableTabLabel):
+        """
+        Initializes PlotAndTable class.
+
+        Args:
+            plotTabLabel (string): text label for plot tab
+            tableTabLabel (string): text label for table tab
+        """
+
+        super().__init__()
+        self.setupPlotTab(plotTabLabel)
+        self.setupTableTab(tableTabLabel)
+
+    def setupPlotTab(self, plotTabLabel):
         # Creating plot widget
         self.plotWidget = PlotWidget()
         self.figure = self.plotWidget.figure
-        self.addTab(self.plotWidget, 'Plot')
+        self.addTab(self.plotWidget, plotTabLabel)
 
-    def setupTableTab(self):
+    def setupTableTab(self, tableTabLabel):
         self.tableWidget = QTableView()
-        self.addTab(self.tableWidget, 'Table')
+        self.addTab(self.tableWidget, tableTabLabel)
 
 class ComputeWidget(QWidget):
     results = pyqtSignal(dict)
