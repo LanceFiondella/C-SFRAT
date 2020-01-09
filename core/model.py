@@ -267,16 +267,22 @@ class Model(ABC):
         self.omega = self.calcOmega(hazard, betas)
         logging.info("Calculated omega: {0}".format(self.omega))
         self.llfVal = self.LLF(hazard, betas)      # log likelihood value
+        logging.info("Calculated log-likelihood value: {0}".format(self.llfVal))
         self.aicVal = self.AIC(hazard, betas)
+        logging.info("Calculated AIC: {0}".format(self.aicVal))
         self.bicVal = self.BIC(hazard, betas)
+        logging.info("Calculated BIC: {0}".format(self.bicVal))
         self.mvfList = self.MVF_all(hazard, self.omega, betas)
 
-        print("llf =", self.llfVal)
-        print("aic =", self.aicVal)
-        
-        logging.info("MVF values: {0}".format(self.mvfList))
+        # temporary
+        if (np.isnan(self.llfVal) or np.isinf(self.llfVal)):
+            self.converged = False
+        else:
+            self.converged = True
 
         self.sseVal = self.SSE(self.mvfList, self.cumulativeFailures)
-
+        logging.info("Calculated SSE: {0}".format(self.sseVal))
         self.intensityList = self.intensityFit(self.mvfList)
+
+        logging.info("MVF values: {0}".format(self.mvfList))
         logging.info("Intensity values: {0}".format(self.intensityList))

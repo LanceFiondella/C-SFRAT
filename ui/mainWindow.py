@@ -46,7 +46,8 @@ from PyQt5.QtWidgets import QMainWindow, qApp, QMessageBox, QWidget, QTabWidget,
                             QHBoxLayout, QVBoxLayout, QTableView, QLabel, \
                             QLineEdit, QGroupBox, QComboBox, QListWidget, \
                             QPushButton, QAction, QActionGroup, QAbstractItemView, \
-                            QFileDialog, QCheckBox, QScrollArea, QGridLayout
+                            QFileDialog, QCheckBox, QScrollArea, QGridLayout, \
+                            QTableWidget, QTableWidgetItem, QAbstractScrollArea
 from PyQt5.QtCore import pyqtSignal
 
 # Matplotlib imports for graphs/plots
@@ -170,11 +171,15 @@ class MainWindow(QMainWindow):
         self.updateUI()
         # set initial model selected
         # set plot
-        for model in results:
-            print(model)
-        names = [model for model in results]
 
-        self._main.tabs.tab2.sideMenu.addSelectedModels(names)
+        names = []
+        for key, model in results.items():
+            if model.converged:
+                names.append(key)
+
+        self._main.tabs.tab2.sideMenu.addSelectedModels(names)  # add models to tab 2 list
+                                                                # so they can be selected
+        self._main.tabs.tab3.addResultsToTable(results)
         logging.info("Estimation results: {0}".format(results))
 
     def importFile(self):
@@ -622,7 +627,7 @@ class Tab2(QWidget):
 
     def setupTableGroup(self):
         tableLayout = QVBoxLayout()
-        self.table = QTableView()
+        self.table = QTableWidget()
         tableLayout.addWidget(self.table)
         return tableLayout
 
@@ -689,15 +694,39 @@ class Tab3(QWidget):
 
     def setupTab3(self):
         self.horizontalLayout = QHBoxLayout()       # main layout
-
-        self.table = QTableView()
-        # self.table = PandasModel()
-            # ^^^^ self.data.dataSet["key"]
-            # only created after estimation is run, dataframe contains results
-            # or maybe from Model class? in which case it wouldn't be a pandas dataframe??
+        self.setupTable()
         self.horizontalLayout.addWidget(self.table)
-
         self.setLayout(self.horizontalLayout)
+
+    def setupTable(self):
+        self.table = QTableWidget()
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)     # make cells unable to be edited
+        self.table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+                                                                    # column width fit to contents
+        self.table.setRowCount(1)
+        self.table.setColumnCount(5)
+        self.table.setHorizontalHeaderLabels(["Model Name", "Log-Likelihood", "AIC", "BIC", "SSE"])
+        self.table.move(0,0)
+
+    def addResultsToTable(self, results):
+        self.table.setSortingEnabled(False) # disable sorting while editing contents
+        self.table.clear()
+        self.table.setHorizontalHeaderLabels(["Model Name", "Log-Likelihood", "AIC", "BIC", "SSE"])
+        self.table.setRowCount(len(results))    # set row count to include all model results, 
+                                                # even if not converged
+        i = 0   # number of converged models
+        for key, model in results.items():
+            if model.converged:
+                self.table.setItem(i, 0, QTableWidgetItem(model.name))
+                self.table.setItem(i, 1, QTableWidgetItem(str(model.llfVal)))
+                self.table.setItem(i, 2, QTableWidgetItem(str(model.aicVal)))
+                self.table.setItem(i, 3, QTableWidgetItem(str(model.bicVal)))
+                self.table.setItem(i, 4, QTableWidgetItem(str(model.sseVal)))
+                i += 1
+        self.table.setRowCount(i)   # set row count to only include converged models
+        self.table.resizeColumnsToContents()    # resize column width after table is edited
+        self.table.setSortingEnabled(True)          # re-enable sorting after table is edited
+
 
 # from https://stackoverflow.com/questions/28660287/sort-qtableview-in-pyqt5
 #   can try to adapt to fit our data
