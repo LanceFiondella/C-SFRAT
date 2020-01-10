@@ -26,6 +26,10 @@ class Model(ABC):
         # list of arrays or array of arrays?
         self.covariateData = [self.data[name].values for name in self.metricNames]
         self.numCovariates = len(self.covariateData)
+        if (self.metricNames == []):
+            self.metricString = "None"
+        else:
+            self.metricString = ", ".join(self.metricNames)
 
         # logging
         logging.info("Failure times: {0}".format(self.t))

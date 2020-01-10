@@ -172,13 +172,18 @@ class MainWindow(QMainWindow):
         # set initial model selected
         # set plot
 
-        names = []
+        convergedNames = []
+        nonConvergedNames = []
         for key, model in results.items():
             if model.converged:
-                names.append(key)
+                convergedNames.append(key)
+            else:
+                nonConvergedNames.append(key)
 
-        self._main.tabs.tab2.sideMenu.addSelectedModels(names)  # add models to tab 2 list
-                                                                # so they can be selected
+        self._main.tabs.tab2.sideMenu.addSelectedModels(convergedNames) # add models to tab 2 list
+                                                                        # so they can be selected
+        self._main.tabs.tab2.sideMenu.addNonConvergedModels(nonConvergedNames)
+                                                                        # show which models didn't converge
         self._main.tabs.tab3.addResultsToTable(results)
         logging.info("Estimation results: {0}".format(results))
 
@@ -266,11 +271,11 @@ class MainWindow(QMainWindow):
             #         self.plotSettings.addLine(self.ax2, model.t, model.mvfList, model.name)
 
 
-
+            # model name and metric combination!
             for modelName in self.selectedModelNames:
                 # add line for model if selected
                 model = self.estimationResults[modelName]
-                self.plotSettings.addLine(self.ax2, model.t, model.mvfList, model.name)
+                self.plotSettings.addLine(self.ax2, model.t, model.mvfList, modelName)
 
     def createIntensityPlot(self, dataframe):
         """
@@ -285,10 +290,11 @@ class MainWindow(QMainWindow):
             #     if model.name in self.selectedModelNames:
             #         self.plotSettings.addLine(self.ax2, model.t, model.intensityList, model.name)
 
+            # model name and metric combination!
             for modelName in self.selectedModelNames:
                 # add line for model if selected
                 model = self.estimationResults[modelName]
-                self.plotSettings.addLine(self.ax2, model.t, model.intensityList, model.name)
+                self.plotSettings.addLine(self.ax2, model.t, model.intensityList, modelName)
 
     def changePlot2(self, selectedModels):
         self.selectedModelNames = selectedModels
@@ -404,7 +410,7 @@ class MainWindow(QMainWindow):
     def setPointsView(self):
         self.setPlotStyle(style='o', plotType='plot')
         logging.info("Plot style set to points view.")
-    
+
     def setLineAndPointsView(self):
         self.setPlotStyle(style='-o')
         logging.info("Plot style set to line and points view.")
@@ -629,8 +635,11 @@ class SideMenu2(QVBoxLayout):
 
     def setupSideMenu(self):
         self.modelsGroup = QGroupBox("Select Model Results")
+        self.nonConvergedGroup = QGroupBox("Did Not Converge")
         self.modelsGroup.setLayout(self.setupModelsGroup())
-        self.addWidget(self.modelsGroup)
+        self.nonConvergedGroup.setLayout(self.setupNonConvergedGroup())
+        self.addWidget(self.modelsGroup, 60)
+        self.addWidget(self.nonConvergedGroup, 40)
 
         self.addStretch(1)
 
@@ -645,6 +654,13 @@ class SideMenu2(QVBoxLayout):
         self.modelListWidget.itemSelectionChanged.connect(self.emitModelChangedSignal)
 
         return modelGroupLayout
+
+    def setupNonConvergedGroup(self):
+        nonConvergedGroupLayout = QVBoxLayout()
+        self.nonConvergedListWidget = QListWidget()
+        nonConvergedGroupLayout.addWidget(self.nonConvergedListWidget)
+
+        return nonConvergedGroupLayout
 
     def addSelectedModels(self, modelNames):
         """
@@ -662,6 +678,9 @@ class SideMenu2(QVBoxLayout):
         # self.modelListWidget.addItems(loadedModels)
 
         self.modelListWidget.addItems(modelNames)
+
+    def addNonConvergedModels(self, nonConvergedNames):
+        self.nonConvergedListWidget.addItems(nonConvergedNames)
 
     def emitModelChangedSignal(self):
         selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
@@ -688,86 +707,29 @@ class Tab3(QWidget):
         self.table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
                                                                     # column width fit to contents
         self.table.setRowCount(1)
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["Model Name", "Log-Likelihood", "AIC", "BIC", "SSE"])
+        self.table.setColumnCount(7)
+        self.table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE", "AHP"])
         self.table.move(0,0)
 
     def addResultsToTable(self, results):
         self.table.setSortingEnabled(False) # disable sorting while editing contents
         self.table.clear()
-        self.table.setHorizontalHeaderLabels(["Model Name", "Log-Likelihood", "AIC", "BIC", "SSE"])
+        self.table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE", "AHP"])
         self.table.setRowCount(len(results))    # set row count to include all model results, 
                                                 # even if not converged
         i = 0   # number of converged models
         for key, model in results.items():
             if model.converged:
                 self.table.setItem(i, 0, QTableWidgetItem(model.name))
-                self.table.setItem(i, 1, QTableWidgetItem(str(model.llfVal)))
-                self.table.setItem(i, 2, QTableWidgetItem(str(model.aicVal)))
-                self.table.setItem(i, 3, QTableWidgetItem(str(model.bicVal)))
-                self.table.setItem(i, 4, QTableWidgetItem(str(model.sseVal)))
+                self.table.setItem(i, 1, QTableWidgetItem(model.metricString))
+                self.table.setItem(i, 2, QTableWidgetItem(str(model.llfVal)))
+                self.table.setItem(i, 3, QTableWidgetItem(str(model.aicVal)))
+                self.table.setItem(i, 4, QTableWidgetItem(str(model.bicVal)))
+                self.table.setItem(i, 5, QTableWidgetItem(str(model.sseVal)))
                 i += 1
         self.table.setRowCount(i)   # set row count to only include converged models
         self.table.resizeColumnsToContents()    # resize column width after table is edited
-        self.table.setSortingEnabled(True)          # re-enable sorting after table is edited
-
-
-# from https://stackoverflow.com/questions/28660287/sort-qtableview-in-pyqt5
-#   can try to adapt to fit our data
-
-# class PandasModel(QAbstractTableModel):
-
-#     def __init__(self, data, parent=None):
-#         """
-
-#         :param data: a pandas dataframe
-#         :param parent: 
-#         """
-#         QAbstractTableModel.__init__(self, parent)
-#         self._data = data
-#         # self.headerdata = data.columns
-
-
-#     def rowCount(self, parent=None):
-#         return len(self._data.values)
-
-#     def columnCount(self, parent=None):
-#         return self._data.columns.size
-
-#     def data(self, index, role=QtCore.Qt.DisplayRole):
-#         if index.isValid():
-#             if role == QtCore.Qt.DisplayRole:
-#                 return str(self._data.values[index.row()][index.column()])
-#         return None
-
-#     def headerData(self, rowcol, orientation, role):
-#         # print(self._data.columns[rowcol])
-#         # print(self._data.index[rowcol])
-#         if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
-#             return self._data.columns[rowcol]
-#         if orientation == QtCore.Qt.Vertical and role == QtCore.Qt.DisplayRole:
-#             return self._data.index[rowcol]
-#         return None
-
-#     def flags(self, index):
-#         flags = super(self.__class__, self).flags(index)
-#         flags |= QtCore.Qt.ItemIsEditable
-#         flags |= QtCore.Qt.ItemIsSelectable
-#         flags |= QtCore.Qt.ItemIsEnabled
-#         flags |= QtCore.Qt.ItemIsDragEnabled
-#         flags |= QtCore.Qt.ItemIsDropEnabled
-#         return flags
-
-#     def sort(self, Ncol, order):
-#         """Sort table by given column number.
-#         """
-#         try:
-#             self.layoutAboutToBeChanged.emit()
-#             self._data = self._data.sort_values(self._data.columns[Ncol], ascending=not order)
-#             self.layoutChanged.emit()
-#         except Exception as e:
-#             print(e)
-
+        self.table.setSortingEnabled(True)      # re-enable sorting after table is edited
 #endregion
 
 #region tab4_test
