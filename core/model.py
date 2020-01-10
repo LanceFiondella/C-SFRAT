@@ -81,9 +81,11 @@ class Model(ABC):
         """
         pass
 
-    def initialEstimates(self):
-        return np.random.uniform(0.0, 0.1, self.numCovariates + 1)  # (low, high, size)
+    def initialEstimates(self, min = 0.0, max = 0.01):
+        return np.insert(np.random.uniform(min, max, self.numCovariates),0, np.random.uniform(min, max*100,1))
+                                                                    # (low, high, size)
                                                                     # size is numCovariates + 1 to have initial estimate for b
+
 
     def LLF_sym(self, hazard):
         # x[0] = b
