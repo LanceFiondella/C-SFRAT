@@ -567,14 +567,17 @@ class SideMenu1(QVBoxLayout):
         # get model classes from models folder
         modelsToRun = [model for model in models.modelList.values() if model.name in selectedModelNames]
         # get selected metric names (IMPORTANT: returned in order they were clicked)
-        selectedMetricNames = [item.text() for item in self.metricListWidget.selectedItems()]
+        selectedMetricNames = [item.text().split(", ") for item in self.metricListWidget.selectedItems()]
+            # split combinations
         # sorts metric names in their order from the data file (left to right)
-        metricNames = [self.metricListWidget.item(i).text() for i in range(self.metricListWidget.count()) if self.metricListWidget.item(i).text() in selectedMetricNames]
+        #metricNames = [self.metricListWidget.item(i).text() for i in range(self.metricListWidget.count()) if self.metricListWidget.item(i).text() in selectedMetricNames]
         # only emit the run signal if at least one model and at least one metric chosen
         if selectedModelNames and selectedMetricNames:
             self.runButton.setEnabled(False)    # disable button until estimation complete
             self.runModelSignal.emit({"modelsToRun": modelsToRun,
-                                  "metricNames": metricNames})
+                                      "metricNames": selectedMetricNames})
+                                      #"metricNames": metricNames})
+                                      
             logging.info("Run models signal emitted. Models = {0}, metrics = {1}".format(selectedModelNames, selectedMetricNames))
         elif self.modelListWidget.count() > 0 and self.metricListWidget.count() > 0:
             # data loaded but not selected

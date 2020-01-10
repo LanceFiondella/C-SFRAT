@@ -5,7 +5,7 @@ from sympy import diff
 from core.model import Model
 
 class DiscreteWeibull2(Model):
-    name = "Discrete Weibull (Order 2)"
+    name = "DW2"
     converged = False
     # initial estimate ranges
 

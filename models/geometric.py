@@ -5,7 +5,7 @@ from sympy import diff
 from core.model import Model
 
 class Geometric(Model):
-    name = "Geometric"
+    name = "GM"
     converged = False
 
     def __init__(self, *args, **kwargs):
