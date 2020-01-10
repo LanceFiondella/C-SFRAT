@@ -11,14 +11,14 @@ from PyQt5 import QtCore
 
 class Data:
     def __init__(self):
-        '''
+        """
         Class that stores input data.
         This class will handle data import using: Data.importFile(filename).
         Dataframes will be stored as a dictionary with sheet names as keys
             and pandas DataFrame as values
         This class will keep track of the currently selected sheet and will
             return that sheet when getData() method is called.
-        '''
+        """
         self.sheetNames = ["None"]
         self._currentSheet = 0
         self.dataSet = {"None": None}
@@ -58,7 +58,7 @@ class Data:
         self.numCovariates = numCov
 
     def setData(self, dataSet):
-        '''
+        """
         Processes raw sheet data into data required by models
 
         failure times | number of failures | metric 1 | metric 2 | ...
@@ -67,8 +67,13 @@ class Data:
 
         Args:
             dataSet : dictionary of raw data imported in importFile()
-        '''
+        """
         for sheet, data in dataSet.items():
+            if "FC" not in data:
+                raise KeyError("Column 'FC' containing failure count not found in imported file.")
+            if "T" not in data:
+                # data["T"] = pd.Series([i+1 for i in range(data["FC"].size)])
+                data.insert(loc=0, column="T", value=pd.Series([i+1 for i in range(data["FC"].size)]))
             dataSet[sheet] = self.processRawData(data)
             numCov = self.initialNumCovariates(data)
             if self.containsHeader:
@@ -79,26 +84,25 @@ class Data:
 
     # data not processed, currently
     def processRawData(self, data):
-        '''
+        """
         Adds column for cumulative failures
         Args:
             data : raw pandas dataframe
         Returns:
             data : processed pandas dataframe
-        '''
-        # check if cumulative failures are included in data??
+        """
         # print(data)
-        data["Cumulative"] = data.iloc[:, 1].cumsum()   # add column for cumulative failures
+        data["Cumulative"] = data["FC"].cumsum()  # add column for cumulative failures
         # print(data)
         return data
 
     def metricsUnnamed(self, data, numCov):
-        '''
+        """
         If data contains a header, but at least one column is unnamed.
         Renames column 1 to "Time" if unnamed,
         Renames column 2 to "Failures" if unnamed,
         Renames columns 3 through X to "MetricX" individually if unnamed
-        '''
+        """
         if "Unnamed: " in str(data.columns[0]):
             data.rename(columns={data.columns[0]:"Time"}, inplace=True)
         if "Unnamed: " in str(data.columns[1]):
@@ -108,41 +112,41 @@ class Data:
                 data.rename(columns={data.columns[i+2]:"Metric{0}".format(i+1)}, inplace=True)
 
     def initialNumCovariates(self, data):
-        '''
+        """
         Calculates the number of covariates on a given sheet
-        '''
+        """
         numCov = len(data.columns) - 3
         # logging.debug("{0} covariates.".format(self._numCovariates))
         return numCov
 
     def renameHeader(self, data, numCov):
-        '''
+        """
         Renames column headers if covariate metrics are unnamed
-        '''
+        """
         data.rename(columns={data.columns[0]:"Time"}, inplace=True)
         data.rename(columns={data.columns[1]:"Failures"}, inplace=True)
         for i in range(numCov):
             data.rename(columns={data.columns[i+2]:"Metric{0}".format(i+1)}, inplace=True)
 
     def getData(self):
-        '''
+        """
         Returns dataframe corresponding to the currentSheet index
-        '''
+        """
         return self.dataSet[self.sheetNames[self._currentSheet]]
 
     def getDataModel(self):
-        '''
+        """
         Returns PandasModel for the current dataFrame to be displayed
         on a QTableWidget
-        '''
+        """
         return PandasModel(self.getData())
 
     def importFile(self, fname):
-        '''
+        """
         Imports data file
         Args:
             fname : Filename of csv or excel file
-        '''
+        """
         self.filename, fileExtenstion = os.path.splitext(fname)
         if fileExtenstion == ".csv":
             if self.hasHeader(fname, fileExtenstion):
@@ -168,7 +172,7 @@ class Data:
         self.getMetricNameCombinations()
 
     def hasHeader(self, fname, extension, rows=2):
-        '''
+        """
         Determines if loaded data has a header
         Args:
             fname : Filename of csv or excel file
@@ -176,7 +180,7 @@ class Data:
             rows : number of rows of file to compare
         Returns:
             bool : True if data has header, False if it does not
-        '''
+        """
         if extension == ".csv":
             df = pd.read_csv(fname, header=None, nrows=rows)
             df_header = pd.read_csv(fname, nrows=rows)
@@ -201,11 +205,12 @@ class Data:
         comb = self.powerset(self.metricNames)
         for c in comb:
             self.metricNameCombinations.append(", ".join(c))
-        self.metricNameCombinations.remove("")  # remove option for zero metrics, user can select zero by having none selected
+        # self.metricNameCombinations.remove("")  # remove option for zero metrics, user can select zero by having none selected
+        self.metricNameCombinations[0] = "No covariates"
         print(self.metricNameCombinations)
 
     def powerset(self, iterable):
-        """powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"""
+        """ powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3) """
         s = list(iterable)
         return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
