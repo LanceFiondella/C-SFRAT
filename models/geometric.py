@@ -15,7 +15,7 @@ class Geometric(Model):
         return [b for i in range(self.n)]
 
     def hazardFunction(self, i, b):
-        # b = symbols("b")   
+        # b = symbols("b")
         f = b
         return f
 

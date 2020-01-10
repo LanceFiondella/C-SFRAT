@@ -1,9 +1,11 @@
-
 import logging
 import os.path
 
 import pandas as pd
 import numpy as np
+
+# for combinations of metric names
+from itertools import combinations, chain
 
 from PyQt5 import QtCore
 
@@ -23,6 +25,8 @@ class Data:
         # self._numCovariates = 0
         self.numCovariates = 0
         self.containsHeader = True
+        self.metricNames = []
+        self.metricNameCombinations = []
         # covariate metric names
 
     @property
@@ -160,6 +164,8 @@ class Data:
         self._currentSheet = 0
         self.setData(data)
         self.setNumCovariates()
+        self.metricNames = self.dataSet[self.sheetNames[self._currentSheet]].columns.values[2:-1]
+        self.getMetricNameCombinations()
 
     def hasHeader(self, fname, extension, rows=2):
         '''
@@ -182,6 +188,26 @@ class Data:
         self.containsHeader = header
         return header
 
+    def getMetricNameCombinations(self):
+        # if (self.numCovariates > 1):
+        #     self.metricNameCombinations = self.metricNames
+        #     comb = []
+        #     for i in range(2, self.numCovariates + 1):
+        #         comb.append(list(combinations(self.metricNames,i)))
+        #     print("comb =", comb)
+        #     print(", ".join(comb[0][0]))
+
+        self.metricNameCombinations = []
+        comb = self.powerset(self.metricNames)
+        for c in comb:
+            self.metricNameCombinations.append(", ".join(c))
+        self.metricNameCombinations.remove("")  # remove option for zero metrics, user can select zero by having none selected
+        print(self.metricNameCombinations)
+
+    def powerset(self, iterable):
+        """powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"""
+        s = list(iterable)
+        return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
 # need to edit to fit our data
 class PandasModel(QtCore.QAbstractTableModel):

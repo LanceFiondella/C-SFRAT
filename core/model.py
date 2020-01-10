@@ -203,11 +203,11 @@ class Model(ABC):
         pass
 
     def AIC(self, h, betas):
-        p = 5   # why?
+        p = len(betas) + 1 + 1   # number of covariates + number of hazard rate parameters + 1 (omega)
         return 2 * p - np.multiply(2, self.LLF(h, betas))
 
     def BIC(self, h, betas):
-        p = 5   # why?
+        p = len(betas) + 1 + 1   # number of covariates + number of hazard rate parameters + 1 (omega)
         return p * np.log(self.n) - 2 * self.LLF(h, betas)
 
     def MVF(self, h, omega, betas, stop):

@@ -105,7 +105,7 @@ class MainWindow(QMainWindow):
         # tab 1 plot and table
         self.ax = self._main.tabs.tab1.plotAndTable.figure.add_subplot(111)
         # tab 2 plot and table
-        self.ax2 = self._main.tabs.tab2.plotAndTable.figure.add_subplot(111)
+        self.ax2 = self._main.tabs.tab2.plot.figure.add_subplot(111)
 
         # signal connections
         self.importFileSignal.connect(self.importFile)
@@ -207,10 +207,9 @@ class MainWindow(QMainWindow):
     def setMetricList(self):
         self._main.tabs.tab1.sideMenu.metricListWidget.clear()
         if self.dataLoaded:
-            dataframe = self.data.getData()
-            self._main.tabs.tab1.sideMenu.metricListWidget.addItems(dataframe.columns.values[2:-1])
+            self._main.tabs.tab1.sideMenu.metricListWidget.addItems(self.data.metricNameCombinations)
             logging.info("{0} covariate metrics on this sheet: {1}".format(self.data.numCovariates,
-                                                                    dataframe.columns.values[2:-1]))
+                                                                    self.data.metricNames))
 
     def setDataView(self, viewType, index):
         """
@@ -251,7 +250,7 @@ class MainWindow(QMainWindow):
         # redraw figures
         self.ax2.legend()
         self._main.tabs.tab1.plotAndTable.figure.canvas.draw()
-        self._main.tabs.tab2.plotAndTable.figure.canvas.draw()
+        self._main.tabs.tab2.plot.figure.canvas.draw()
 
     def createMVFPlot(self, dataframe):
         """
@@ -469,19 +468,10 @@ class Tab1(QWidget):
 
         self.sideMenu = SideMenu1()
         self.horizontalLayout.addLayout(self.sideMenu, 25)
-
-        # self.plotGroup = QGroupBox("Plot and Table of Imported Data")
-        # self.plotGroup.setLayout(self.setupPlotGroup())
         self.plotAndTable = PlotAndTable("Plot", "Table")
         self.horizontalLayout.addWidget(self.plotAndTable, 75)
 
         self.setLayout(self.horizontalLayout)
-
-    # def setupPlotGroup(self):
-    #     plotAndTableLayout = QVBoxLayout()
-    #     self.plotAndTable = PlotAndTable()
-    #     plotAndTableLayout.addWidget(self.plotAndTable)
-    #     return plotAndTableLayout
 
 class SideMenu1(QVBoxLayout):
     """
@@ -530,9 +520,6 @@ class SideMenu1(QVBoxLayout):
     def setupModelsGroup(self):
         modelGroupLayout = QVBoxLayout()
         self.modelListWidget = QListWidget()
-
-        # TEMPORARY
-        # will later dynamically add model names
         loadedModels = [model.name for model in models.modelList.values()]
         self.modelListWidget.addItems(loadedModels)
         logging.info("{0} model(s) loaded: {1}".format(len(loadedModels), loadedModels))
@@ -547,7 +534,24 @@ class SideMenu1(QVBoxLayout):
         self.metricListWidget.setSelectionMode(QAbstractItemView.MultiSelection)     # able to select multiple metrics
         metricsGroupLayout.addWidget(self.metricListWidget)
 
+        buttonLayout = QHBoxLayout()
+        self.selectAllButton = QPushButton("Select All")
+        self.clearAllButton = QPushButton("Clear All")
+        self.selectAllButton.clicked.connect(self.selectAll)
+        self.clearAllButton.clicked.connect(self.clearAll)
+        buttonLayout.addWidget(self.selectAllButton, 50)
+        buttonLayout.addWidget(self.clearAllButton, 50)
+        metricsGroupLayout.addLayout(buttonLayout)
+
         return metricsGroupLayout
+    
+    def selectAll(self):
+        self.metricListWidget.selectAll()
+        self.metricListWidget.repaint()
+
+    def clearAll(self):
+        self.metricListWidget.clearSelection()
+        self.metricListWidget.repaint()
 
     def emitRunModelsSignal(self):
         """
@@ -602,34 +606,11 @@ class Tab2(QWidget):
 
     def setupTab2(self):
         self.horizontalLayout = QHBoxLayout()       # main layout
-
-        '''
-        self.plotGroup = QGroupBox("Model Results")
-        self.plotGroup.setLayout(self.setupPlotGroup())
-        self.horizontalLayout.addWidget(self.plotGroup, 60)
-
-        self.tableGroup = QGroupBox("Table of Predictions")
-        self.tableGroup.setLayout(self.setupTableGroup())
-        self.horizontalLayout.addWidget(self.tableGroup, 40)
-        '''
-
         self.sideMenu = SideMenu2()
         self.horizontalLayout.addLayout(self.sideMenu, 25)
-        self.plotAndTable = PlotAndTable("Plot", "Prediction Table")
-        self.horizontalLayout.addWidget(self.plotAndTable, 75)
-        self.setLayout(self.horizontalLayout)
-
-    def setupPlotGroup(self):
-        plotLayout = QVBoxLayout()
         self.plot = PlotWidget()
-        plotLayout.addWidget(self.plot)
-        return plotLayout
-
-    def setupTableGroup(self):
-        tableLayout = QVBoxLayout()
-        self.table = QTableWidget()
-        tableLayout.addWidget(self.table)
-        return tableLayout
+        self.horizontalLayout.addWidget(self.plot, 75)
+        self.setLayout(self.horizontalLayout)
 
 class SideMenu2(QVBoxLayout):
     """
