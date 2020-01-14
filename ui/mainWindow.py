@@ -47,13 +47,19 @@ from PyQt5.QtWidgets import QMainWindow, qApp, QMessageBox, QWidget, QTabWidget,
                             QLineEdit, QGroupBox, QComboBox, QListWidget, \
                             QPushButton, QAction, QActionGroup, QAbstractItemView, \
                             QFileDialog, QCheckBox, QScrollArea, QGridLayout, \
-                            QTableWidget, QTableWidgetItem, QAbstractScrollArea
+                            QTableWidget, QTableWidgetItem, QAbstractScrollArea, \
+                            QSpinBox, QDoubleSpinBox
 from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QIntValidator, QDoubleValidator
 
 # Matplotlib imports for graphs/plots
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
+
+# temporary import
+from scipy.optimize import shgo
+import numpy as np
 
 # For handling debug output
 import logging
@@ -114,6 +120,7 @@ class MainWindow(QMainWindow):
         # self._main.tabs.tab1.sideMenu.runModelSignal.connect(self._main.tabs.tab2.sideMenu.addSelectedModels)    # fill tab 2 models group with selected models
         self._main.tabs.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2)
         # connect tab2 list changed to refreshing tab 2 plot
+        self._main.tabs.tab4.runAllocationSignal.connect(self.runAllocation)
 
         self.initUI()
         logging.info("UI loaded.")
@@ -145,6 +152,9 @@ class MainWindow(QMainWindow):
         Args:
             modelDetails : dictionary of models and metrics to use for calculations
         """
+        # disable buttons until estimation complete
+        self._main.tabs.tab1.sideMenu.runButton.setEnabled(False)
+        self._main.tabs.tab4.allocationButton.setEnabled(False)
         modelsToRun = modelDetails["modelsToRun"]
         metricNames = modelDetails["metricNames"]
         if self.data:
@@ -167,6 +177,8 @@ class MainWindow(QMainWindow):
         self.estimationComplete = True
         self.estimationResults = results
         self._main.tabs.tab1.sideMenu.runButton.setEnabled(True)    # re-enable button, can run another estimation
+        self._main.tabs.tab4.allocationButton.setEnabled(True)      # re-enable allocation button, can't run
+                                                                    # if estimation not complete
         # self.setDataView("view", self.dataViewIndex)
         self.updateUI()
         # set initial model selected
@@ -300,6 +312,18 @@ class MainWindow(QMainWindow):
         self.selectedModelNames = selectedModels
         self.updateUI()
 
+    def runAllocation(self):
+        B = self._main.tabs.tab4.budgetSpinBox.value()
+        f = self._main.tabs.tab4.failureSpinBox.value()
+        m = self.estimationResults["NB2 - (cVec, eVec, fVec)"]
+
+        cons = ({'type': 'ineq', 'fun': lambda x:  B-x[0]-x[1]-x[2]})
+        bnds = ((0, None), (0, None), (0, None))
+
+        #res = shgo(m.allocationFunction, args=(f,), bounds=bnds, constraints=cons, n=10000, iters=4)
+        res = shgo(lambda x: -(51+ 1.5449911694401008*(1- (0.9441308828628996 ** (np.exp(0.10847739229960603*x[0]+0.027716725008716442*x[1]+0.159319065848297*x[2]))))), bounds=bnds, constraints=cons, n=10000, iters=4)
+        print(res)
+        print(sum(res.x))
 
     def setTrendTest(self, index):
         """
@@ -579,7 +603,7 @@ class SideMenu1(QVBoxLayout):
         #metricNames = [self.metricListWidget.item(i).text() for i in range(self.metricListWidget.count()) if self.metricListWidget.item(i).text() in selectedMetricNames]
         # only emit the run signal if at least one model and at least one metric chosen
         if selectedModelNames and selectedMetricNames:
-            self.runButton.setEnabled(False)    # disable button until estimation complete
+            # self.runButton.setEnabled(False)    # disable button until estimation complete
             self.runModelSignal.emit({"modelsToRun": modelsToRun,
                                       "metricNames": selectedMetricNames})
                                       #"metricNames": metricNames})
@@ -734,16 +758,39 @@ class Tab3(QWidget):
 
 #region tab4_test
 class Tab4(QWidget):
+
+    # signals
+    runAllocationSignal = pyqtSignal()  # starts allocation computation
+
     def __init__(self):
         super().__init__()
         self.setupTab4()
 
     def setupTab4(self):
-        self.mainLayout = QHBoxLayout() # main tab layout
+        self.mainLayout = QVBoxLayout() # main tab layout
         self.scrollArea = QScrollArea() # allows dynamic number of rows depending on number of covariates
         self.scrollWidget = QWidget()
 
-        self.setupLayouts(3)   # create initial number of rows  
+        self.mainLayout.addWidget(QLabel("Budget"))
+        self.budgetSpinBox = QDoubleSpinBox()
+        self.budgetSpinBox.setMaximumWidth(200)
+        self.budgetSpinBox.setRange(0.0, 999999.0)
+        self.budgetSpinBox.setValue(20)
+        self.mainLayout.addWidget(self.budgetSpinBox)
+        
+        self.mainLayout.addWidget(QLabel("Failures"))
+        self.failureSpinBox = QSpinBox()
+        self.failureSpinBox.setMaximumWidth(200)
+        self.failureSpinBox.setRange(1, 999999)
+        self.mainLayout.addWidget(self.failureSpinBox)
+
+        self.allocationButton = QPushButton("Run Allocation")
+        self.allocationButton.setEnabled(False) # begins disabled since no model has been run yet
+        self.allocationButton.setMaximumWidth(250)
+        self.allocationButton.clicked.connect(self.emitRunAllocationSignal)
+        self.mainLayout.addWidget(self.allocationButton)
+
+        self.setupLayouts(3)   # create initial number of rows
 
         self.gridLayout.addWidget(QLabel("Metric"), 0, 0)
         self.gridLayout.addWidget(QLabel("Cost"), 0, 1)
@@ -785,5 +832,8 @@ class Tab4(QWidget):
         self.gridLayout.addWidget(self.allocationCheckBoxes[i], i + 1, 2)   # column 3
         self.gridLayout.addWidget(self.percentageLineEdits[i], i + 1, 3)    # column 4
         self.gridLayout.addWidget(self.totalLineEdits[i], i + 1, 4)         # column 5
+
+    def emitRunAllocationSignal(self):
+        self.runAllocationSignal.emit()
 
 #endregion

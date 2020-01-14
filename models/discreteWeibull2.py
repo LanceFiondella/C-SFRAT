@@ -34,14 +34,14 @@ class DiscreteWeibull2(Model):
         # sol = self.optimizeSolution(fd, [0.997816, 0.0361963, 0.0713079, 0.0584351])
         logging.info("Optimized solution: {0}".format(sol))
 
-        b = sol[0]
-        betas = sol[1:]
-        hazard = self.calcHazard(b)
-        self.modelFitting(hazard, betas)
+        self.b = sol[0]
+        self.betas = sol[1:]
+        hazard = self.calcHazard(self.b)
+        self.modelFitting(hazard, self.betas)
 
         logging.info("Omega: {0}".format(self.omega))
-        logging.info("Betas: {0}".format(betas))
-        logging.info("b: {0}".format(b))
+        logging.info("Betas: {0}".format(self.betas))
+        logging.info("b: {0}".format(self.b))
 
 if __name__ == "__main__":
     dw = DiscreteWeibull2()
