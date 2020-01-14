@@ -86,7 +86,8 @@ class Model(ABC):
         pass
 
     def initialEstimates(self, min = 0.0, max = 0.01):
-        return np.insert(np.random.uniform(min, max, self.numCovariates),0, np.random.uniform(0.75999, 0.99999,1))
+        #return np.insert(np.random.uniform(min, max, self.numCovariates), 0, np.random.uniform(0.0, 0.1, 1)) #Works for GM and NB2
+        return np.insert(np.random.uniform(min, max, self.numCovariates),0, np.random.uniform(0.998, 0.99999,1))
                                                                     # (low, high, size)
                                                                     # size is numCovariates + 1 to have initial estimate for b
 
