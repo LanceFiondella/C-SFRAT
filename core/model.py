@@ -186,8 +186,17 @@ class Model(ABC):
 
     def optimizeSolution(self, fd, B):
         logging.info("Solving for MLEs...")
-        solution = scipy.optimize.fsolve(fd, x0=B)
+        #solution = scipy.optimize.fsolve(fd, x0=B)
+        #solution = scipy.optimize.broyden1(fd, xin=B)          #Works for DW2 - DS1  - EstB{0.998, 0.999}
+        #solution = scipy.optimize.broyden2(fd, xin=B)          #Does not work (Seems to work well until the 3 covariates then crashes)
+        solution = scipy.optimize.anderson(fd, xin=B)          #Works for DW2 - DS1  - EstB{0.998, 0.999}
+        #solution = scipy.optimize.excitingmixing(fd, xin=B)    #Does not work
+        #solution = scipy.optimize.newton_krylov(fd, xin=B)     #Does not work
+        #solution = scipy.optimize.linearmixing(fd, xin=B)      #Does not work
+        #solution = scipy.optimize.diagbroyden(fd, xin=B)       #Does not Work
+        #solution = scipy.optimize.root(fd, x0=B, method='hybr')
         logging.info("MLEs solved.")
+        logging.info(solution)
         return solution
 
     def calcOmega(self, h, betas):

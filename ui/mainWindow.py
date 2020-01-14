@@ -58,7 +58,7 @@ from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
 # temporary import
-from scipy.optimize import shgo
+#from scipy.optimize import shgo
 import numpy as np
 
 # For handling debug output
