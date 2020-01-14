@@ -88,9 +88,9 @@ class Model(ABC):
         """
         pass
 
-    def initialEstimates(self, min = 0.0, max = 0.01):
+    def initialEstimates(self, minB = 0.0, maxB = 0.1):
         #return np.insert(np.random.uniform(min, max, self.numCovariates), 0, np.random.uniform(0.0, 0.1, 1)) #Works for GM and NB2
-        return np.insert(np.random.uniform(min, max, self.numCovariates),0, np.random.uniform(0.998, 0.99999,1))
+        return np.insert(np.random.uniform(0.0, 0.01, self.numCovariates),0, np.random.uniform(minB, maxB,1))
                                                                     # (low, high, size)
                                                                     # size is numCovariates + 1 to have initial estimate for b
 
@@ -186,15 +186,25 @@ class Model(ABC):
 
     def optimizeSolution(self, fd, B):
         logging.info("Solving for MLEs...")
-        #solution = scipy.optimize.fsolve(fd, x0=B)
-        #solution = scipy.optimize.broyden1(fd, xin=B)          #Works for DW2 - DS1  - EstB{0.998, 0.999}
+
+        try:
+            solution = scipy.optimize.broyden1(fd, xin=B)          #Works for DW2 - DS1  - EstB{0.998, 0.999}
+            logging.info("Using broyden1")
+        except scipy.optimize.nonlin.NoConvergence:
+            solution = scipy.optimize.fsolve(fd, x0=B)
+            logging.info("Using fsolve")
+        except:
+            logging.info("Could Not Converge")
+
+
         #solution = scipy.optimize.broyden2(fd, xin=B)          #Does not work (Seems to work well until the 3 covariates then crashes)
-        solution = scipy.optimize.anderson(fd, xin=B)          #Works for DW2 - DS1  - EstB{0.998, 0.999}
+        #solution = scipy.optimize.anderson(fd, xin=B)          #Works for DW2 - DS1  - EstB{0.998, 0.999} Does not work for DS2
         #solution = scipy.optimize.excitingmixing(fd, xin=B)    #Does not work
         #solution = scipy.optimize.newton_krylov(fd, xin=B)     #Does not work
         #solution = scipy.optimize.linearmixing(fd, xin=B)      #Does not work
         #solution = scipy.optimize.diagbroyden(fd, xin=B)       #Does not Work
         #solution = scipy.optimize.root(fd, x0=B, method='hybr')
+        #solution = scipy.optimize.fsolve(fd, x0=B)
         logging.info("MLEs solved.")
         logging.info(solution)
         return solution

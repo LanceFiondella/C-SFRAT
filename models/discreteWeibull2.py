@@ -22,7 +22,7 @@ class DiscreteWeibull2(Model):
 
     def runEstimation(self):
         print("-------- DISCRETE WEIBULL (ORDER 2) --------")
-        initial = self.initialEstimates()
+        initial = self.initialEstimates(0.998, 0.9999)
         logging.info("Initial estimates: {0}".format(initial))
         f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
         bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
