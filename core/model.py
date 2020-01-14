@@ -246,6 +246,7 @@ class Model(ABC):
         # can clean this up to use less loops, probably
         prodlist = []
         for i in range(stop + 1):     # CHANGED THIS FROM self.n + 1 !!!
+            print(i)
             sum1 = 1
             sum2 = 1
             TempTerm1 = 1
@@ -261,7 +262,7 @@ class Model(ABC):
         return omega * sum(prodlist)
 
     def MVF_all(self, h, omega, betas):
-        mvfList = np.array([self.MVF(h, self.omega, betas, k) for k in range(self.n)])
+        mvfList = np.array([self.MVF(h, self.omega, betas, dataPoints) for dataPoints in range(self.n)])
         return mvfList
 
     def MVF_allocation(self, h, omega, betas, stop, x):
@@ -269,12 +270,14 @@ class Model(ABC):
         x is vector of covariate metrics chosen for allocation
         """
         # can clean this up to use less loops, probably
-        covData = list(self.covariateData)
-        for i in range(len(x)):
-            covData.append(x[i]) 
+        covData = [list(self.covariateData[j]) for j in range(self.numCovariates)]
+        
+        for j in range(self.numCovariates):
+            covData[j].append(x[j]) # append a single variable (x[j]) to the end of each vector of covariate data
 
         prodlist = []
         for i in range(stop + 1):     # CHANGED THIS FROM self.n + 1 !!!
+            print(i)
             sum1 = 1
             sum2 = 1
             TempTerm1 = 1
@@ -287,11 +290,13 @@ class Model(ABC):
                     TempTerm2 = TempTerm2 * np.exp(covData[j][k] * betas[j])
                 sum2 = sum2 * ((1 - h(i, self.b))**(TempTerm2))
             prodlist.append(sum1 * sum2)
-        return omega * sum(prodlist)
+        return -(omega * sum(prodlist)) # must be negative, SHGO uses minimization
     
     def allocationFunction(self, x, *args):
-        # args[0] = failures
-        return self.MVF_allocation(self.hazardFunction, self.omega, self.betas, args[0], x)
+        failures = args[0]
+        # i = self.n + failures
+        i = self.n
+        return self.MVF_allocation(self.hazardFunction, self.omega, self.betas, i, x)
     
     def SSE(self, fitted, actual):
         sub = np.subtract(fitted, actual)

@@ -120,7 +120,7 @@ class MainWindow(QMainWindow):
         # self._main.tabs.tab1.sideMenu.runModelSignal.connect(self._main.tabs.tab2.sideMenu.addSelectedModels)    # fill tab 2 models group with selected models
         self._main.tabs.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2)
         # connect tab2 list changed to refreshing tab 2 plot
-        self._main.tabs.tab4.runAllocationSignal.connect(self.runAllocation)
+        self._main.tabs.tab4.sideMenu.runAllocationSignal.connect(self.runAllocation)
 
         self.initUI()
         logging.info("UI loaded.")
@@ -154,7 +154,7 @@ class MainWindow(QMainWindow):
         """
         # disable buttons until estimation complete
         self._main.tabs.tab1.sideMenu.runButton.setEnabled(False)
-        self._main.tabs.tab4.allocationButton.setEnabled(False)
+        self._main.tabs.tab4.sideMenu.allocationButton.setEnabled(False)
         modelsToRun = modelDetails["modelsToRun"]
         metricNames = modelDetails["metricNames"]
         if self.data:
@@ -177,7 +177,7 @@ class MainWindow(QMainWindow):
         self.estimationComplete = True
         self.estimationResults = results
         self._main.tabs.tab1.sideMenu.runButton.setEnabled(True)    # re-enable button, can run another estimation
-        self._main.tabs.tab4.allocationButton.setEnabled(True)      # re-enable allocation button, can't run
+        self._main.tabs.tab4.sideMenu.allocationButton.setEnabled(True)      # re-enable allocation button, can't run
                                                                     # if estimation not complete
         # self.setDataView("view", self.dataViewIndex)
         self.updateUI()
@@ -197,6 +197,8 @@ class MainWindow(QMainWindow):
         self._main.tabs.tab2.sideMenu.addNonConvergedModels(nonConvergedNames)
                                                                         # show which models didn't converge
         self._main.tabs.tab3.addResultsToTable(results)
+        self._main.tabs.tab4.sideMenu.addSelectedModels(convergedNames) # add models to tab 4 list so they
+                                                                        # can be selected for allocation
         logging.info("Estimation results: {0}".format(results))
 
     def importFile(self):
@@ -312,16 +314,18 @@ class MainWindow(QMainWindow):
         self.selectedModelNames = selectedModels
         self.updateUI()
 
-    def runAllocation(self):
-        B = self._main.tabs.tab4.budgetSpinBox.value()
-        f = self._main.tabs.tab4.failureSpinBox.value()
-        m = self.estimationResults["NB2 - (cVec, eVec, fVec)"]
+    def runAllocation(self, combinations):
+        B = self._main.tabs.tab4.sideMenu.budgetSpinBox.value()
+        f = self._main.tabs.tab4.sideMenu.failureSpinBox.value()
+        m = self.estimationResults[combinations[0]]
 
-        cons = ({'type': 'ineq', 'fun': lambda x:  B-x[0]-x[1]-x[2]})
-        bnds = ((0, None), (0, None), (0, None))
+        # cons = ({'type': 'ineq', 'fun': lambda x:  B-x[0]-x[1]-x[2]})
+        cons = ({'type': 'ineq', 'fun': lambda x:  B - sum([x[i] for i in range(m.numCovariates)])})
+        # bnds = ((0, None), (0, None), (0, None))
+        bnds = tuple((0, None) for i in range(m.numCovariates))
 
-        #res = shgo(m.allocationFunction, args=(f,), bounds=bnds, constraints=cons, n=10000, iters=4)
-        res = shgo(lambda x: -(51+ 1.5449911694401008*(1- (0.9441308828628996 ** (np.exp(0.10847739229960603*x[0]+0.027716725008716442*x[1]+0.159319065848297*x[2]))))), bounds=bnds, constraints=cons, n=10000, iters=4)
+        res = shgo(m.allocationFunction, args=(f,), bounds=bnds, constraints=cons)#, n=10000, iters=4)
+        # res = shgo(lambda x: -(51+ 1.5449911694401008*(1- (0.9441308828628996 ** (np.exp(0.10847739229960603*x[0]+0.027716725008716442*x[1]+0.159319065848297*x[2]))))), bounds=bnds, constraints=cons, n=10000, iters=4)
         print(res)
         print(sum(res.x))
 
@@ -615,7 +619,7 @@ class SideMenu1(QVBoxLayout):
             msgBox = QMessageBox()
             msgBox.setIcon(QMessageBox.Warning)
             msgBox.setText("Model not selected")
-            msgBox.setInformativeText("Please select at least one model.")
+            msgBox.setInformativeText("Please select at least one model and at least one metric option.")
             msgBox.setWindowTitle("Warning")
             msgBox.exec_()
         else:
@@ -759,81 +763,110 @@ class Tab3(QWidget):
 #region tab4_test
 class Tab4(QWidget):
 
-    # signals
-    runAllocationSignal = pyqtSignal()  # starts allocation computation
-
     def __init__(self):
         super().__init__()
         self.setupTab4()
 
     def setupTab4(self):
-        self.mainLayout = QVBoxLayout() # main tab layout
-        self.scrollArea = QScrollArea() # allows dynamic number of rows depending on number of covariates
-        self.scrollWidget = QWidget()
+        self.mainLayout = QHBoxLayout() # main tab layout
 
-        self.mainLayout.addWidget(QLabel("Budget"))
-        self.budgetSpinBox = QDoubleSpinBox()
-        self.budgetSpinBox.setMaximumWidth(200)
-        self.budgetSpinBox.setRange(0.0, 999999.0)
-        self.budgetSpinBox.setValue(20)
-        self.mainLayout.addWidget(self.budgetSpinBox)
-        
-        self.mainLayout.addWidget(QLabel("Failures"))
-        self.failureSpinBox = QSpinBox()
-        self.failureSpinBox.setMaximumWidth(200)
-        self.failureSpinBox.setRange(1, 999999)
-        self.mainLayout.addWidget(self.failureSpinBox)
-
-        self.allocationButton = QPushButton("Run Allocation")
-        self.allocationButton.setEnabled(False) # begins disabled since no model has been run yet
-        self.allocationButton.setMaximumWidth(250)
-        self.allocationButton.clicked.connect(self.emitRunAllocationSignal)
-        self.mainLayout.addWidget(self.allocationButton)
-
-        self.setupLayouts(3)   # create initial number of rows
-
-        self.gridLayout.addWidget(QLabel("Metric"), 0, 0)
-        self.gridLayout.addWidget(QLabel("Cost"), 0, 1)
-        self.gridLayout.addWidget(QLabel("Allocation"), 0, 2)
-        self.gridLayout.addWidget(QLabel("%"), 0, 3)
-        self.gridLayout.addWidget(QLabel("Total"), 0, 4)
-
-    def setupLayouts(self, numCovariates):
-        """
-        Creates effort allocation layout and elements depending
-        on the number of covariates in data.
-        """
-        self.gridLayout = QGridLayout() 
-
-        self.covLabels = [0 for i in range(numCovariates)]
-        self.costLineEdits = [0 for i in range(numCovariates)]
-        self.allocationCheckBoxes = [0 for i in range(numCovariates)]
-        self.percentageLineEdits = [0 for i in range(numCovariates)]
-        self.totalLineEdits = [0 for i in range(numCovariates)]
-
-        for i in range(numCovariates):
-            self.addRow(i)
-
-        self.scrollWidget.setLayout(self.gridLayout)
-        self.scrollArea.setWidget(self.scrollWidget)
-        self.mainLayout.addWidget(self.scrollArea)
+        self.sideMenu = SideMenu4()
+        self.mainLayout.addLayout(self.sideMenu, 25)
+        self.table = self.setupTable()
+        self.mainLayout.addWidget(self.table, 75)
         self.setLayout(self.mainLayout)
 
-    def addRow(self, i):
-        self.covLabels[i] = QLabel("C{0}".format(i))
-        self.costLineEdits[i] = QLineEdit()
-        self.allocationCheckBoxes[i] = QCheckBox()
-        self.percentageLineEdits[i] = QLineEdit()
-        self.totalLineEdits[i] = QLineEdit()
+    def setupTable(self):
+        table = QTableWidget()
+        table.setEditTriggers(QTableWidget.NoEditTriggers)     # make cells unable to be edited
+        table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+                                                                    # column width fit to contents
+        table.setRowCount(1)
+        table.setColumnCount(7)
+        table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE", "AHP"])
+        table.move(0,0)
 
-        # starts at second row, first is for labels
-        self.gridLayout.addWidget(self.covLabels[i], i + 1, 0)              # column 1
-        self.gridLayout.addWidget(self.costLineEdits[i], i + 1, 1)          # column 2
-        self.gridLayout.addWidget(self.allocationCheckBoxes[i], i + 1, 2)   # column 3
-        self.gridLayout.addWidget(self.percentageLineEdits[i], i + 1, 3)    # column 4
-        self.gridLayout.addWidget(self.totalLineEdits[i], i + 1, 4)         # column 5
+        return table
+
+class SideMenu4(QVBoxLayout):
+    """
+    Side menu for tab 4
+    """
+
+    # signals
+    runAllocationSignal = pyqtSignal(list)  # starts allocation computation
+
+    def __init__(self):
+        super().__init__()
+        self.setupSideMenu()
+
+    def setupSideMenu(self):
+        self.modelsGroup = QGroupBox("Select Models/Metrics for Allocation")
+        self.modelsGroup.setLayout(self.setupModelsGroup())
+        self.optionsGroup = QGroupBox("Allocation Parameters")
+        self.optionsGroup.setLayout(self.setupOptionsGroup())
+        self.setupAllocationButton()
+
+        self.addWidget(self.modelsGroup, 75)
+        self.addWidget(self.optionsGroup, 25)
+        self.addWidget(self.allocationButton)
+
+        self.addStretch(1)
+
+    def setupModelsGroup(self):
+        modelGroupLayout = QVBoxLayout()
+        self.modelListWidget = QListWidget()
+        modelGroupLayout.addWidget(self.modelListWidget)
+        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)       # able to select multiple models
+
+        return modelGroupLayout
+
+    def setupOptionsGroup(self):
+        optionsGroupLayout = QVBoxLayout()
+        optionsGroupLayout.addWidget(QLabel("Budget"))
+        self.budgetSpinBox = QDoubleSpinBox()
+        # self.budgetSpinBox.setMaximumWidth(200)
+        self.budgetSpinBox.setRange(0.0, 999999.0)
+        self.budgetSpinBox.setValue(20)
+        optionsGroupLayout.addWidget(self.budgetSpinBox)
+        
+        optionsGroupLayout.addWidget(QLabel("Failures"))
+        self.failureSpinBox = QSpinBox()
+        # self.failureSpinBox.setMaximumWidth(200)
+        self.failureSpinBox.setRange(1, 999999)
+        optionsGroupLayout.addWidget(self.failureSpinBox)
+
+        return optionsGroupLayout
+
+    def setupAllocationButton(self):
+        self.allocationButton = QPushButton("Run Allocation")
+        self.allocationButton.setEnabled(False) # begins disabled since no model has been run yet
+        # self.allocationButton.setMaximumWidth(250)
+        self.allocationButton.clicked.connect(self.emitRunAllocationSignal)
+
+    def addSelectedModels(self, modelNames):
+        """
+
+
+        Args:
+            modelNames (list): list of strings, name of each model
+        """
+
+        self.modelListWidget.addItems(modelNames)
 
     def emitRunAllocationSignal(self):
-        self.runAllocationSignal.emit()
+        selectedCombinationNames = [item.text() for item in self.modelListWidget.selectedItems()]
+        if selectedCombinationNames:
+            selectedCombinationNames = [item.text() for item in self.modelListWidget.selectedItems()]
+            logging.info("Selected for Allocation: {0}".format(selectedCombinationNames))
+            self.runAllocationSignal.emit(selectedCombinationNames)
+        else:
+            logging.warning("Must select at least one model/metric combination for allocation.")
+            msgBox = QMessageBox()
+            msgBox.setIcon(QMessageBox.Warning)
+            msgBox.setText("No selection made for allocation")
+            msgBox.setInformativeText("Please select at least one model/metric combination.")
+            msgBox.setWindowTitle("Warning")
+            msgBox.exec_()
 
 #endregion
