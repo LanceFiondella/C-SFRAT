@@ -188,7 +188,7 @@ class Model(ABC):
         logging.info("Solving for MLEs...")
 
         try:
-            solution = scipy.optimize.broyden1(fd, xin=B)          #Works for DW2 - DS1  - EstB{0.998, 0.999}
+            solution = scipy.optimize.broyden1(fd, xin=B)
             logging.info("Using broyden1")
         except scipy.optimize.nonlin.NoConvergence:
             solution = scipy.optimize.fsolve(fd, x0=B)

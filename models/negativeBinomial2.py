@@ -21,7 +21,7 @@ class NegativeBinomial2(Model):
 
     def runEstimation(self):
         print("-------- NEGATIVE BINOMIAL (ORDER 2) --------")
-        initial = self.initialEstimates()
+        initial = self.initialEstimates(0.09, 0.1)
         logging.info("Initial estimates: {0}".format(initial))
         f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
         bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
