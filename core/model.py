@@ -88,7 +88,7 @@ class Model(ABC):
         """
         pass
 
-    def initialEstimates(self, min = 0.0, max = 0.01):
+    def initialEstimates(self, minB = 0.09, maxB = 0.1):
         #return np.insert(np.random.uniform(min, max, self.numCovariates), 0, np.random.uniform(0.0, 0.1, 1)) #Works for GM and NB2
         return np.insert(np.random.uniform(min, max, self.numCovariates),0, np.random.uniform(0.998, 0.99999,1))
                                                                     # (low, high, size)
@@ -188,7 +188,7 @@ class Model(ABC):
         logging.info("Solving for MLEs...")
 
         try:
-            solution = scipy.optimize.broyden1(fd, xin=B)          #Works for DW2 - DS1  - EstB{0.998, 0.999}
+            solution = scipy.optimize.broyden1(fd, xin=B)
             logging.info("Using broyden1")
         except scipy.optimize.nonlin.NoConvergence:
             solution = scipy.optimize.fsolve(fd, x0=B)
