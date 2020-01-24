@@ -1,0 +1,590 @@
+Index: ui/mainWindow.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>#-----------------------------------------------------------------------------------#\r\n# TODO:\r\n# how will table data be entered?\r\n#   ignore first line? only parse floats?\r\n# make sure everything that needs to be is a np array, not list\r\n# select hazard function\r\n# MSE vs SSE?\r\n# checking on other datasets\r\n# using only a subset of metrics\r\n# making UI easier to use for someone who doesn't understand the math\r\n# status bar?\r\n# options selected from menubar like in SFRAT\r\n# protection levels\r\n# graph should always be on same side (right)?\r\n# setting status tips\r\n# dialog asking if you want to quit?\r\n# pay attention to how scaling/strecting works, minimum sizes for UI elements\r\n# naming conventions for excel/csv\r\n# less classes?\r\n#   example: self._main.tabs.tab1.sideMenu.sheetSelect.addItems(self.data.sheetNames)\r\n# figure out access modifiers, public/private variables, properties\r\n# use logging object, removes matplotlib debug messages in debug mode\r\n# changing sheets during calculations?\r\n#   think the solution is to load the data once, and then continue using that same data\r\n#   until calculations are completed\r\n# change column header names if they don't have any\r\n# numCovariates - property?\r\n# do Model abstract peroperties do anything?\r\n# figure out \"if self.data.getData() is not None\"\r\n#   just need self.dataLoaded?\r\n# more descriptions of what's happening as estimations are running (ComputeWidget)\r\n# predict points? (commonWidgets)\r\n# naming \"hazard functions\" instead of models\r\n# fsolve doesn't return if converged, so it's not updated for models\r\n#   should try other scipy functions\r\n# make tab 2 like tab 1\r\n#   side menu with plot/table on right\r\n#   definitely need a side menu to select the hazard functions\r\n# names of tabs in tab 2?\r\n# self.viewType is never updated, we don't use updateUI()\r\n# sometimes metric list doesn't load until interacted with\r\n#------------------------------------------------------------------------------------#\r\n\r\n# PyQt5 imports for UI elements\r\nfrom PyQt5.QtWidgets import QMainWindow, qApp, QMessageBox, QWidget, QTabWidget, \\\r\n                            QHBoxLayout, QVBoxLayout, QTableView, QLabel, \\\r\n                            QLineEdit, QGroupBox, QComboBox, QListWidget, \\\r\n                            QPushButton, QAction, QActionGroup, QAbstractItemView, \\\r\n                            QFileDialog, QCheckBox, QScrollArea, QGridLayout, \\\r\n                            QTableWidget, QTableWidgetItem, QAbstractScrollArea, \\\r\n                            QSpinBox, QDoubleSpinBox\r\nfrom PyQt5.QtCore import pyqtSignal\r\nfrom PyQt5.QtGui import QIntValidator, QDoubleValidator\r\n\r\n# Matplotlib imports for graphs/plots\r\nfrom matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas\r\nfrom matplotlib.figure import Figure\r\nimport matplotlib.pyplot as plt\r\n\r\n# temporary import\r\n#from scipy.optimize import shgo\r\nimport numpy as np\r\n\r\n# For handling debug output\r\nimport logging\r\n\r\n# Local imports\r\nfrom ui.commonWidgets import PlotWidget, PlotAndTable, ComputeWidget, TaskThread\r\nfrom core.dataClass import Data\r\nfrom core.graphSettings import PlotSettings\r\nimport models\r\n\r\n\r\nclass MainWindow(QMainWindow):\r\n    # signals\r\n    importFileSignal = pyqtSignal()\r\n\r\n    # debug mode?\r\n    def __init__(self, debug=False):\r\n        \"\"\"\r\n        description to be created at a later time\r\n        \"\"\"\r\n        super().__init__()\r\n\r\n        # setup main window parameters\r\n        self.title = \"Covariate Tool\"\r\n        self.left = 100\r\n        self.top = 100\r\n        self.width = 1080\r\n        self.height = 720\r\n        self.minWidth = 800\r\n        self.minHeight = 600\r\n        self._main = MainWidget()\r\n        self.setCentralWidget(self._main)\r\n\r\n        # set debug mode?\r\n        self.debug = debug\r\n\r\n        # set data\r\n        self.data = Data()\r\n        self.plotSettings = PlotSettings()\r\n        self.selectedModelNames = []\r\n\r\n        # self.estimationResults\r\n        # self.currentModel\r\n\r\n        # flags\r\n        self.dataLoaded = False\r\n        self.estimationComplete = False\r\n\r\n        # tab 1 plot and table\r\n        self.ax = self._main.tabs.tab1.plotAndTable.figure.add_subplot(111)\r\n        # tab 2 plot and table\r\n        self.ax2 = self._main.tabs.tab2.plot.figure.add_subplot(111)\r\n\r\n        # signal connections\r\n        self.importFileSignal.connect(self.importFile)\r\n        self._main.tabs.tab1.sideMenu.viewChangedSignal.connect(self.setDataView)\r\n        self._main.tabs.tab1.sideMenu.runModelSignal.connect(self.runModels)    # run models when signal is received\r\n        # self._main.tabs.tab1.sideMenu.runModelSignal.connect(self._main.tabs.tab2.sideMenu.addSelectedModels)    # fill tab 2 models group with selected models\r\n        self._main.tabs.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2)\r\n        # connect tab2 list changed to refreshing tab 2 plot\r\n        self._main.tabs.tab4.sideMenu.runAllocationSignal.connect(self.runAllocation)\r\n\r\n        self.initUI()\r\n        logging.info(\"UI loaded.\")\r\n\r\n    def closeEvent(self, event):\r\n        \"\"\"\r\n        description to be created at a later time\r\n        \"\"\"\r\n        logging.info(\"Covariate Tool application closed.\")\r\n        qApp.quit()\r\n\r\n    def initUI(self):\r\n        \"\"\"\r\n        description to be created at a later time\r\n        \"\"\"\r\n        self.setupMenu()\r\n        self.setWindowTitle(self.title)\r\n        self.setGeometry(self.left, self.top, self.width, self.height)\r\n        self.setMinimumSize(self.minWidth, self.minHeight)\r\n        self.statusBar().showMessage(\"\")\r\n        self.viewType = \"view\"\r\n        self.dataViewIndex = 0\r\n        self.show()\r\n\r\n    def runModels(self, modelDetails):\r\n        \"\"\"\r\n        Run selected models using selected metrics\r\n\r\n        Args:\r\n            modelDetails : dictionary of models and metrics to use for calculations\r\n        \"\"\"\r\n        # disable buttons until estimation complete\r\n        self._main.tabs.tab1.sideMenu.runButton.setEnabled(False)\r\n        self._main.tabs.tab4.sideMenu.allocationButton.setEnabled(False)\r\n        modelsToRun = modelDetails[\"modelsToRun\"]\r\n        metricNames = modelDetails[\"metricNames\"]\r\n        if self.data:\r\n            self.estimationComplete = False # estimation not complete since it just started running\r\n            self._main.tabs.tab2.sideMenu.modelListWidget.clear()   # clear tab 2 list containing \r\n                                                                    # previously computed models,\r\n                                                                    # only added when calculations complete\r\n            self.computeWidget = ComputeWidget(modelsToRun, metricNames, self.data)\r\n            # DON'T WANT TO DISPLAY RESULTS IN ANOTHER WINDOW\r\n            # WANT TO DISPLAY ON TAB 2/3\r\n            self.computeWidget.results.connect(self.onEstimationComplete)     # signal emitted when estimation complete\r\n\r\n    def onEstimationComplete(self, results):\r\n        \"\"\"\r\n        description to be created at a later time\r\n\r\n        Args:\r\n            results (dict): contains model objects\r\n        \"\"\"\r\n        self.estimationComplete = True\r\n        self.estimationResults = results\r\n        self._main.tabs.tab1.sideMenu.runButton.setEnabled(True)    # re-enable button, can run another estimation\r\n        self._main.tabs.tab4.sideMenu.allocationButton.setEnabled(True)      # re-enable allocation button, can't run\r\n                                                                    # if estimation not complete\r\n        # self.setDataView(\"view\", self.dataViewIndex)\r\n        self.updateUI()\r\n        # set initial model selected\r\n        # set plot\r\n\r\n        convergedNames = []\r\n        nonConvergedNames = []\r\n        for key, model in results.items():\r\n            if model.converged:\r\n                convergedNames.append(key)\r\n            else:\r\n                nonConvergedNames.append(key)\r\n\r\n        self._main.tabs.tab2.sideMenu.addSelectedModels(convergedNames) # add models to tab 2 list\r\n                                                                        # so they can be selected\r\n        self._main.tabs.tab2.sideMenu.addNonConvergedModels(nonConvergedNames)\r\n                                                                        # show which models didn't converge\r\n        self._main.tabs.tab3.addResultsToTable(results)\r\n        self._main.tabs.tab4.sideMenu.addSelectedModels(convergedNames) # add models to tab 4 list so they\r\n                                                                        # can be selected for allocation\r\n        logging.info(\"Estimation results: {0}\".format(results))\r\n\r\n    def importFile(self):\r\n        \"\"\"\r\n        Import selected file\r\n        \"\"\"\r\n        self._main.tabs.tab1.sideMenu.sheetSelect.clear()   # clear sheet names from previous file\r\n        self._main.tabs.tab1.sideMenu.sheetSelect.addItems(self.data.sheetNames)    # add sheet names from new file\r\n\r\n        self.setDataView(\"view\", self.dataViewIndex)\r\n        # self.setMetricList()\r\n\r\n    def changeSheet(self, index):\r\n        \"\"\"\r\n        Change the current sheet displayed\r\n\r\n        Args:\r\n            index : index of the sheet\r\n        \"\"\"\r\n        self.data.currentSheet = index      # store \r\n        self.setDataView(\"view\", self.dataViewIndex)\r\n        self._main.tabs.tab1.plotAndTable.figure.canvas.draw()\r\n        self.setMetricList()\r\n\r\n    def setMetricList(self):\r\n        self._main.tabs.tab1.sideMenu.metricListWidget.clear()\r\n        if self.dataLoaded:\r\n            self._main.tabs.tab1.sideMenu.metricListWidget.addItems(self.data.metricNameCombinations)\r\n            logging.info(\"{0} covariate metrics on this sheet: {1}\".format(self.data.numCovariates,\r\n                                                                    self.data.metricNames))\r\n\r\n    def setDataView(self, viewType, index):\r\n        \"\"\"\r\n        Set the data to be displayed. \r\n        Called whenever a menu item is changed\r\n\r\n        Args:\r\n            viewType: string that determines view\r\n            index: index of the dataview list\r\n        \"\"\"\r\n        if self.data.getData() is not None:\r\n            if viewType == \"view\":\r\n                self.setRawDataView(index)\r\n                self.dataViewIndex = index  # was at the end of elif statements, but would change mvf/intensity view\r\n                                            # unintentionally when changing sheets\r\n            elif viewType == \"trend\":\r\n                self.setTrendTest(index)\r\n            elif viewType == \"sheet\":\r\n                self.changeSheet(index)\r\n            #self.viewType = viewType\r\n                # removed since it would change the sheet displayed when changing display settings\r\n\r\n    def setRawDataView(self, index):\r\n        \"\"\"\r\n        Changes plot between MVF and intensity\r\n        \"\"\"\r\n        self._main.tabs.tab1.plotAndTable.tableWidget.setModel(self.data.getDataModel())\r\n        dataframe = self.data.getData()\r\n        self.plotSettings.plotType = \"step\"\r\n\r\n        if self.dataViewIndex == 0:     # changed from index to self.dataViewIndex\r\n            # MVF\r\n            self.createMVFPlot(dataframe)\r\n        if self.dataViewIndex == 1:     # changed from index to self.dataViewIndex\r\n            # Intensity\r\n            self.createIntensityPlot(dataframe)\r\n\r\n        # redraw figures\r\n        self.ax2.legend()\r\n        self._main.tabs.tab1.plotAndTable.figure.canvas.draw()\r\n        self._main.tabs.tab2.plot.figure.canvas.draw()\r\n\r\n    def createMVFPlot(self, dataframe):\r\n        \"\"\"\r\n        called by setDataView\r\n        \"\"\"\r\n        self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe[\"Cumulative\"], title=\"MVF\", xLabel=\"time\", yLabel=\"failures\")\r\n        if self.estimationComplete:\r\n            self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe.iloc[:, 0], dataframe[\"Cumulative\"], title=\"MVF\", xLabel=\"time\", yLabel=\"failures\")\r\n            self.plotSettings.plotType = \"plot\"\r\n            # for model in self.estimationResults.values():\r\n            #     # add line for model if selected\r\n            #     if model.name in self.selectedModelNames:\r\n            #         self.plotSettings.addLine(self.ax2, model.t, model.mvfList, model.name)\r\n\r\n\r\n            # model name and metric combination!\r\n            for modelName in self.selectedModelNames:\r\n                # add line for model if selected\r\n                model = self.estimationResults[modelName]\r\n                self.plotSettings.addLine(self.ax2, model.t, model.mvfList, modelName)\r\n\r\n    def createIntensityPlot(self, dataframe):\r\n        \"\"\"\r\n        called by setDataView\r\n        \"\"\"\r\n        self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe.iloc[:, 1], title=\"Intensity\", xLabel=\"time\", yLabel=\"failures\")\r\n        if self.estimationComplete:\r\n            self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe.iloc[:, 0], dataframe.iloc[:, 1], title=\"Intensity\", xLabel=\"time\", yLabel=\"failures\")\r\n            self.plotSettings.plotType = \"plot\"\r\n            # for model in self.estimationResults.values():\r\n            #     # add line for model if selected\r\n            #     if model.name in self.selectedModelNames:\r\n            #         self.plotSettings.addLine(self.ax2, model.t, model.intensityList, model.name)\r\n\r\n            # model name and metric combination!\r\n            for modelName in self.selectedModelNames:\r\n                # add line for model if selected\r\n                model = self.estimationResults[modelName]\r\n                self.plotSettings.addLine(self.ax2, model.t, model.intensityList, modelName)\r\n\r\n    def changePlot2(self, selectedModels):\r\n        self.selectedModelNames = selectedModels\r\n        self.updateUI()\r\n\r\n    def runAllocation(self, combinations):\r\n        B = self._main.tabs.tab4.sideMenu.budgetSpinBox.value()\r\n        f = self._main.tabs.tab4.sideMenu.failureSpinBox.value()\r\n        m = self.estimationResults[combinations[0]]\r\n\r\n        # cons = ({'type': 'ineq', 'fun': lambda x:  B-x[0]-x[1]-x[2]})\r\n        cons = ({'type': 'ineq', 'fun': lambda x:  B - sum([x[i] for i in range(m.numCovariates)])})\r\n        # bnds = ((0, None), (0, None), (0, None))\r\n        bnds = tuple((0, None) for i in range(m.numCovariates))\r\n\r\n        res = shgo(m.allocationFunction, args=(f,), bounds=bnds, constraints=cons)#, n=10000, iters=4)\r\n        # res = shgo(lambda x: -(51+ 1.5449911694401008*(1- (0.9441308828628996 ** (np.exp(0.10847739229960603*x[0]+0.027716725008716442*x[1]+0.159319065848297*x[2]))))), bounds=bnds, constraints=cons, n=10000, iters=4)\r\n        print(res)\r\n        print(sum(res.x))\r\n\r\n    def setTrendTest(self, index):\r\n        \"\"\"\r\n        description to be created at a later time\r\n        \"\"\"\r\n        pass\r\n\r\n    def setPlotStyle(self, style='-o', plotType=\"step\"):\r\n        \"\"\"\r\n        description to be created at a later time\r\n        \"\"\"\r\n        self.plotSettings.style = style\r\n        self.plotSettings.plotType = plotType\r\n        self.updateUI()\r\n        # self.setDataView(\"view\", self.dataViewIndex)\r\n\r\n    def updateUI(self):\r\n        \"\"\"\r\n        Change Plot, Table and SideMenu\r\n        when the state of the Data object changes\r\n\r\n        Should be called explicitly\r\n        \"\"\"\r\n        self.setDataView(self.viewType, self.dataViewIndex)\r\n\r\n    def setupMenu(self):\r\n        \"\"\"\r\n        description to be created at a later time\r\n        \"\"\"\r\n        self.menu = self.menuBar()      # initialize menu bar\r\n\r\n        # ---- File menu\r\n        fileMenu = self.menu.addMenu(\"File\")\r\n        # open\r\n        openFile = QAction(\"Open\", self)\r\n        openFile.setShortcut(\"Ctrl+O\")\r\n        openFile.setStatusTip(\"Import Data File\")\r\n        openFile.triggered.connect(self.fileOpened)\r\n        # exit\r\n        exitApp = QAction(\"Exit\", self)\r\n        exitApp.setShortcut(\"Ctrl+Q\")\r\n        exitApp.setStatusTip(\"Close application\")\r\n        exitApp.triggered.connect(self.closeEvent)\r\n        # add actions to file menu\r\n        fileMenu.addAction(openFile)\r\n        fileMenu.addSeparator()\r\n        fileMenu.addAction(exitApp)\r\n\r\n        # ---- View menu\r\n        viewMenu = self.menu.addMenu(\"View\")\r\n        # -- plotting style\r\n        # maybe want a submenu?\r\n        viewStyle = QActionGroup(viewMenu)\r\n        # points\r\n        viewPoints = QAction(\"Show Points\", self, checkable=True)\r\n        viewPoints.setShortcut(\"Ctrl+P\")\r\n        viewPoints.setStatusTip(\"Data shown as points on graphs\")\r\n        viewPoints.triggered.connect(self.setPointsView)\r\n        viewStyle.addAction(viewPoints)\r\n        # lines\r\n        viewLines = QAction(\"Show Lines\", self, checkable=True)\r\n        viewLines.setShortcut(\"Ctrl+L\")\r\n        viewLines.setStatusTip(\"Data shown as lines on graphs\")\r\n        viewLines.triggered.connect(self.setLineView)\r\n        viewStyle.addAction(viewLines)\r\n        # points and lines\r\n        viewBoth = QAction(\"Show Points and Lines\", self, checkable=True)\r\n        viewBoth.setShortcut(\"Ctrl+B\")\r\n        viewBoth.setStatusTip(\"Data shown as points and lines on graphs\")\r\n        viewBoth.setChecked(True)\r\n        viewBoth.triggered.connect(self.setLineAndPointsView)\r\n        viewStyle.addAction(viewBoth)\r\n        # add actions to view menu\r\n        viewMenu.addActions(viewStyle.actions())\r\n        # -- graph display\r\n        graphStyle = QActionGroup(viewMenu)\r\n        # MVF\r\n        mvf = QAction(\"MVF Graph\", self, checkable=True)\r\n        mvf.setShortcut(\"Ctrl+M\")\r\n        mvf.setStatusTip(\"Graphs display MVF of data\")\r\n        mvf.setChecked(True)\r\n        mvf.triggered.connect(self.setMVFView)\r\n        graphStyle.addAction(mvf)\r\n        # intensity\r\n        intensity = QAction(\"Intensity Graph\", self, checkable=True)\r\n        intensity.setShortcut(\"Ctrl+I\")\r\n        intensity.setStatusTip(\"Graphs display failure intensity\")\r\n        intensity.triggered.connect(self.setIntensityView)\r\n        graphStyle.addAction(intensity)\r\n        # add actions to view menu\r\n        viewMenu.addSeparator()\r\n        viewMenu.addActions(graphStyle.actions())\r\n\r\n    #region Menu actions\r\n    def fileOpened(self):\r\n        files = QFileDialog.getOpenFileName(self, \"Open profile\", \"\", filter=(\"Data Files (*.csv *.xls *.xlsx)\"))\r\n        # if a file was loaded\r\n        if files[0]:\r\n            self.data.importFile(files[0])      # imports loaded file\r\n            self.dataLoaded = True\r\n            logging.info(\"Data loaded from {0}\".format(files[0]))\r\n            self.importFileSignal.emit()            # emits signal that file was imported successfully\r\n\r\n    def setLineView(self):\r\n        self.setPlotStyle(style='-')\r\n        logging.info(\"Plot style set to line view.\")\r\n\r\n    def setPointsView(self):\r\n        self.setPlotStyle(style='o', plotType='plot')\r\n        logging.info(\"Plot style set to points view.\")\r\n\r\n    def setLineAndPointsView(self):\r\n        self.setPlotStyle(style='-o')\r\n        logging.info(\"Plot style set to line and points view.\")\r\n\r\n    def setMVFView(self):\r\n        self.dataViewIndex = 0\r\n        logging.info(\"Data plots set to MVF view.\")\r\n        if self.dataLoaded:\r\n            self.setRawDataView(self.dataViewIndex)\r\n\r\n    def setIntensityView(self):\r\n        self.dataViewIndex = 1\r\n        logging.info(\"Data plots set to intensity view.\")\r\n        if self.dataLoaded:\r\n            self.setRawDataView(self.dataViewIndex)\r\n    #endregion\r\n\r\n\r\nclass MainWidget(QWidget):\r\n    \"\"\"\r\n    description to be created at a later time\r\n    \"\"\"\r\n    def __init__(self):\r\n        super().__init__()\r\n        self.initUI()\r\n\r\n    def initUI(self):\r\n        self.layout = QVBoxLayout()\r\n        self.tabs = Tabs()\r\n        self.layout.addWidget(self.tabs)\r\n        self.setLayout(self.layout)\r\n\r\nclass Tabs(QTabWidget):\r\n    def __init__(self):\r\n        super().__init__()\r\n        self.setupTabs()\r\n\r\n    def setupTabs(self):\r\n        self.tab1 = Tab1()\r\n        self.addTab(self.tab1, \"Data Upload and Model Selection\")\r\n\r\n        self.tab2 = Tab2()\r\n        self.addTab(self.tab2, \"Model Results and Predictions\")\r\n\r\n        self.tab3 = Tab3()\r\n        self.addTab(self.tab3, \"Model Comparison\")\r\n\r\n        self.tab4 = Tab4()\r\n        self.addTab(self.tab4, \"Effort Allocation\")\r\n\r\n        self.resize(300, 200)\r\n\r\n#region Tab 1\r\nclass Tab1(QWidget):\r\n    def __init__(self):\r\n        super().__init__()\r\n        self.setupTab1()\r\n\r\n    def setupTab1(self):\r\n        self.horizontalLayout = QHBoxLayout()       # main layout\r\n\r\n        self.sideMenu = SideMenu1()\r\n        self.horizontalLayout.addLayout(self.sideMenu, 25)\r\n        self.plotAndTable = PlotAndTable(\"Plot\", \"Table\")\r\n        self.horizontalLayout.addWidget(self.plotAndTable, 75)\r\n\r\n        self.setLayout(self.horizontalLayout)\r\n\r\nclass SideMenu1(QVBoxLayout):\r\n    \"\"\"\r\n    Side menu for tab 1\r\n    \"\"\"\r\n\r\n    # signals\r\n    viewChangedSignal = pyqtSignal(str, int)    # should this be before init?\r\n    runModelSignal = pyqtSignal(dict)\r\n\r\n    def __init__(self):\r\n        super().__init__()\r\n        self.setupSideMenu()\r\n\r\n    def setupSideMenu(self):\r\n        self.sheetGroup = QGroupBox(\"Select Sheet\")\r\n        self.sheetGroup.setLayout(self.setupSheetGroup())\r\n        self.addWidget(self.sheetGroup)\r\n\r\n        self.modelsGroup = QGroupBox(\"Select Model(s)\")\r\n        self.modelsGroup.setLayout(self.setupModelsGroup())\r\n        self.addWidget(self.modelsGroup)\r\n\r\n        self.metricsGroup = QGroupBox(\"Select Metric(s)\")\r\n        self.metricsGroup.setLayout(self.setupMetricsGroup())\r\n        self.addWidget(self.metricsGroup)\r\n\r\n        self.runButton = QPushButton(\"Run Estimation\")\r\n        self.runButton.clicked.connect(self.emitRunModelsSignal)\r\n        self.addWidget(self.runButton)\r\n\r\n        self.addStretch(1)\r\n\r\n        # signals\r\n        self.sheetSelect.currentIndexChanged.connect(self.emitSheetChangedSignal)\r\n\r\n    def setupSheetGroup(self):\r\n        sheetGroupLayout = QVBoxLayout()\r\n        # sheetGroupLayout.addWidget(QLabel(\"Select sheet\"))\r\n\r\n        self.sheetSelect = QComboBox()\r\n        sheetGroupLayout.addWidget(self.sheetSelect)\r\n\r\n        return sheetGroupLayout\r\n\r\n    def setupModelsGroup(self):\r\n        modelGroupLayout = QVBoxLayout()\r\n        self.modelListWidget = QListWidget()\r\n        loadedModels = [model.name for model in models.modelList.values()]\r\n        self.modelListWidget.addItems(loadedModels)\r\n        logging.info(\"{0} model(s) loaded: {1}\".format(len(loadedModels), loadedModels))\r\n        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)       # able to select multiple models\r\n        modelGroupLayout.addWidget(self.modelListWidget)\r\n\r\n        return modelGroupLayout\r\n\r\n    def setupMetricsGroup(self):\r\n        metricsGroupLayout = QVBoxLayout()\r\n        self.metricListWidget = QListWidget()   # metric names added dynamically from data when loaded\r\n        self.metricListWidget.setSelectionMode(QAbstractItemView.MultiSelection)     # able to select multiple metrics\r\n        metricsGroupLayout.addWidget(self.metricListWidget)\r\n\r\n        buttonLayout = QHBoxLayout()\r\n        self.selectAllButton = QPushButton(\"Select All\")\r\n        self.clearAllButton = QPushButton(\"Clear All\")\r\n        self.selectAllButton.clicked.connect(self.selectAll)\r\n        self.clearAllButton.clicked.connect(self.clearAll)\r\n        buttonLayout.addWidget(self.selectAllButton, 50)\r\n        buttonLayout.addWidget(self.clearAllButton, 50)\r\n        metricsGroupLayout.addLayout(buttonLayout)\r\n\r\n        return metricsGroupLayout\r\n    \r\n    def selectAll(self):\r\n        self.metricListWidget.selectAll()\r\n        self.metricListWidget.repaint()\r\n\r\n    def clearAll(self):\r\n        self.metricListWidget.clearSelection()\r\n        self.metricListWidget.repaint()\r\n\r\n    def emitRunModelsSignal(self):\r\n        \"\"\"\r\n        Method called when Run Estimation button pressed.\r\n        Signal that tells models to run (runModelSignal) is\r\n        only emitted if at least one model and at least one\r\n        metric is selected.\r\n        \"\"\"\r\n        logging.info(\"Run button pressed.\")\r\n        # get model names as strings\r\n        \r\n        selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]\r\n        # get model classes from models folder\r\n        modelsToRun = [model for model in models.modelList.values() if model.name in selectedModelNames]\r\n        # get selected metric names (IMPORTANT: returned in order they were clicked)\r\n        selectedMetricNames = [item.text().split(\", \") for item in self.metricListWidget.selectedItems()]\r\n            # split combinations\r\n        # sorts metric names in their order from the data file (left to right)\r\n        #metricNames = [self.metricListWidget.item(i).text() for i in range(self.metricListWidget.count()) if self.metricListWidget.item(i).text() in selectedMetricNames]\r\n        # only emit the run signal if at least one model and at least one metric chosen\r\n        if selectedModelNames and selectedMetricNames:\r\n            # self.runButton.setEnabled(False)    # disable button until estimation complete\r\n            self.runModelSignal.emit({\"modelsToRun\": modelsToRun,\r\n                                      \"metricNames\": selectedMetricNames})\r\n                                      #\"metricNames\": metricNames})\r\n                                      \r\n            logging.info(\"Run models signal emitted. Models = {0}, metrics = {1}\".format(selectedModelNames, selectedMetricNames))\r\n        elif self.modelListWidget.count() > 0 and self.metricListWidget.count() > 0:\r\n            # data loaded but not selected\r\n            logging.warning(\"Must select at least one model.\")\r\n            msgBox = QMessageBox()\r\n            msgBox.setIcon(QMessageBox.Warning)\r\n            msgBox.setText(\"Model not selected\")\r\n            msgBox.setInformativeText(\"Please select at least one model and at least one metric option.\")\r\n            msgBox.setWindowTitle(\"Warning\")\r\n            msgBox.exec_()\r\n        else:\r\n            logging.warning(\"No data found. Data must be loaded in CSV or Excel format.\")\r\n            msgBox = QMessageBox()\r\n            msgBox.setIcon(QMessageBox.Warning)\r\n            msgBox.setText(\"No data found\")\r\n            msgBox.setInformativeText(\"Please load failure data as a .csv file or an Excel workbook (.xls, xlsx).\")\r\n            msgBox.setWindowTitle(\"Warning\")\r\n            msgBox.exec_()\r\n\r\n    def emitSheetChangedSignal(self):\r\n        self.viewChangedSignal.emit(\"sheet\", self.sheetSelect.currentIndex())\r\n#endregion\r\n\r\n#region Tab 2\r\nclass Tab2(QWidget):\r\n    def __init__(self):\r\n        super().__init__()\r\n        self.setupTab2()\r\n\r\n    def setupTab2(self):\r\n        self.horizontalLayout = QHBoxLayout()       # main layout\r\n        self.sideMenu = SideMenu2()\r\n        self.horizontalLayout.addLayout(self.sideMenu, 25)\r\n        self.plot = PlotWidget()\r\n        self.horizontalLayout.addWidget(self.plot, 75)\r\n        self.setLayout(self.horizontalLayout)\r\n\r\nclass SideMenu2(QVBoxLayout):\r\n    \"\"\"\r\n    Side menu for tab 2\r\n    \"\"\"\r\n\r\n    # signals\r\n    modelChangedSignal = pyqtSignal(list)    # changes based on selection of models in tab 2\r\n\r\n    def __init__(self):\r\n        super().__init__()\r\n        self.setupSideMenu()\r\n\r\n    def setupSideMenu(self):\r\n        self.modelsGroup = QGroupBox(\"Select Model Results\")\r\n        self.nonConvergedGroup = QGroupBox(\"Did Not Converge\")\r\n        self.modelsGroup.setLayout(self.setupModelsGroup())\r\n        self.nonConvergedGroup.setLayout(self.setupNonConvergedGroup())\r\n        self.addWidget(self.modelsGroup, 60)\r\n        self.addWidget(self.nonConvergedGroup, 40)\r\n\r\n        self.addStretch(1)\r\n\r\n        # signals\r\n        # self.sheetSelect.currentIndexChanged.connect(self.emitSheetChangedSignal)\r\n\r\n    def setupModelsGroup(self):\r\n        modelGroupLayout = QVBoxLayout()\r\n        self.modelListWidget = QListWidget()\r\n        modelGroupLayout.addWidget(self.modelListWidget)\r\n        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)       # able to select multiple models\r\n        self.modelListWidget.itemSelectionChanged.connect(self.emitModelChangedSignal)\r\n\r\n        return modelGroupLayout\r\n\r\n    def setupNonConvergedGroup(self):\r\n        nonConvergedGroupLayout = QVBoxLayout()\r\n        self.nonConvergedListWidget = QListWidget()\r\n        nonConvergedGroupLayout.addWidget(self.nonConvergedListWidget)\r\n\r\n        return nonConvergedGroupLayout\r\n\r\n    def addSelectedModels(self, modelNames):\r\n        \"\"\"\r\n\r\n\r\n        Args:\r\n            modelNames (list): list of strings, name of each model\r\n        \"\"\"\r\n\r\n        #self.modelListWidget.clear()\r\n        # modelsRan = modelDetails[\"modelsToRun\"]\r\n        # metricNames = modelDetails[\"metricNames\"]\r\n\r\n        # loadedModels = [model.name for model in modelsRan]\r\n        # self.modelListWidget.addItems(loadedModels)\r\n\r\n        self.modelListWidget.addItems(modelNames)\r\n\r\n    def addNonConvergedModels(self, nonConvergedNames):\r\n        self.nonConvergedListWidget.addItems(nonConvergedNames)\r\n\r\n    def emitModelChangedSignal(self):\r\n        selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]\r\n        logging.info(\"Selected models: {0}\".format(selectedModelNames))\r\n        self.modelChangedSignal.emit(selectedModelNames)\r\n\r\n#endregion\r\n\r\n#region Tab 3\r\nclass Tab3(QWidget):\r\n    def __init__(self):\r\n        super().__init__()\r\n        self.setupTab3()\r\n\r\n    def setupTab3(self):\r\n        self.horizontalLayout = QHBoxLayout()       # main layout\r\n        self.setupTable()\r\n        self.horizontalLayout.addWidget(self.table)\r\n        self.setLayout(self.horizontalLayout)\r\n\r\n    def setupTable(self):\r\n        self.table = QTableWidget()\r\n        self.table.setEditTriggers(QTableWidget.NoEditTriggers)     # make cells unable to be edited\r\n        self.table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)\r\n                                                                    # column width fit to contents\r\n        self.table.setRowCount(1)\r\n        self.table.setColumnCount(7)\r\n        self.table.setHorizontalHeaderLabels([\"Model Name\", \"Covariates\", \"Log-Likelihood\", \"AIC\", \"BIC\", \"SSE\", \"AHP\"])\r\n        self.table.move(0,0)\r\n\r\n    def addResultsToTable(self, results):\r\n        self.table.setSortingEnabled(False) # disable sorting while editing contents\r\n        self.table.clear()\r\n        self.table.setHorizontalHeaderLabels([\"Model Name\", \"Covariates\", \"Log-Likelihood\", \"AIC\", \"BIC\", \"SSE\", \"AHP\"])\r\n        self.table.setRowCount(len(results))    # set row count to include all model results, \r\n                                                # even if not converged\r\n        i = 0   # number of converged models\r\n        for key, model in results.items():\r\n            if model.converged:\r\n                self.table.setItem(i, 0, QTableWidgetItem(model.name))\r\n                self.table.setItem(i, 1, QTableWidgetItem(model.metricString))\r\n                self.table.setItem(i, 2, QTableWidgetItem(str(model.llfVal)))\r\n                self.table.setItem(i, 3, QTableWidgetItem(str(model.aicVal)))\r\n                self.table.setItem(i, 4, QTableWidgetItem(str(model.bicVal)))\r\n                self.table.setItem(i, 5, QTableWidgetItem(str(model.sseVal)))\r\n                i += 1\r\n        self.table.setRowCount(i)   # set row count to only include converged models\r\n        self.table.resizeColumnsToContents()    # resize column width after table is edited\r\n        self.table.setSortingEnabled(True)      # re-enable sorting after table is edited\r\n#endregion\r\n\r\n#region tab4_test\r\nclass Tab4(QWidget):\r\n\r\n    def __init__(self):\r\n        super().__init__()\r\n        self.setupTab4()\r\n\r\n    def setupTab4(self):\r\n        self.mainLayout = QHBoxLayout() # main tab layout\r\n\r\n        self.sideMenu = SideMenu4()\r\n        self.mainLayout.addLayout(self.sideMenu, 25)\r\n        self.table = self.setupTable()\r\n        self.mainLayout.addWidget(self.table, 75)\r\n        self.setLayout(self.mainLayout)\r\n\r\n    def setupTable(self):\r\n        table = QTableWidget()\r\n        table.setEditTriggers(QTableWidget.NoEditTriggers)     # make cells unable to be edited\r\n        table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)\r\n                                                                    # column width fit to contents\r\n        table.setRowCount(1)\r\n        table.setColumnCount(7)\r\n        table.setHorizontalHeaderLabels([\"Model Name\", \"Covariates\", \"Log-Likelihood\", \"AIC\", \"BIC\", \"SSE\", \"AHP\"])\r\n        table.move(0,0)\r\n\r\n        return table\r\n\r\nclass SideMenu4(QVBoxLayout):\r\n    \"\"\"\r\n    Side menu for tab 4\r\n    \"\"\"\r\n\r\n    # signals\r\n    runAllocationSignal = pyqtSignal(list)  # starts allocation computation\r\n\r\n    def __init__(self):\r\n        super().__init__()\r\n        self.setupSideMenu()\r\n\r\n    def setupSideMenu(self):\r\n        self.modelsGroup = QGroupBox(\"Select Models/Metrics for Allocation\")\r\n        self.modelsGroup.setLayout(self.setupModelsGroup())\r\n        self.optionsGroup = QGroupBox(\"Allocation Parameters\")\r\n        self.optionsGroup.setLayout(self.setupOptionsGroup())\r\n        self.setupAllocationButton()\r\n\r\n        self.addWidget(self.modelsGroup, 75)\r\n        self.addWidget(self.optionsGroup, 25)\r\n        self.addWidget(self.allocationButton)\r\n\r\n        self.addStretch(1)\r\n\r\n    def setupModelsGroup(self):\r\n        modelGroupLayout = QVBoxLayout()\r\n        self.modelListWidget = QListWidget()\r\n        modelGroupLayout.addWidget(self.modelListWidget)\r\n        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)       # able to select multiple models\r\n\r\n        return modelGroupLayout\r\n\r\n    def setupOptionsGroup(self):\r\n        optionsGroupLayout = QVBoxLayout()\r\n        optionsGroupLayout.addWidget(QLabel(\"Budget\"))\r\n        self.budgetSpinBox = QDoubleSpinBox()\r\n        # self.budgetSpinBox.setMaximumWidth(200)\r\n        self.budgetSpinBox.setRange(0.0, 999999.0)\r\n        self.budgetSpinBox.setValue(20)\r\n        optionsGroupLayout.addWidget(self.budgetSpinBox)\r\n        \r\n        optionsGroupLayout.addWidget(QLabel(\"Failures\"))\r\n        self.failureSpinBox = QSpinBox()\r\n        # self.failureSpinBox.setMaximumWidth(200)\r\n        self.failureSpinBox.setRange(1, 999999)\r\n        optionsGroupLayout.addWidget(self.failureSpinBox)\r\n\r\n        return optionsGroupLayout\r\n\r\n    def setupAllocationButton(self):\r\n        self.allocationButton = QPushButton(\"Run Allocation\")\r\n        self.allocationButton.setEnabled(False) # begins disabled since no model has been run yet\r\n        # self.allocationButton.setMaximumWidth(250)\r\n        self.allocationButton.clicked.connect(self.emitRunAllocationSignal)\r\n\r\n    def addSelectedModels(self, modelNames):\r\n        \"\"\"\r\n\r\n\r\n        Args:\r\n            modelNames (list): list of strings, name of each model\r\n        \"\"\"\r\n\r\n        self.modelListWidget.addItems(modelNames)\r\n\r\n    def emitRunAllocationSignal(self):\r\n        selectedCombinationNames = [item.text() for item in self.modelListWidget.selectedItems()]\r\n        if selectedCombinationNames:\r\n            selectedCombinationNames = [item.text() for item in self.modelListWidget.selectedItems()]\r\n            logging.info(\"Selected for Allocation: {0}\".format(selectedCombinationNames))\r\n            self.runAllocationSignal.emit(selectedCombinationNames)\r\n        else:\r\n            logging.warning(\"Must select at least one model/metric combination for allocation.\")\r\n            msgBox = QMessageBox()\r\n            msgBox.setIcon(QMessageBox.Warning)\r\n            msgBox.setText(\"No selection made for allocation\")\r\n            msgBox.setInformativeText(\"Please select at least one model/metric combination.\")\r\n            msgBox.setWindowTitle(\"Warning\")\r\n            msgBox.exec_()\r\n\r\n#endregion
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- ui/mainWindow.py	(revision e24db66ad609217940eb4557439c4cca1ee3e7fc)
++++ ui/mainWindow.py	(date 1579893033691)
+@@ -1,4 +1,4 @@
+-#-----------------------------------------------------------------------------------#
++# -----------------------------------------------------------------------------------#
+ # TODO:
+ # how will table data be entered?
+ #   ignore first line? only parse floats?
+@@ -39,16 +39,16 @@
+ # names of tabs in tab 2?
+ # self.viewType is never updated, we don't use updateUI()
+ # sometimes metric list doesn't load until interacted with
+-#------------------------------------------------------------------------------------#
++# ------------------------------------------------------------------------------------#
+ 
+ # PyQt5 imports for UI elements
+ from PyQt5.QtWidgets import QMainWindow, qApp, QMessageBox, QWidget, QTabWidget, \
+-                            QHBoxLayout, QVBoxLayout, QTableView, QLabel, \
+-                            QLineEdit, QGroupBox, QComboBox, QListWidget, \
+-                            QPushButton, QAction, QActionGroup, QAbstractItemView, \
+-                            QFileDialog, QCheckBox, QScrollArea, QGridLayout, \
+-                            QTableWidget, QTableWidgetItem, QAbstractScrollArea, \
+-                            QSpinBox, QDoubleSpinBox
++    QHBoxLayout, QVBoxLayout, QTableView, QLabel, \
++    QLineEdit, QGroupBox, QComboBox, QListWidget, \
++    QPushButton, QAction, QActionGroup, QAbstractItemView, \
++    QFileDialog, QCheckBox, QScrollArea, QGridLayout, \
++    QTableWidget, QTableWidgetItem, QAbstractScrollArea, \
++    QSpinBox, QDoubleSpinBox
+ from PyQt5.QtCore import pyqtSignal
+ from PyQt5.QtGui import QIntValidator, QDoubleValidator
+ 
+@@ -57,10 +57,6 @@
+ from matplotlib.figure import Figure
+ import matplotlib.pyplot as plt
+ 
+-# temporary import
+-#from scipy.optimize import shgo
+-import numpy as np
+-
+ # For handling debug output
+ import logging
+ 
+@@ -68,6 +64,7 @@
+ from ui.commonWidgets import PlotWidget, PlotAndTable, ComputeWidget, TaskThread
+ from core.dataClass import Data
+ from core.graphSettings import PlotSettings
++from core.allocation import effortAllocation
+ import models
+ 
+ 
+@@ -116,7 +113,7 @@
+         # signal connections
+         self.importFileSignal.connect(self.importFile)
+         self._main.tabs.tab1.sideMenu.viewChangedSignal.connect(self.setDataView)
+-        self._main.tabs.tab1.sideMenu.runModelSignal.connect(self.runModels)    # run models when signal is received
++        self._main.tabs.tab1.sideMenu.runModelSignal.connect(self.runModels)  # run models when signal is received
+         # self._main.tabs.tab1.sideMenu.runModelSignal.connect(self._main.tabs.tab2.sideMenu.addSelectedModels)    # fill tab 2 models group with selected models
+         self._main.tabs.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2)
+         # connect tab2 list changed to refreshing tab 2 plot
+@@ -158,14 +155,15 @@
+         modelsToRun = modelDetails["modelsToRun"]
+         metricNames = modelDetails["metricNames"]
+         if self.data:
+-            self.estimationComplete = False # estimation not complete since it just started running
+-            self._main.tabs.tab2.sideMenu.modelListWidget.clear()   # clear tab 2 list containing 
+-                                                                    # previously computed models,
+-                                                                    # only added when calculations complete
++            self.estimationComplete = False  # estimation not complete since it just started running
++            self._main.tabs.tab2.sideMenu.modelListWidget.clear()  # clear tab 2 list containing
++            # previously computed models,
++            # only added when calculations complete
++            self._main.tabs.tab4.sideMenu.modelListWidget.clear()
+             self.computeWidget = ComputeWidget(modelsToRun, metricNames, self.data)
+             # DON'T WANT TO DISPLAY RESULTS IN ANOTHER WINDOW
+             # WANT TO DISPLAY ON TAB 2/3
+-            self.computeWidget.results.connect(self.onEstimationComplete)     # signal emitted when estimation complete
++            self.computeWidget.results.connect(self.onEstimationComplete)  # signal emitted when estimation complete
+ 
+     def onEstimationComplete(self, results):
+         """
+@@ -176,9 +174,9 @@
+         """
+         self.estimationComplete = True
+         self.estimationResults = results
+-        self._main.tabs.tab1.sideMenu.runButton.setEnabled(True)    # re-enable button, can run another estimation
+-        self._main.tabs.tab4.sideMenu.allocationButton.setEnabled(True)      # re-enable allocation button, can't run
+-                                                                    # if estimation not complete
++        self._main.tabs.tab1.sideMenu.runButton.setEnabled(True)  # re-enable button, can run another estimation
++        self._main.tabs.tab4.sideMenu.allocationButton.setEnabled(True)  # re-enable allocation button, can't run
++        # if estimation not complete
+         # self.setDataView("view", self.dataViewIndex)
+         self.updateUI()
+         # set initial model selected
+@@ -192,21 +190,21 @@
+             else:
+                 nonConvergedNames.append(key)
+ 
+-        self._main.tabs.tab2.sideMenu.addSelectedModels(convergedNames) # add models to tab 2 list
+-                                                                        # so they can be selected
++        self._main.tabs.tab2.sideMenu.addSelectedModels(convergedNames)  # add models to tab 2 list
++        # so they can be selected
+         self._main.tabs.tab2.sideMenu.addNonConvergedModels(nonConvergedNames)
+-                                                                        # show which models didn't converge
++        # show which models didn't converge
+         self._main.tabs.tab3.addResultsToTable(results)
+-        self._main.tabs.tab4.sideMenu.addSelectedModels(convergedNames) # add models to tab 4 list so they
+-                                                                        # can be selected for allocation
++        self._main.tabs.tab4.sideMenu.addSelectedModels(convergedNames)  # add models to tab 4 list so they
++        # can be selected for allocation
+         logging.info("Estimation results: {0}".format(results))
+ 
+     def importFile(self):
+         """
+         Import selected file
+         """
+-        self._main.tabs.tab1.sideMenu.sheetSelect.clear()   # clear sheet names from previous file
+-        self._main.tabs.tab1.sideMenu.sheetSelect.addItems(self.data.sheetNames)    # add sheet names from new file
++        self._main.tabs.tab1.sideMenu.sheetSelect.clear()  # clear sheet names from previous file
++        self._main.tabs.tab1.sideMenu.sheetSelect.addItems(self.data.sheetNames)  # add sheet names from new file
+ 
+         self.setDataView("view", self.dataViewIndex)
+         # self.setMetricList()
+@@ -218,7 +216,7 @@
+         Args:
+             index : index of the sheet
+         """
+-        self.data.currentSheet = index      # store 
++        self.data.currentSheet = index  # store
+         self.setDataView("view", self.dataViewIndex)
+         self._main.tabs.tab1.plotAndTable.figure.canvas.draw()
+         self.setMetricList()
+@@ -228,11 +226,11 @@
+         if self.dataLoaded:
+             self._main.tabs.tab1.sideMenu.metricListWidget.addItems(self.data.metricNameCombinations)
+             logging.info("{0} covariate metrics on this sheet: {1}".format(self.data.numCovariates,
+-                                                                    self.data.metricNames))
++                                                                           self.data.metricNames))
+ 
+     def setDataView(self, viewType, index):
+         """
+-        Set the data to be displayed. 
++        Set the data to be displayed.
+         Called whenever a menu item is changed
+ 
+         Args:
+@@ -243,13 +241,13 @@
+             if viewType == "view":
+                 self.setRawDataView(index)
+                 self.dataViewIndex = index  # was at the end of elif statements, but would change mvf/intensity view
+-                                            # unintentionally when changing sheets
++                # unintentionally when changing sheets
+             elif viewType == "trend":
+                 self.setTrendTest(index)
+             elif viewType == "sheet":
+                 self.changeSheet(index)
+-            #self.viewType = viewType
+-                # removed since it would change the sheet displayed when changing display settings
++            # self.viewType = viewType
++            # removed since it would change the sheet displayed when changing display settings
+ 
+     def setRawDataView(self, index):
+         """
+@@ -259,10 +257,10 @@
+         dataframe = self.data.getData()
+         self.plotSettings.plotType = "step"
+ 
+-        if self.dataViewIndex == 0:     # changed from index to self.dataViewIndex
++        if self.dataViewIndex == 0:  # changed from index to self.dataViewIndex
+             # MVF
+             self.createMVFPlot(dataframe)
+-        if self.dataViewIndex == 1:     # changed from index to self.dataViewIndex
++        if self.dataViewIndex == 1:  # changed from index to self.dataViewIndex
+             # Intensity
+             self.createIntensityPlot(dataframe)
+ 
+@@ -275,16 +273,17 @@
+         """
+         called by setDataView
+         """
+-        self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe["Cumulative"], title="MVF", xLabel="time", yLabel="failures")
++        self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe["Cumulative"], title="MVF",
++                                                 xLabel="time", yLabel="failures")
+         if self.estimationComplete:
+-            self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe.iloc[:, 0], dataframe["Cumulative"], title="MVF", xLabel="time", yLabel="failures")
++            self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe.iloc[:, 0], dataframe["Cumulative"],
++                                                      title="MVF", xLabel="time", yLabel="failures")
+             self.plotSettings.plotType = "plot"
+             # for model in self.estimationResults.values():
+             #     # add line for model if selected
+             #     if model.name in self.selectedModelNames:
+             #         self.plotSettings.addLine(self.ax2, model.t, model.mvfList, model.name)
+ 
+-
+             # model name and metric combination!
+             for modelName in self.selectedModelNames:
+                 # add line for model if selected
+@@ -295,9 +294,11 @@
+         """
+         called by setDataView
+         """
+-        self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe.iloc[:, 1], title="Intensity", xLabel="time", yLabel="failures")
++        self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe.iloc[:, 1], title="Intensity",
++                                                 xLabel="time", yLabel="failures")
+         if self.estimationComplete:
+-            self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe.iloc[:, 0], dataframe.iloc[:, 1], title="Intensity", xLabel="time", yLabel="failures")
++            self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe.iloc[:, 0], dataframe.iloc[:, 1],
++                                                      title="Intensity", xLabel="time", yLabel="failures")
+             self.plotSettings.plotType = "plot"
+             # for model in self.estimationResults.values():
+             #     # add line for model if selected
+@@ -315,19 +316,26 @@
+         self.updateUI()
+ 
+     def runAllocation(self, combinations):
+-        B = self._main.tabs.tab4.sideMenu.budgetSpinBox.value()
+-        f = self._main.tabs.tab4.sideMenu.failureSpinBox.value()
+-        m = self.estimationResults[combinations[0]]
++        B = self._main.tabs.tab4.sideMenu.budgetSpinBox.value()  # budget
++        f = self._main.tabs.tab4.sideMenu.failureSpinBox.value()  # number of failures (UNUSED)
++        m = self.estimationResults[combinations[0]]  # model object
+ 
+-        # cons = ({'type': 'ineq', 'fun': lambda x:  B-x[0]-x[1]-x[2]})
+-        cons = ({'type': 'ineq', 'fun': lambda x:  B - sum([x[i] for i in range(m.numCovariates)])})
+-        # bnds = ((0, None), (0, None), (0, None))
+-        bnds = tuple((0, None) for i in range(m.numCovariates))
++        self.allocationResults = {}  # create a dictionary for allocation results
++        for i in range(len(combinations)):
++            name = combinations[i]
++            m = self.estimationResults[name]  # model indexed by the name
++            self.allocationResults[name] = effortAllocation(m, B, f)
++        print(self.allocationResults)
+ 
+-        res = shgo(m.allocationFunction, args=(f,), bounds=bnds, constraints=cons)#, n=10000, iters=4)
+-        # res = shgo(lambda x: -(51+ 1.5449911694401008*(1- (0.9441308828628996 ** (np.exp(0.10847739229960603*x[0]+0.027716725008716442*x[1]+0.159319065848297*x[2]))))), bounds=bnds, constraints=cons, n=10000, iters=4)
+-        print(res)
+-        print(sum(res.x))
++        # # cons = ({'type': 'ineq', 'fun': lambda x:  B-x[0]-x[1]-x[2]})
++        # cons = ({'type': 'ineq', 'fun': lambda x:  B - sum([x[i] for i in range(m.numCovariates)])})
++        # # bnds = ((0, None), (0, None), (0, None))
++        # bnds = tuple((0, None) for i in range(m.numCovariates))
++
++        # res = shgo(m.allocationFunction, args=(f,), bounds=bnds, constraints=cons)#, n=10000, iters=4)
++        # # res = shgo(lambda x: -(51+ 1.5449911694401008*(1- (0.9441308828628996 ** (np.exp(0.10847739229960603*x[0]+0.027716725008716442*x[1]+0.159319065848297*x[2]))))), bounds=bnds, constraints=cons, n=10000, iters=4)
++        # print(res)
++        # print(sum(res.x))
+ 
+     def setTrendTest(self, index):
+         """
+@@ -357,7 +365,7 @@
+         """
+         description to be created at a later time
+         """
+-        self.menu = self.menuBar()      # initialize menu bar
++        self.menu = self.menuBar()  # initialize menu bar
+ 
+         # ---- File menu
+         fileMenu = self.menu.addMenu("File")
+@@ -421,15 +429,15 @@
+         viewMenu.addSeparator()
+         viewMenu.addActions(graphStyle.actions())
+ 
+-    #region Menu actions
++    # region Menu actions
+     def fileOpened(self):
+         files = QFileDialog.getOpenFileName(self, "Open profile", "", filter=("Data Files (*.csv *.xls *.xlsx)"))
+         # if a file was loaded
+         if files[0]:
+-            self.data.importFile(files[0])      # imports loaded file
++            self.data.importFile(files[0])  # imports loaded file
+             self.dataLoaded = True
+             logging.info("Data loaded from {0}".format(files[0]))
+-            self.importFileSignal.emit()            # emits signal that file was imported successfully
++            self.importFileSignal.emit()  # emits signal that file was imported successfully
+ 
+     def setLineView(self):
+         self.setPlotStyle(style='-')
+@@ -454,13 +462,14 @@
+         logging.info("Data plots set to intensity view.")
+         if self.dataLoaded:
+             self.setRawDataView(self.dataViewIndex)
+-    #endregion
++    # endregion
+ 
+ 
+ class MainWidget(QWidget):
+     """
+     description to be created at a later time
+     """
++
+     def __init__(self):
+         super().__init__()
+         self.initUI()
+@@ -471,6 +480,7 @@
+         self.layout.addWidget(self.tabs)
+         self.setLayout(self.layout)
+ 
++
+ class Tabs(QTabWidget):
+     def __init__(self):
+         super().__init__()
+@@ -491,14 +501,15 @@
+ 
+         self.resize(300, 200)
+ 
+-#region Tab 1
++
++# region Tab 1
+ class Tab1(QWidget):
+     def __init__(self):
+         super().__init__()
+         self.setupTab1()
+ 
+     def setupTab1(self):
+-        self.horizontalLayout = QHBoxLayout()       # main layout
++        self.horizontalLayout = QHBoxLayout()  # main layout
+ 
+         self.sideMenu = SideMenu1()
+         self.horizontalLayout.addLayout(self.sideMenu, 25)
+@@ -507,13 +518,14 @@
+ 
+         self.setLayout(self.horizontalLayout)
+ 
++
+ class SideMenu1(QVBoxLayout):
+     """
+     Side menu for tab 1
+     """
+ 
+     # signals
+-    viewChangedSignal = pyqtSignal(str, int)    # should this be before init?
++    viewChangedSignal = pyqtSignal(str, int)  # should this be before init?
+     runModelSignal = pyqtSignal(dict)
+ 
+     def __init__(self):
+@@ -557,15 +569,15 @@
+         loadedModels = [model.name for model in models.modelList.values()]
+         self.modelListWidget.addItems(loadedModels)
+         logging.info("{0} model(s) loaded: {1}".format(len(loadedModels), loadedModels))
+-        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)       # able to select multiple models
++        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)  # able to select multiple models
+         modelGroupLayout.addWidget(self.modelListWidget)
+ 
+         return modelGroupLayout
+ 
+     def setupMetricsGroup(self):
+         metricsGroupLayout = QVBoxLayout()
+-        self.metricListWidget = QListWidget()   # metric names added dynamically from data when loaded
+-        self.metricListWidget.setSelectionMode(QAbstractItemView.MultiSelection)     # able to select multiple metrics
++        self.metricListWidget = QListWidget()  # metric names added dynamically from data when loaded
++        self.metricListWidget.setSelectionMode(QAbstractItemView.MultiSelection)  # able to select multiple metrics
+         metricsGroupLayout.addWidget(self.metricListWidget)
+ 
+         buttonLayout = QHBoxLayout()
+@@ -578,7 +590,7 @@
+         metricsGroupLayout.addLayout(buttonLayout)
+ 
+         return metricsGroupLayout
+-    
++
+     def selectAll(self):
+         self.metricListWidget.selectAll()
+         self.metricListWidget.repaint()
+@@ -596,23 +608,24 @@
+         """
+         logging.info("Run button pressed.")
+         # get model names as strings
+-        
++
+         selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
+         # get model classes from models folder
+         modelsToRun = [model for model in models.modelList.values() if model.name in selectedModelNames]
+         # get selected metric names (IMPORTANT: returned in order they were clicked)
+         selectedMetricNames = [item.text().split(", ") for item in self.metricListWidget.selectedItems()]
+-            # split combinations
++        # split combinations
+         # sorts metric names in their order from the data file (left to right)
+-        #metricNames = [self.metricListWidget.item(i).text() for i in range(self.metricListWidget.count()) if self.metricListWidget.item(i).text() in selectedMetricNames]
++        # metricNames = [self.metricListWidget.item(i).text() for i in range(self.metricListWidget.count()) if self.metricListWidget.item(i).text() in selectedMetricNames]
+         # only emit the run signal if at least one model and at least one metric chosen
+         if selectedModelNames and selectedMetricNames:
+             # self.runButton.setEnabled(False)    # disable button until estimation complete
+             self.runModelSignal.emit({"modelsToRun": modelsToRun,
+                                       "metricNames": selectedMetricNames})
+-                                      #"metricNames": metricNames})
+-                                      
+-            logging.info("Run models signal emitted. Models = {0}, metrics = {1}".format(selectedModelNames, selectedMetricNames))
++            # "metricNames": metricNames})
++
++            logging.info("Run models signal emitted. Models = {0}, metrics = {1}".format(selectedModelNames,
++                                                                                         selectedMetricNames))
+         elif self.modelListWidget.count() > 0 and self.metricListWidget.count() > 0:
+             # data loaded but not selected
+             logging.warning("Must select at least one model.")
+@@ -633,29 +646,32 @@
+ 
+     def emitSheetChangedSignal(self):
+         self.viewChangedSignal.emit("sheet", self.sheetSelect.currentIndex())
+-#endregion
++
++
++# endregion
+ 
+-#region Tab 2
++# region Tab 2
+ class Tab2(QWidget):
+     def __init__(self):
+         super().__init__()
+         self.setupTab2()
+ 
+     def setupTab2(self):
+-        self.horizontalLayout = QHBoxLayout()       # main layout
++        self.horizontalLayout = QHBoxLayout()  # main layout
+         self.sideMenu = SideMenu2()
+         self.horizontalLayout.addLayout(self.sideMenu, 25)
+         self.plot = PlotWidget()
+         self.horizontalLayout.addWidget(self.plot, 75)
+         self.setLayout(self.horizontalLayout)
+ 
++
+ class SideMenu2(QVBoxLayout):
+     """
+     Side menu for tab 2
+     """
+ 
+     # signals
+-    modelChangedSignal = pyqtSignal(list)    # changes based on selection of models in tab 2
++    modelChangedSignal = pyqtSignal(list)  # changes based on selection of models in tab 2
+ 
+     def __init__(self):
+         super().__init__()
+@@ -678,7 +694,7 @@
+         modelGroupLayout = QVBoxLayout()
+         self.modelListWidget = QListWidget()
+         modelGroupLayout.addWidget(self.modelListWidget)
+-        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)       # able to select multiple models
++        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)  # able to select multiple models
+         self.modelListWidget.itemSelectionChanged.connect(self.emitModelChangedSignal)
+ 
+         return modelGroupLayout
+@@ -698,7 +714,7 @@
+             modelNames (list): list of strings, name of each model
+         """
+ 
+-        #self.modelListWidget.clear()
++        # self.modelListWidget.clear()
+         # modelsRan = modelDetails["modelsToRun"]
+         # metricNames = modelDetails["metricNames"]
+ 
+@@ -715,37 +731,38 @@
+         logging.info("Selected models: {0}".format(selectedModelNames))
+         self.modelChangedSignal.emit(selectedModelNames)
+ 
+-#endregion
++
++# endregion
+ 
+-#region Tab 3
++# region Tab 3
+ class Tab3(QWidget):
+     def __init__(self):
+         super().__init__()
+         self.setupTab3()
+ 
+     def setupTab3(self):
+-        self.horizontalLayout = QHBoxLayout()       # main layout
++        self.horizontalLayout = QHBoxLayout()  # main layout
+         self.setupTable()
+         self.horizontalLayout.addWidget(self.table)
+         self.setLayout(self.horizontalLayout)
+ 
+     def setupTable(self):
+         self.table = QTableWidget()
+-        self.table.setEditTriggers(QTableWidget.NoEditTriggers)     # make cells unable to be edited
++        self.table.setEditTriggers(QTableWidget.NoEditTriggers)  # make cells unable to be edited
+         self.table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+-                                                                    # column width fit to contents
++        # column width fit to contents
+         self.table.setRowCount(1)
+         self.table.setColumnCount(7)
+         self.table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE", "AHP"])
+-        self.table.move(0,0)
++        self.table.move(0, 0)
+ 
+     def addResultsToTable(self, results):
+-        self.table.setSortingEnabled(False) # disable sorting while editing contents
++        self.table.setSortingEnabled(False)  # disable sorting while editing contents
+         self.table.clear()
+         self.table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE", "AHP"])
+-        self.table.setRowCount(len(results))    # set row count to include all model results, 
+-                                                # even if not converged
+-        i = 0   # number of converged models
++        self.table.setRowCount(len(results))  # set row count to include all model results,
++        # even if not converged
++        i = 0  # number of converged models
+         for key, model in results.items():
+             if model.converged:
+                 self.table.setItem(i, 0, QTableWidgetItem(model.name))
+@@ -755,12 +772,14 @@
+                 self.table.setItem(i, 4, QTableWidgetItem(str(model.bicVal)))
+                 self.table.setItem(i, 5, QTableWidgetItem(str(model.sseVal)))
+                 i += 1
+-        self.table.setRowCount(i)   # set row count to only include converged models
+-        self.table.resizeColumnsToContents()    # resize column width after table is edited
+-        self.table.setSortingEnabled(True)      # re-enable sorting after table is edited
+-#endregion
++        self.table.setRowCount(i)  # set row count to only include converged models
++        self.table.resizeColumnsToContents()  # resize column width after table is edited
++        self.table.setSortingEnabled(True)  # re-enable sorting after table is edited
++
++
++# endregion
+ 
+-#region tab4_test
++# region tab4_test
+ class Tab4(QWidget):
+ 
+     def __init__(self):
+@@ -768,7 +787,7 @@
+         self.setupTab4()
+ 
+     def setupTab4(self):
+-        self.mainLayout = QHBoxLayout() # main tab layout
++        self.mainLayout = QHBoxLayout()  # main tab layout
+ 
+         self.sideMenu = SideMenu4()
+         self.mainLayout.addLayout(self.sideMenu, 25)
+@@ -778,16 +797,17 @@
+ 
+     def setupTable(self):
+         table = QTableWidget()
+-        table.setEditTriggers(QTableWidget.NoEditTriggers)     # make cells unable to be edited
++        table.setEditTriggers(QTableWidget.NoEditTriggers)  # make cells unable to be edited
+         table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+-                                                                    # column width fit to contents
++        # column width fit to contents
+         table.setRowCount(1)
+         table.setColumnCount(7)
+         table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE", "AHP"])
+-        table.move(0,0)
++        table.move(0, 0)
+ 
+         return table
+ 
++
+ class SideMenu4(QVBoxLayout):
+     """
+     Side menu for tab 4
+@@ -817,7 +837,7 @@
+         modelGroupLayout = QVBoxLayout()
+         self.modelListWidget = QListWidget()
+         modelGroupLayout.addWidget(self.modelListWidget)
+-        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)       # able to select multiple models
++        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)  # able to select multiple models
+ 
+         return modelGroupLayout
+ 
+@@ -829,7 +849,7 @@
+         self.budgetSpinBox.setRange(0.0, 999999.0)
+         self.budgetSpinBox.setValue(20)
+         optionsGroupLayout.addWidget(self.budgetSpinBox)
+-        
++
+         optionsGroupLayout.addWidget(QLabel("Failures"))
+         self.failureSpinBox = QSpinBox()
+         # self.failureSpinBox.setMaximumWidth(200)
+@@ -840,7 +860,7 @@
+ 
+     def setupAllocationButton(self):
+         self.allocationButton = QPushButton("Run Allocation")
+-        self.allocationButton.setEnabled(False) # begins disabled since no model has been run yet
++        self.allocationButton.setEnabled(False)  # begins disabled since no model has been run yet
+         # self.allocationButton.setMaximumWidth(250)
+         self.allocationButton.clicked.connect(self.emitRunAllocationSignal)
+ 
+@@ -869,4 +889,4 @@
+             msgBox.setWindowTitle("Warning")
+             msgBox.exec_()
+ 
+-#endregion
+\ No newline at end of file
++# endregion
+\ No newline at end of file
