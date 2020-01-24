@@ -90,7 +90,7 @@ class Model(ABC):
 
     def initialEstimates(self, minB = 0.09, maxB = 0.1):
         #return np.insert(np.random.uniform(min, max, self.numCovariates), 0, np.random.uniform(0.0, 0.1, 1)) #Works for GM and NB2
-        return np.insert(np.random.uniform(min, max, self.numCovariates),0, np.random.uniform(0.998, 0.99999,1))
+        return np.insert(np.random.uniform(0.0, 0.01, self.numCovariates),0, np.random.uniform(0.998, 0.99999,1))
                                                                     # (low, high, size)
                                                                     # size is numCovariates + 1 to have initial estimate for b
 

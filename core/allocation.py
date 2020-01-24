@@ -1,6 +1,7 @@
-from scipy.optimize import shgo
+#from scipy.optimize import shgo
 
 def effortAllocation(model, B, f):
+    """
     # cons = ({'type': 'ineq', 'fun': lambda x:  B-x[0]-x[1]-x[2]})
     cons = ({'type': 'ineq', 'fun': lambda x:  B - sum([x[i] for i in range(model.numCovariates)])})
     # bnds = ((0, None), (0, None), (0, None))
@@ -12,3 +13,5 @@ def effortAllocation(model, B, f):
     print(sum(res.x))
 
     return res
+    """
+    pass
