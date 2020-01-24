@@ -57,10 +57,6 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
-# temporary import
-#from scipy.optimize import shgo
-import numpy as np
-
 # For handling debug output
 import logging
 
@@ -68,6 +64,7 @@ import logging
 from ui.commonWidgets import PlotWidget, PlotAndTable, ComputeWidget, TaskThread
 from core.dataClass import Data
 from core.graphSettings import PlotSettings
+from core.allocation import effortAllocation
 import models
 
 
@@ -162,6 +159,7 @@ class MainWindow(QMainWindow):
             self._main.tabs.tab2.sideMenu.modelListWidget.clear()   # clear tab 2 list containing 
                                                                     # previously computed models,
                                                                     # only added when calculations complete
+            self._main.tabs.tab4.sideMenu.modelListWidget.clear()
             self.computeWidget = ComputeWidget(modelsToRun, metricNames, self.data)
             # DON'T WANT TO DISPLAY RESULTS IN ANOTHER WINDOW
             # WANT TO DISPLAY ON TAB 2/3
@@ -315,19 +313,26 @@ class MainWindow(QMainWindow):
         self.updateUI()
 
     def runAllocation(self, combinations):
-        B = self._main.tabs.tab4.sideMenu.budgetSpinBox.value()
-        f = self._main.tabs.tab4.sideMenu.failureSpinBox.value()
-        m = self.estimationResults[combinations[0]]
+        B = self._main.tabs.tab4.sideMenu.budgetSpinBox.value()     # budget
+        f = self._main.tabs.tab4.sideMenu.failureSpinBox.value()    # number of failures (UNUSED)
+        m = self.estimationResults[combinations[0]]     # model object
 
-        # cons = ({'type': 'ineq', 'fun': lambda x:  B-x[0]-x[1]-x[2]})
-        cons = ({'type': 'ineq', 'fun': lambda x:  B - sum([x[i] for i in range(m.numCovariates)])})
-        # bnds = ((0, None), (0, None), (0, None))
-        bnds = tuple((0, None) for i in range(m.numCovariates))
+        self.allocationResults = {}    # create a dictionary for allocation results
+        for i in range(len(combinations)):
+            name = combinations[i]
+            m = self.estimationResults[name]  # model indexed by the name
+            self.allocationResults[name] = effortAllocation(m, B, f)
+        print(self.allocationResults)
 
-        res = shgo(m.allocationFunction, args=(f,), bounds=bnds, constraints=cons)#, n=10000, iters=4)
-        # res = shgo(lambda x: -(51+ 1.5449911694401008*(1- (0.9441308828628996 ** (np.exp(0.10847739229960603*x[0]+0.027716725008716442*x[1]+0.159319065848297*x[2]))))), bounds=bnds, constraints=cons, n=10000, iters=4)
-        print(res)
-        print(sum(res.x))
+        # # cons = ({'type': 'ineq', 'fun': lambda x:  B-x[0]-x[1]-x[2]})
+        # cons = ({'type': 'ineq', 'fun': lambda x:  B - sum([x[i] for i in range(m.numCovariates)])})
+        # # bnds = ((0, None), (0, None), (0, None))
+        # bnds = tuple((0, None) for i in range(m.numCovariates))
+
+        # res = shgo(m.allocationFunction, args=(f,), bounds=bnds, constraints=cons)#, n=10000, iters=4)
+        # # res = shgo(lambda x: -(51+ 1.5449911694401008*(1- (0.9441308828628996 ** (np.exp(0.10847739229960603*x[0]+0.027716725008716442*x[1]+0.159319065848297*x[2]))))), bounds=bnds, constraints=cons, n=10000, iters=4)
+        # print(res)
+        # print(sum(res.x))
 
     def setTrendTest(self, index):
         """
