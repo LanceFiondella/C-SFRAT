@@ -1,12 +1,12 @@
 import logging
 import numpy as np
-from sympy import diff
 
 from core.model import Model
 
 class NegativeBinomial2(Model):
     name = "NB2"
-    converged = False
+    coxParameterEstimateRange = [0.0, 0.01]
+    shapeParameterEstimateRange = [0.09, 0.1]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -19,6 +19,7 @@ class NegativeBinomial2(Model):
         f = (i * b**2)/(1 + b * (i - 1))
         return f
 
+    """
     def runEstimation(self):
         print("-------- NEGATIVE BINOMIAL (ORDER 2) --------")
         initial = self.initialEstimates(0.09, 0.1)
@@ -40,6 +41,4 @@ class NegativeBinomial2(Model):
         logging.info("Omega: {0}".format(self.omega))
         logging.info("Betas: {0}".format(self.betas))
         logging.info("b: {0}".format(self.b))
-
-if __name__ == "__main__":
-    nb = NegativeBinomial2()
+    """

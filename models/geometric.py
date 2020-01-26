@@ -1,12 +1,12 @@
 import logging
 import numpy as np
-from sympy import diff
 
 from core.model import Model
 
 class Geometric(Model):
     name = "GM"
-    converged = False
+    coxParameterEstimateRange = [0.0, 0.01]
+    shapeParameterEstimateRange = [0.09, 0.1]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -19,6 +19,7 @@ class Geometric(Model):
         f = b
         return f
 
+    """
     def runEstimation(self):
         print("-------- GEOMETRIC --------")
         initial = self.initialEstimates(0.09, 0.1)
@@ -40,6 +41,4 @@ class Geometric(Model):
         logging.info("Omega: {0}".format(self.omega))
         logging.info("Betas: {0}".format(self.betas))
         logging.info("b: {0}".format(self.b))
-
-if __name__ == "__main__":
-    g = Geometric()
+    """

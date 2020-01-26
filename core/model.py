@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod, abstractproperty
 
 import numpy as np
 import sympy as sym
-from sympy import symbols, exp, lambdify, DeferredVector, factorial, Symbol, Idx, IndexedBase
+from sympy import symbols, diff, exp, lambdify, DeferredVector, factorial, Symbol, Idx, IndexedBase
 import scipy.optimize
 
 import logging
@@ -26,13 +26,11 @@ class Model(ABC):
         # list of arrays or array of arrays?
         self.covariateData = [self.data[name].values for name in self.metricNames]
         self.numCovariates = len(self.covariateData)
+        self.converged = False
         if (self.metricNames == []):
             self.metricString = "None"
         else:
             self.metricString = ", ".join(self.metricNames)
-
-        print("****************** covariate data ****************")
-        print(self.covariateData)
 
         # logging
         logging.info("Failure times: {0}".format(self.t))
@@ -55,24 +53,24 @@ class Model(ABC):
 
     @property
     @abstractmethod
-    def converged(self):
+    def coxParameterEstimateRange(self):
         """
-        Indicates whether model has converged (Bool)
-        Must be set after parameters are calculated
+        Define Cox parameter estimate range for root finding initial values
         """
-        return False
+        return [0.0, 0.01]
 
-    # @property
-    # @abstractmethod
-    # def estimateRange(self):
-    #     """
-    #     Define ranges for root finding initial values
-    #     """
-    #     return [0.0, 0.1]
+    @property
+    @abstractmethod
+    def shapeParameterEstimateRange(self):
+        """
+        Define shape parameter estimate range for root finding initial values
+        """
+        return [0.0, 0.1]
 
     ##################################################
     # Methods that must be implemented by all models #
     ##################################################
+
     @abstractmethod
     def calcHazard(self):
         pass
@@ -88,11 +86,14 @@ class Model(ABC):
         """
         pass
 
-    def initialEstimates(self, minB = 0.09, maxB = 0.1):
+    def initialEstimates(self):
         #return np.insert(np.random.uniform(min, max, self.numCovariates), 0, np.random.uniform(0.0, 0.1, 1)) #Works for GM and NB2
-        return np.insert(np.random.uniform(0.0, 0.01, self.numCovariates),0, np.random.uniform(0.998, 0.99999,1))
+        # return np.insert(np.random.uniform(0.0, 0.01, self.numCovariates), 0, np.random.uniform(0.998, 0.99999,1))
                                                                     # (low, high, size)
                                                                     # size is numCovariates + 1 to have initial estimate for b
+        betasEstimate = np.random.normal(self.coxParameterEstimateRange[0], self.coxParameterEstimateRange[1], self.numCovariates)
+        bEstimate = np.random.normal(self.shapeParameterEstimateRange[0], self.shapeParameterEstimateRange[1], 1)
+        return np.insert(betasEstimate, 0, bEstimate)
 
 
     def LLF_sym(self, hazard):
@@ -108,15 +109,12 @@ class Model(ABC):
             TempTerm1 = 1
             for j in range(1, self.numCovariates + 1):
                 TempTerm1 = TempTerm1 * exp(self.covariateData[j - 1][i] * x[j])
-            #print('Test: ', TempTerm1)
             sum1 = 1 - ((1 - (hazard(i, x[0]))) ** (TempTerm1))
             for k in range(i):
                 TempTerm2 = 1
                 for j in range(1, self.numCovariates + 1):
                     TempTerm2 = TempTerm2 * exp(self.covariateData[j - 1][k] * x[j])
-                #print ('Test:', TempTerm2)
                 sum2 = sum2 * ((1 - (hazard(i, x[0])))**(TempTerm2))
-            #print ('Sum2:', sum2)
             second.append(sum2)
             prodlist.append(sum1*sum2)
 
@@ -134,18 +132,6 @@ class Model(ABC):
         f = firstTerm + secondTerm + thirdTerm - fourthTerm
         return f, x
 
-    def LLF_sym2(self):
-        # x[0] = h
-        # x[1:] = beta1..
-
-        x = DeferredVector('x')
-        # term 1 of 4
-        for i in range(self.n):
-            # exponential
-            for j in range(self.numCovariates):
-                term1exp = self.covariateData[j][i] * x[j + 1]
-            (1 - (1 - x[0]) * exp(term1exp))
-
     def convertSym(self, x, bh, target):
         return lambdify(x, bh, target)
 
@@ -159,15 +145,12 @@ class Model(ABC):
             TempTerm1 = 1
             for j in range(self.numCovariates):
                 TempTerm1 = TempTerm1 * np.exp(self.covariateData[j][i] * betas[j])
-            #print('Test: ', TempTerm1)
             sum1 = 1 - ((1 - h[i]) ** (TempTerm1))
             for k in range(i):
                 TempTerm2 = 1
                 for j in range(self.numCovariates):
                     TempTerm2 = TempTerm2 * np.exp(self.covariateData[j][k] * betas[j])
-                #print ('Test:', TempTerm2)
                 sum2 = sum2*((1 - h[i])**(TempTerm2))
-            #print ('Sum2:', sum2)
             second.append(sum2)
             prodlist.append(sum1*sum2)
 
@@ -195,6 +178,7 @@ class Model(ABC):
             logging.info("Using fsolve")
         except:
             logging.info("Could Not Converge")
+            solution = [0 for i in range(self.numCovariates + 1)]
 
 
         #solution = scipy.optimize.broyden2(fd, xin=B)          #Does not work (Seems to work well until the 3 covariates then crashes)
@@ -227,7 +211,6 @@ class Model(ABC):
             prodlist.append(sum1*sum2)
         denominator = sum(prodlist)
         numerator = self.totalFailures
-        # print("numerator =", numerator, "denominator =", denominator)
 
         return numerator / denominator
 
@@ -246,7 +229,6 @@ class Model(ABC):
         # can clean this up to use less loops, probably
         prodlist = []
         for i in range(stop + 1):     # CHANGED THIS FROM self.n + 1 !!!
-            print(i)
             sum1 = 1
             sum2 = 1
             TempTerm1 = 1
@@ -277,7 +259,6 @@ class Model(ABC):
 
         prodlist = []
         for i in range(stop + 1):     # CHANGED THIS FROM self.n + 1 !!!
-            print(i)
             sum1 = 1
             sum2 = 1
             TempTerm1 = 1
@@ -307,11 +288,10 @@ class Model(ABC):
         difference = [mvfList[i+1]-mvfList[i] for i in range(len(mvfList)-1)]
         return [mvfList[0]] + difference
 
-    '''
     def runEstimation(self):
         initial = self.initialEstimates()
         logging.info("Initial estimates: {0}".format(initial))
-        f, x = self.LLF_sym()
+        f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
         bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
         logging.info("Log-likelihood differentiated.")
         logging.info("Converting symbolic equation to numpy...")
@@ -320,14 +300,10 @@ class Model(ABC):
         sol = self.optimizeSolution(fd, initial)
         logging.info("Optimized solution: {0}".format(sol))
 
-        b = sol[0]
-        betas = sol[1:]
-        hazard = self.calcHazard(b)
-        self.modelFitting(hazard, betas)
-
-        # return all data, save in child model
-
-    '''
+        self.b = sol[0]
+        self.betas = sol[1:]
+        hazard = self.calcHazard(self.b)
+        self.modelFitting(hazard, self.betas)
 
     def modelFitting(self, hazard, betas):
         self.omega = self.calcOmega(hazard, betas)
@@ -352,3 +328,4 @@ class Model(ABC):
 
         logging.info("MVF values: {0}".format(self.mvfList))
         logging.info("Intensity values: {0}".format(self.intensityList))
+

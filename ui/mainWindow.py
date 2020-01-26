@@ -315,13 +315,14 @@ class MainWindow(QMainWindow):
     def runAllocation(self, combinations):
         B = self._main.tabs.tab4.sideMenu.budgetSpinBox.value()     # budget
         f = self._main.tabs.tab4.sideMenu.failureSpinBox.value()    # number of failures (UNUSED)
-        m = self.estimationResults[combinations[0]]     # model object
+        # m = self.estimationResults[combinations[0]]     # model object
 
         self.allocationResults = {}    # create a dictionary for allocation results
         for i in range(len(combinations)):
             name = combinations[i]
-            m = self.estimationResults[name]  # model indexed by the name
-            self.allocationResults[name] = effortAllocation(m, B, f)
+            if " - (No covariates)" not in name:
+                m = self.estimationResults[name]  # model indexed by the name
+                self.allocationResults[name] = effortAllocation(m, B, f)
         print(self.allocationResults)
 
         # # cons = ({'type': 'ineq', 'fun': lambda x:  B-x[0]-x[1]-x[2]})

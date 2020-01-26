@@ -1,13 +1,12 @@
 import logging
 import numpy as np
-from sympy import diff
 
 from core.model import Model
 
 class DiscreteWeibull2(Model):
     name = "DW2"
-    converged = False
-    # initial estimate ranges
+    coxParameterEstimateRange = [0.0, 0.01]
+    shapeParameterEstimateRange = [0.998, 0.9999]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -20,6 +19,7 @@ class DiscreteWeibull2(Model):
         f = 1 - b**(i**2 - (i - 1)**2)
         return f
 
+    """
     def runEstimation(self):
         print("-------- DISCRETE WEIBULL (ORDER 2) --------")
         initial = self.initialEstimates(0.998, 0.9999)
@@ -42,6 +42,4 @@ class DiscreteWeibull2(Model):
         logging.info("Omega: {0}".format(self.omega))
         logging.info("Betas: {0}".format(self.betas))
         logging.info("b: {0}".format(self.b))
-
-if __name__ == "__main__":
-    dw = DiscreteWeibull2()
+    """
