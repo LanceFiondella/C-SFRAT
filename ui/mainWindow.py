@@ -64,7 +64,7 @@ import logging
 from ui.commonWidgets import PlotWidget, PlotAndTable, ComputeWidget, TaskThread
 from core.dataClass import Data
 from core.graphSettings import PlotSettings
-from core.allocation import effortAllocation
+from core.allocation import EffortAllocation
 import models
 
 
@@ -322,8 +322,10 @@ class MainWindow(QMainWindow):
             name = combinations[i]
             if " - (No covariates)" not in name:
                 m = self.estimationResults[name]  # model indexed by the name
-                self.allocationResults[name] = effortAllocation(m, B, f)
+                self.allocationResults[name] = [EffortAllocation(m, B, f), m]
         print(self.allocationResults)
+
+        self._main.tabs.tab4.addResultsToTable(self.allocationResults, self.data.metricNames)
 
         # # cons = ({'type': 'ineq', 'fun': lambda x:  B-x[0]-x[1]-x[2]})
         # cons = ({'type': 'ineq', 'fun': lambda x:  B - sum([x[i] for i in range(m.numCovariates)])})
@@ -788,11 +790,58 @@ class Tab4(QWidget):
         table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
                                                                     # column width fit to contents
         table.setRowCount(1)
-        table.setColumnCount(7)
-        table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE", "AHP"])
+        table.setColumnCount(3)
+        table.setHorizontalHeaderLabels(["Model Name", "Covariates", "H"])
         table.move(0,0)
 
         return table
+
+    def createHeaderLabels(self, metricNames):
+        percentNames = []
+        i = 0
+        for name in metricNames:
+            percentNames.append("%" + name)
+            i += 1
+        headerLabels = ["Model Name", "Covariates", "H"] + percentNames
+        return headerLabels
+
+    def addResultsToTable(self, results, metricNames):
+        """
+        results = dict
+            results[name] = [EffortAllocation, Model]
+        """
+        self.table.setSortingEnabled(False) # disable sorting while editing contents
+        self.table.clear()
+        self.table.setColumnCount(3 + len(metricNames))
+        self.table.setHorizontalHeaderLabels(self.createHeaderLabels(metricNames))
+        self.table.setRowCount(len(results))    # set row count to include all model results, 
+                                                # even if not converged
+        i = 0   # rows
+        for key, value in results.items():
+            res = value[0]
+            model = value[1]
+            self.table.setItem(i, 0, QTableWidgetItem(model.name))   # model name
+            self.table.setItem(i, 1, QTableWidgetItem(model.metricString))  # model metrics
+            self.table.setItem(i, 2, QTableWidgetItem(str(res.H)))
+            # number of columns = number of covariates
+            j = 0
+            for name in model.metricNames:
+                col = model.metricNameDictionary[name]
+                print(name)
+                print(col)
+                self.table.setItem(i, 3 + col, QTableWidgetItem(str(res.percentages[j])))
+                print(res.percentages[j])
+                j += 1
+            i += 1
+
+                # try:
+                #     c = model.metricNameDictionary[model.metricNames[j]]    # get index from metric name
+                #     self.table.setItem(i, 2 + j, QTableWidgetItem(str(c)))  # 
+                # except KeyError:
+                #     self.table.setItem(i, )
+        self.table.setRowCount(i)   # set row count to only include converged models
+        self.table.resizeColumnsToContents()    # resize column width after table is edited
+        self.table.setSortingEnabled(True)      # re-enable sorting after table is edited
 
 class SideMenu4(QVBoxLayout):
     """

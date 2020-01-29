@@ -27,10 +27,9 @@ class Model(ABC):
         self.covariateData = [self.data[name].values for name in self.metricNames]
         self.numCovariates = len(self.covariateData)
         self.converged = False
-        if (self.metricNames == []):
-            self.metricString = "None"
-        else:
-            self.metricString = ", ".join(self.metricNames)
+        self.setupMetricString()
+        self.metricNameDictionary = {}
+        self.setupMetricNameDictionary()
 
         # logging
         logging.info("Failure times: {0}".format(self.t))
@@ -86,12 +85,29 @@ class Model(ABC):
         """
         pass
 
+    def setupMetricString(self):
+        if (self.metricNames == []):
+            self.metricString = "None"
+        else:
+            self.metricString = ", ".join(self.metricNames)
+
+    def setupMetricNameDictionary(self):
+        """
+        For allocation table. Allows the effort allocation to be placed in correct column.
+        Metric name maps to number of metric (from imported data).
+        """
+        i = 0
+        for name in self.metricNames:
+            self.metricNameDictionary[name] = i
+            i += 1
+
     def initialEstimates(self):
         #return np.insert(np.random.uniform(min, max, self.numCovariates), 0, np.random.uniform(0.0, 0.1, 1)) #Works for GM and NB2
         # return np.insert(np.random.uniform(0.0, 0.01, self.numCovariates), 0, np.random.uniform(0.998, 0.99999,1))
                                                                     # (low, high, size)
                                                                     # size is numCovariates + 1 to have initial estimate for b
         betasEstimate = np.random.normal(self.coxParameterEstimateRange[0], self.coxParameterEstimateRange[1], self.numCovariates)
+        print(self.shapeParameterEstimateRange)
         bEstimate = np.random.normal(self.shapeParameterEstimateRange[0], self.shapeParameterEstimateRange[1], 1)
         return np.insert(betasEstimate, 0, bEstimate)
 
@@ -170,15 +186,17 @@ class Model(ABC):
     def optimizeSolution(self, fd, B):
         logging.info("Solving for MLEs...")
 
-        try:
-            solution = scipy.optimize.broyden1(fd, xin=B)
-            logging.info("Using broyden1")
-        except scipy.optimize.nonlin.NoConvergence:
-            solution = scipy.optimize.fsolve(fd, x0=B)
-            logging.info("Using fsolve")
-        except:
-            logging.info("Could Not Converge")
-            solution = [0 for i in range(self.numCovariates + 1)]
+        solution = scipy.optimize.fsolve(fd, x0=B)
+
+        # try:
+        #     solution = scipy.optimize.broyden1(fd, xin=B)
+        #     logging.info("Using broyden1")
+        # except scipy.optimize.nonlin.NoConvergence:
+        #     solution = scipy.optimize.fsolve(fd, x0=B)
+        #     logging.info("Using fsolve")
+        # except:
+        #     logging.info("Could Not Converge")
+        #     solution = [0 for i in range(self.numCovariates + 1)]
 
 
         #solution = scipy.optimize.broyden2(fd, xin=B)          #Does not work (Seems to work well until the 3 covariates then crashes)
