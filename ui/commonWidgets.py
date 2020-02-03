@@ -64,7 +64,8 @@ class ComputeWidget(QWidget):
         self.setFixedSize(350, 200)
 
         self.progressBar = QProgressBar(self)
-        self.progressBar.setMaximum(len(modelsToRun)*len(metricNames))
+        self.numCombinations = len(modelsToRun) * len(metricNames)
+        self.progressBar.setMaximum(self.numCombinations)
         self.label = QLabel()
         self.label.setText("Computing results...\nModels completed: {0}".format(0))
         self.modelCount = 0
@@ -84,7 +85,7 @@ class ComputeWidget(QWidget):
 
     def showCurrentCalculation(self, calcName):
         """ Shows name of model combination currently being calculated """
-        self.label.setText("Computing {0}...\nModels completed: {1}".format(calcName, self.modelCount))
+        self.label.setText("Computing {0}...\nModels completed: {1} of {2}".format(calcName, self.modelCount, self.numCombinations))
 
     def modelFinished(self):
         self.modelCount += 1

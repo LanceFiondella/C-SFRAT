@@ -1,41 +1,20 @@
 #-----------------------------------------------------------------------------------#
 # TODO:
-# how will table data be entered?
-#   ignore first line? only parse floats?
 # make sure everything that needs to be is a np array, not list
-# select hazard function
 # MSE vs SSE?
 # checking on other datasets
-# using only a subset of metrics
 # making UI easier to use for someone who doesn't understand the math
-# status bar?
 # options selected from menubar like in SFRAT
-# protection levels
-# graph should always be on same side (right)?
-# setting status tips
+# protection levels, access modifiers, public/private variables, properties
+# fewer classes?
+#   example: self._main.tabs.tab1.sideMenu.sheetSelect.addItems(self.data.sheetNames)
 # dialog asking if you want to quit?
 # pay attention to how scaling/strecting works, minimum sizes for UI elements
-# naming conventions for excel/csv
-# less classes?
-#   example: self._main.tabs.tab1.sideMenu.sheetSelect.addItems(self.data.sheetNames)
-# figure out access modifiers, public/private variables, properties
 # use logging object, removes matplotlib debug messages in debug mode
-# changing sheets during calculations?
-#   think the solution is to load the data once, and then continue using that same data
-#   until calculations are completed
-# change column header names if they don't have any
-# numCovariates - property?
-# do Model abstract peroperties do anything?
-# figure out "if self.data.getData() is not None"
-#   just need self.dataLoaded?
-# more descriptions of what's happening as estimations are running (ComputeWidget)
 # predict points? (commonWidgets)
 # naming "hazard functions" instead of models
 # fsolve doesn't return if converged, so it's not updated for models
 #   should try other scipy functions
-# make tab 2 like tab 1
-#   side menu with plot/table on right
-#   definitely need a side menu to select the hazard functions
 # names of tabs in tab 2?
 # self.viewType is never updated, we don't use updateUI()
 # sometimes metric list doesn't load until interacted with
@@ -323,9 +302,8 @@ class MainWindow(QMainWindow):
             if " - (No covariates)" not in name:
                 m = self.estimationResults[name]  # model indexed by the name
                 self.allocationResults[name] = [EffortAllocation(m, B, f), m]
-        print(self.allocationResults)
 
-        self._main.tabs.tab4.addResultsToTable(self.allocationResults, self.data.metricNames)
+        self._main.tabs.tab4.addResultsToTable(self.allocationResults, self.data)
 
         # # cons = ({'type': 'ineq', 'fun': lambda x:  B-x[0]-x[1]-x[2]})
         # cons = ({'type': 'ineq', 'fun': lambda x:  B - sum([x[i] for i in range(m.numCovariates)])})
@@ -758,10 +736,10 @@ class Tab3(QWidget):
             if model.converged:
                 self.table.setItem(i, 0, QTableWidgetItem(model.name))
                 self.table.setItem(i, 1, QTableWidgetItem(model.metricString))
-                self.table.setItem(i, 2, QTableWidgetItem(str(model.llfVal)))
-                self.table.setItem(i, 3, QTableWidgetItem(str(model.aicVal)))
-                self.table.setItem(i, 4, QTableWidgetItem(str(model.bicVal)))
-                self.table.setItem(i, 5, QTableWidgetItem(str(model.sseVal)))
+                self.table.setItem(i, 2, QTableWidgetItem("{0:.2f}".format(model.llfVal)))
+                self.table.setItem(i, 3, QTableWidgetItem("{0:.2f}".format(model.aicVal)))
+                self.table.setItem(i, 4, QTableWidgetItem("{0:.2f}".format(model.bicVal)))
+                self.table.setItem(i, 5, QTableWidgetItem("{0:.2f}".format(model.sseVal)))
                 i += 1
         self.table.setRowCount(i)   # set row count to only include converged models
         self.table.resizeColumnsToContents()    # resize column width after table is edited
@@ -805,32 +783,33 @@ class Tab4(QWidget):
         headerLabels = ["Model Name", "Covariates", "H"] + percentNames
         return headerLabels
 
-    def addResultsToTable(self, results, metricNames):
+    def addResultsToTable(self, results, data):
         """
         results = dict
             results[name] = [EffortAllocation, Model]
         """
         self.table.setSortingEnabled(False) # disable sorting while editing contents
         self.table.clear()
-        self.table.setColumnCount(3 + len(metricNames))
-        self.table.setHorizontalHeaderLabels(self.createHeaderLabels(metricNames))
+        self.table.setColumnCount(3 + len(data.metricNames))
+        self.table.setHorizontalHeaderLabels(self.createHeaderLabels(data.metricNames))
         self.table.setRowCount(len(results))    # set row count to include all model results, 
                                                 # even if not converged
         i = 0   # rows
+
         for key, value in results.items():
             res = value[0]
             model = value[1]
+
+            print(res.percentages)
+
             self.table.setItem(i, 0, QTableWidgetItem(model.name))   # model name
             self.table.setItem(i, 1, QTableWidgetItem(model.metricString))  # model metrics
-            self.table.setItem(i, 2, QTableWidgetItem(str(res.H)))
+            self.table.setItem(i, 2, QTableWidgetItem("{0:.2f}".format(res.H)))
             # number of columns = number of covariates
             j = 0
             for name in model.metricNames:
-                col = model.metricNameDictionary[name]
-                print(name)
-                print(col)
-                self.table.setItem(i, 3 + col, QTableWidgetItem(str(res.percentages[j])))
-                print(res.percentages[j])
+                col = data.metricNameDictionary[name]
+                self.table.setItem(i, 3 + col, QTableWidgetItem("{0:.2f}".format(res.percentages[j])))
                 j += 1
             i += 1
 

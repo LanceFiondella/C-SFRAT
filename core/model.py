@@ -28,8 +28,6 @@ class Model(ABC):
         self.numCovariates = len(self.covariateData)
         self.converged = False
         self.setupMetricString()
-        self.metricNameDictionary = {}
-        self.setupMetricNameDictionary()
 
         # logging
         logging.info("Failure times: {0}".format(self.t))
@@ -74,16 +72,16 @@ class Model(ABC):
     def calcHazard(self):
         pass
 
-    # @abstractmethod
-    # def modelFitting(self):
-    #     pass
-
     @abstractmethod
-    def runEstimation(self):
-        """
-        main method that calls others; called by TaskThread
-        """
+    def hazardFunction(self):
         pass
+
+    # @abstractmethod
+    # def runEstimation(self):
+    #     """
+    #     main method that calls others; called by TaskThread
+    #     """
+    #     pass
 
     def setupMetricString(self):
         if (self.metricNames == []):
@@ -91,24 +89,14 @@ class Model(ABC):
         else:
             self.metricString = ", ".join(self.metricNames)
 
-    def setupMetricNameDictionary(self):
-        """
-        For allocation table. Allows the effort allocation to be placed in correct column.
-        Metric name maps to number of metric (from imported data).
-        """
-        i = 0
-        for name in self.metricNames:
-            self.metricNameDictionary[name] = i
-            i += 1
-
     def initialEstimates(self):
         #return np.insert(np.random.uniform(min, max, self.numCovariates), 0, np.random.uniform(0.0, 0.1, 1)) #Works for GM and NB2
         # return np.insert(np.random.uniform(0.0, 0.01, self.numCovariates), 0, np.random.uniform(0.998, 0.99999,1))
                                                                     # (low, high, size)
                                                                     # size is numCovariates + 1 to have initial estimate for b
-        betasEstimate = np.random.normal(self.coxParameterEstimateRange[0], self.coxParameterEstimateRange[1], self.numCovariates)
+        betasEstimate = np.random.uniform(self.coxParameterEstimateRange[0], self.coxParameterEstimateRange[1], self.numCovariates)
         print(self.shapeParameterEstimateRange)
-        bEstimate = np.random.normal(self.shapeParameterEstimateRange[0], self.shapeParameterEstimateRange[1], 1)
+        bEstimate = np.random.uniform(self.shapeParameterEstimateRange[0], self.shapeParameterEstimateRange[1], 1)
         return np.insert(betasEstimate, 0, bEstimate)
 
 
@@ -186,17 +174,17 @@ class Model(ABC):
     def optimizeSolution(self, fd, B):
         logging.info("Solving for MLEs...")
 
-        solution = scipy.optimize.fsolve(fd, x0=B)
+        # solution = scipy.optimize.fsolve(fd, x0=B)
 
-        # try:
-        #     solution = scipy.optimize.broyden1(fd, xin=B)
-        #     logging.info("Using broyden1")
-        # except scipy.optimize.nonlin.NoConvergence:
-        #     solution = scipy.optimize.fsolve(fd, x0=B)
-        #     logging.info("Using fsolve")
-        # except:
-        #     logging.info("Could Not Converge")
-        #     solution = [0 for i in range(self.numCovariates + 1)]
+        try:
+            solution = scipy.optimize.broyden1(fd, xin=B)
+            logging.info("Using broyden1")
+        except scipy.optimize.nonlin.NoConvergence:
+            solution = scipy.optimize.fsolve(fd, x0=B)
+            logging.info("Using fsolve")
+        except:
+            logging.info("Could Not Converge")
+            solution = [0 for i in range(self.numCovariates + 1)]
 
 
         #solution = scipy.optimize.broyden2(fd, xin=B)          #Does not work (Seems to work well until the 3 covariates then crashes)
@@ -289,13 +277,13 @@ class Model(ABC):
                     TempTerm2 = TempTerm2 * np.exp(covData[j][k] * betas[j])
                 sum2 = sum2 * ((1 - h(i, self.b))**(TempTerm2))
             prodlist.append(sum1 * sum2)
-        return -(omega * sum(prodlist)) # must be negative, SHGO uses minimization
+        return (omega * sum(prodlist)) # must be negative, SHGO uses minimization
     
     def allocationFunction(self, x, *args):
         failures = args[0]
         # i = self.n + failures
         i = self.n
-        return self.MVF_allocation(self.hazardFunction, self.omega, self.betas, i, x)
+        return -(self.MVF_allocation(self.hazardFunction, self.omega, self.betas, i, x))
     
     def SSE(self, fitted, actual):
         sub = np.subtract(fitted, actual)

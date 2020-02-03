@@ -27,7 +27,8 @@ class Data:
         self.containsHeader = True
         self.metricNames = []
         self.metricNameCombinations = []
-        # covariate metric names
+        self.metricNameDictionary = {}
+        self.setupMetricNameDictionary()
 
     @property
     def currentSheet(self):
@@ -51,6 +52,16 @@ class Data:
     # @numCovariates.setter
     # def numCovariates(self):
     #     pass
+
+    def setupMetricNameDictionary(self):
+        """
+        For allocation table. Allows the effort allocation to be placed in correct column.
+        Metric name maps to number of metric (from imported data).
+        """
+        i = 0
+        for name in self.metricNames:
+            self.metricNameDictionary[name] = i
+            i += 1
 
     def setNumCovariates(self):
         # -3 columns for failure times, number of failures, and cumulative failures
@@ -170,6 +181,7 @@ class Data:
         self.setNumCovariates()
         self.metricNames = self.dataSet[self.sheetNames[self._currentSheet]].columns.values[2:-1]
         self.getMetricNameCombinations()
+        self.setupMetricNameDictionary()
 
     def hasHeader(self, fname, extension, rows=2):
         """
