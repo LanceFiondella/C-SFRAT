@@ -880,13 +880,15 @@ class SideMenu4(QVBoxLayout):
 
     def addSelectedModels(self, modelNames):
         """
-
+        Results on no covariates not added to list
 
         Args:
             modelNames (list): list of strings, name of each model
         """
 
-        self.modelListWidget.addItems(modelNames)
+        for name in modelNames:
+            if " - (No covariates)" not in name:
+                self.modelListWidget.addItem(name)
 
     def emitRunAllocationSignal(self):
         selectedCombinationNames = [item.text() for item in self.modelListWidget.selectedItems()]

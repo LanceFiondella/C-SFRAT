@@ -1,5 +1,5 @@
-import logging
-import numpy as np
+#import logging
+#import numpy as np
 
 from core.model import Model
 
@@ -7,9 +7,10 @@ class Geometric(Model):
     name = "GM"
     coxParameterEstimateRange = [0.0, 0.01]
     shapeParameterEstimateRange = [0.09, 0.1]
+    symbolicDifferentiation = True
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
 
     def calcHazard(self, b):
         return [b for i in range(self.n)]
@@ -18,6 +19,12 @@ class Geometric(Model):
         # b = symbols("b")
         f = b
         return f
+
+    # def LLF(self):
+    #     pass
+
+    # def dLLF(self):
+    #     pass
 
     """
     def runEstimation(self):

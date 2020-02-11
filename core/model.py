@@ -64,6 +64,14 @@ class Model(ABC):
         """
         return [0.0, 0.1]
 
+    # @property
+    # @abstractmethod
+    # def symbolicDifferentiation(self):
+    #     """
+    #     Set False if manually implementing log-likelihood function and its derivative
+    #     """
+    #     return True
+
     ##################################################
     # Methods that must be implemented by all models #
     ##################################################
@@ -231,6 +239,11 @@ class Model(ABC):
         p = len(betas) + 1 + 1   # number of covariates + number of hazard rate parameters + 1 (omega)
         return p * np.log(self.n) - 2 * self.LLF(h, betas)
 
+    def SSE(self, fitted, actual):
+        sub = np.subtract(fitted, actual)
+        sseError = np.sum(np.power(sub, 2))
+        return sseError
+
     def MVF(self, h, omega, betas, stop):
         # can clean this up to use less loops, probably
         prodlist = []
@@ -277,18 +290,13 @@ class Model(ABC):
                     TempTerm2 = TempTerm2 * np.exp(covData[j][k] * betas[j])
                 sum2 = sum2 * ((1 - h(i, self.b))**(TempTerm2))
             prodlist.append(sum1 * sum2)
-        return (omega * sum(prodlist)) # must be negative, SHGO uses minimization
+        return (omega * sum(prodlist))
     
     def allocationFunction(self, x, *args):
         failures = args[0]
         # i = self.n + failures
         i = self.n
-        return -(self.MVF_allocation(self.hazardFunction, self.omega, self.betas, i, x))
-    
-    def SSE(self, fitted, actual):
-        sub = np.subtract(fitted, actual)
-        sseError = np.sum(np.power(sub, 2))
-        return sseError
+        return -(self.MVF_allocation(self.hazardFunction, self.omega, self.betas, i, x))    # must be negative, SHGO uses minimization
 
     def intensityFit(self, mvfList):
         difference = [mvfList[i+1]-mvfList[i] for i in range(len(mvfList)-1)]

@@ -29,9 +29,11 @@ class EffortAllocation:
         bnds = tuple((0, None) for i in range(self.model.numCovariates))
 
         self.res = shgo(self.model.allocationFunction, args=(self.f,), bounds=bnds, constraints=cons)#, n=10000, iters=4)
-        # res = shgo(lambda x: -(51+ 1.5449911694401008*(1- (0.9441308828628996 ** (np.exp(0.10847739229960603*x[0]+0.027716725008716442*x[1]+0.159319065848297*x[2]))))), bounds=bnds, constraints=cons, n=10000, iters=4)
+        self.mvfVal = -self.res.fun
+        self.H = self.mvfVal - self.model.mvfList[-1]   # predicted MVF value - last actual MVF value
+        # self.H = self.model.MVF(self.model.calcHazard(self.model.b), self.model.omega, self.model.betas, self.model.n + 1) - self.model.mvfList[-1]
+            # may need to change from calcHazard function
 
     def organizeResults(self):
-        self.H = self.res.funl[0]   # function evaluation
+        # self.H = self.res.funl[0]   # function evaluation
         self.percentages = np.multiply(np.divide(self.res.x, self.B), 100)
-
