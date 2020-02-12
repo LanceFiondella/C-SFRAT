@@ -27,9 +27,9 @@ from PyQt5.QtWidgets import QMainWindow, qApp, QMessageBox, QWidget, QTabWidget,
                             QPushButton, QAction, QActionGroup, QAbstractItemView, \
                             QFileDialog, QCheckBox, QScrollArea, QGridLayout, \
                             QTableWidget, QTableWidgetItem, QAbstractScrollArea, \
-                            QSpinBox, QDoubleSpinBox
+                            QSpinBox, QDoubleSpinBox, QSpacerItem, QSizePolicy
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QIntValidator, QDoubleValidator
+#from PyQt5.QtGui import QIntValidator, QDoubleValidator
 
 # Matplotlib imports for graphs/plots
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -710,10 +710,12 @@ class Tab3(QWidget):
         self.setupTab3()
 
     def setupTab3(self):
-        self.horizontalLayout = QHBoxLayout()       # main layout
+        self.mainLayout = QHBoxLayout()       # main layout
+        self.sideMenu = SideMenu3()
         self.setupTable()
-        self.horizontalLayout.addWidget(self.table)
-        self.setLayout(self.horizontalLayout)
+        self.mainLayout.addLayout(self.sideMenu, 15)
+        self.mainLayout.addWidget(self.table, 85)
+        self.setLayout(self.mainLayout)
 
     def setupTable(self):
         self.table = QTableWidget()
@@ -726,6 +728,12 @@ class Tab3(QWidget):
         self.table.move(0,0)
 
     def addResultsToTable(self, results):
+        # numResults = len(results)
+        llf = []
+        aic = []
+        bic = []
+        sse = []
+
         self.table.setSortingEnabled(False) # disable sorting while editing contents
         self.table.clear()
         self.table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE", "AHP"])
@@ -737,13 +745,72 @@ class Tab3(QWidget):
                 self.table.setItem(i, 0, QTableWidgetItem(model.name))
                 self.table.setItem(i, 1, QTableWidgetItem(model.metricString))
                 self.table.setItem(i, 2, QTableWidgetItem("{0:.2f}".format(model.llfVal)))
+                llf.append(model.llfVal)
                 self.table.setItem(i, 3, QTableWidgetItem("{0:.2f}".format(model.aicVal)))
+                aic.append(model.aicVal)
                 self.table.setItem(i, 4, QTableWidgetItem("{0:.2f}".format(model.bicVal)))
+                bic.append(model.bicVal)
                 self.table.setItem(i, 5, QTableWidgetItem("{0:.2f}".format(model.sseVal)))
+                sse.append(model.sseVal)
                 i += 1
         self.table.setRowCount(i)   # set row count to only include converged models
         self.table.resizeColumnsToContents()    # resize column width after table is edited
         self.table.setSortingEnabled(True)      # re-enable sorting after table is edited
+
+class SideMenu3(QGridLayout):
+    """
+    Side menu for tab 3
+    """
+
+    # signals
+
+    def __init__(self):
+        super().__init__()
+        self.setupSideMenu()
+
+    def setupSideMenu(self):
+        self.createLabel("Metric", 0, 0)
+        self.createLabel("Weighting", 0, 1)
+        self.createLabel("LLF", 1, 0)
+        self.createLabel("AIC", 2, 0)
+        self.createLabel("BIC", 3, 0)
+        self.createLabel("SSE", 4, 0)
+        self.llfLineEdit = QSpinBox()
+        self.aicLineEdit = QSpinBox()
+        self.bicLineEdit = QSpinBox()
+        self.sseLineEdit = QSpinBox()
+        self.llfLineEdit.setRange(0, 10)
+        self.aicLineEdit.setRange(0, 10)
+        self.bicLineEdit.setRange(0, 10)
+        self.sseLineEdit.setRange(0, 10)
+        self.addWidget(self.llfLineEdit, 1, 1)
+        self.addWidget(self.aicLineEdit, 2, 1)
+        self.addWidget(self.bicLineEdit, 3, 1)
+        self.addWidget(self.sseLineEdit, 4, 1)
+
+        vspacer = QSpacerItem(20, 40, QSizePolicy.Maximum, QSizePolicy.Expanding)
+        self.addItem(vspacer, 5, 0, 1, -1)
+
+
+
+        self.setColumnStretch(1, 1)
+
+    def createLabel(self, text, row, col):
+        label = QLabel(text)
+        label.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum))
+        self.addWidget(label, row, col)
+
+        # self.modelsGroup = QGroupBox("Select Models/Metrics for Allocation")
+        # self.modelsGroup.setLayout(self.setupModelsGroup())
+        # self.optionsGroup = QGroupBox("Allocation Parameters")
+        # self.optionsGroup.setLayout(self.setupOptionsGroup())
+        # self.setupAllocationButton()
+
+        # self.addWidget(self.modelsGroup, 75)
+        # self.addWidget(self.optionsGroup, 25)
+        # self.addWidget(self.allocationButton)
+
+        # self.addStretch(1)
 #endregion
 
 #region tab4_test
