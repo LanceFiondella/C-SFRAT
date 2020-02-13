@@ -96,6 +96,7 @@ class MainWindow(QMainWindow):
         # self._main.tabs.tab1.sideMenu.runModelSignal.connect(self._main.tabs.tab2.sideMenu.addSelectedModels)    # fill tab 2 models group with selected models
         self._main.tabs.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2)
         # connect tab2 list changed to refreshing tab 2 plot
+        self._main.tabs.tab3.sideMenu.comboBoxChangedSignal.connect(self.goodnessOfFit)
         self._main.tabs.tab4.sideMenu.runAllocationSignal.connect(self.runAllocation)
 
         self.initUI()
@@ -121,62 +122,83 @@ class MainWindow(QMainWindow):
         self.dataViewIndex = 0
         self.show()
 
-    def runModels(self, modelDetails):
-        """
-        Run selected models using selected metrics
-
-        Args:
-            modelDetails : dictionary of models and metrics to use for calculations
-        """
-        # disable buttons until estimation complete
-        self._main.tabs.tab1.sideMenu.runButton.setEnabled(False)
-        self._main.tabs.tab4.sideMenu.allocationButton.setEnabled(False)
-        modelsToRun = modelDetails["modelsToRun"]
-        metricNames = modelDetails["metricNames"]
-        if self.data:
-            self.estimationComplete = False # estimation not complete since it just started running
-            self._main.tabs.tab2.sideMenu.modelListWidget.clear()   # clear tab 2 list containing 
-                                                                    # previously computed models,
-                                                                    # only added when calculations complete
-            self._main.tabs.tab4.sideMenu.modelListWidget.clear()
-            self.computeWidget = ComputeWidget(modelsToRun, metricNames, self.data)
-            # DON'T WANT TO DISPLAY RESULTS IN ANOTHER WINDOW
-            # WANT TO DISPLAY ON TAB 2/3
-            self.computeWidget.results.connect(self.onEstimationComplete)     # signal emitted when estimation complete
-
-    def onEstimationComplete(self, results):
+    def setupMenu(self):
         """
         description to be created at a later time
-
-        Args:
-            results (dict): contains model objects
         """
-        self.estimationComplete = True
-        self.estimationResults = results
-        self._main.tabs.tab1.sideMenu.runButton.setEnabled(True)    # re-enable button, can run another estimation
-        self._main.tabs.tab4.sideMenu.allocationButton.setEnabled(True)      # re-enable allocation button, can't run
-                                                                    # if estimation not complete
-        # self.setDataView("view", self.dataViewIndex)
-        self.updateUI()
-        # set initial model selected
-        # set plot
+        self.menu = self.menuBar()      # initialize menu bar
 
-        convergedNames = []
-        nonConvergedNames = []
-        for key, model in results.items():
-            if model.converged:
-                convergedNames.append(key)
-            else:
-                nonConvergedNames.append(key)
+        # ---- File menu
+        fileMenu = self.menu.addMenu("File")
+        # open
+        openFile = QAction("Open", self)
+        openFile.setShortcut("Ctrl+O")
+        openFile.setStatusTip("Import Data File")
+        openFile.triggered.connect(self.fileOpened)
+        # exit
+        exitApp = QAction("Exit", self)
+        exitApp.setShortcut("Ctrl+Q")
+        exitApp.setStatusTip("Close application")
+        exitApp.triggered.connect(self.closeEvent)
+        # add actions to file menu
+        fileMenu.addAction(openFile)
+        fileMenu.addSeparator()
+        fileMenu.addAction(exitApp)
 
-        self._main.tabs.tab2.sideMenu.addSelectedModels(convergedNames) # add models to tab 2 list
-                                                                        # so they can be selected
-        self._main.tabs.tab2.sideMenu.addNonConvergedModels(nonConvergedNames)
-                                                                        # show which models didn't converge
-        self._main.tabs.tab3.addResultsToTable(results)
-        self._main.tabs.tab4.sideMenu.addSelectedModels(convergedNames) # add models to tab 4 list so they
-                                                                        # can be selected for allocation
-        logging.info("Estimation results: {0}".format(results))
+        # ---- View menu
+        viewMenu = self.menu.addMenu("View")
+        # -- plotting style
+        # maybe want a submenu?
+        viewStyle = QActionGroup(viewMenu)
+        # points
+        viewPoints = QAction("Show Points", self, checkable=True)
+        viewPoints.setShortcut("Ctrl+P")
+        viewPoints.setStatusTip("Data shown as points on graphs")
+        viewPoints.triggered.connect(self.setPointsView)
+        viewStyle.addAction(viewPoints)
+        # lines
+        viewLines = QAction("Show Lines", self, checkable=True)
+        viewLines.setShortcut("Ctrl+L")
+        viewLines.setStatusTip("Data shown as lines on graphs")
+        viewLines.triggered.connect(self.setLineView)
+        viewStyle.addAction(viewLines)
+        # points and lines
+        viewBoth = QAction("Show Points and Lines", self, checkable=True)
+        viewBoth.setShortcut("Ctrl+B")
+        viewBoth.setStatusTip("Data shown as points and lines on graphs")
+        viewBoth.setChecked(True)
+        viewBoth.triggered.connect(self.setLineAndPointsView)
+        viewStyle.addAction(viewBoth)
+        # add actions to view menu
+        viewMenu.addActions(viewStyle.actions())
+        # -- graph display
+        graphStyle = QActionGroup(viewMenu)
+        # MVF
+        mvf = QAction("MVF Graph", self, checkable=True)
+        mvf.setShortcut("Ctrl+M")
+        mvf.setStatusTip("Graphs display MVF of data")
+        mvf.setChecked(True)
+        mvf.triggered.connect(self.setMVFView)
+        graphStyle.addAction(mvf)
+        # intensity
+        intensity = QAction("Intensity Graph", self, checkable=True)
+        intensity.setShortcut("Ctrl+I")
+        intensity.setStatusTip("Graphs display failure intensity")
+        intensity.triggered.connect(self.setIntensityView)
+        graphStyle.addAction(intensity)
+        # add actions to view menu
+        viewMenu.addSeparator()
+        viewMenu.addActions(graphStyle.actions())
+
+    #region Importing, plotting
+    def fileOpened(self):
+        files = QFileDialog.getOpenFileName(self, "Open profile", "", filter=("Data Files (*.csv *.xls *.xlsx)"))
+        # if a file was loaded
+        if files[0]:
+            self.data.importFile(files[0])      # imports loaded file
+            self.dataLoaded = True
+            logging.info("Data loaded from {0}".format(files[0]))
+            self.importFileSignal.emit()            # emits signal that file was imported successfully
 
     def importFile(self):
         """
@@ -287,40 +309,6 @@ class MainWindow(QMainWindow):
                 model = self.estimationResults[modelName]
                 self.plotSettings.addLine(self.ax2, model.t, model.intensityList, modelName)
 
-    def changePlot2(self, selectedModels):
-        self.selectedModelNames = selectedModels
-        self.updateUI()
-
-    def runAllocation(self, combinations):
-        B = self._main.tabs.tab4.sideMenu.budgetSpinBox.value()     # budget
-        f = self._main.tabs.tab4.sideMenu.failureSpinBox.value()    # number of failures (UNUSED)
-        # m = self.estimationResults[combinations[0]]     # model object
-
-        self.allocationResults = {}    # create a dictionary for allocation results
-        for i in range(len(combinations)):
-            name = combinations[i]
-            if " - (No covariates)" not in name:
-                m = self.estimationResults[name]  # model indexed by the name
-                self.allocationResults[name] = [EffortAllocation(m, B, f), m]
-
-        self._main.tabs.tab4.addResultsToTable(self.allocationResults, self.data)
-
-        # # cons = ({'type': 'ineq', 'fun': lambda x:  B-x[0]-x[1]-x[2]})
-        # cons = ({'type': 'ineq', 'fun': lambda x:  B - sum([x[i] for i in range(m.numCovariates)])})
-        # # bnds = ((0, None), (0, None), (0, None))
-        # bnds = tuple((0, None) for i in range(m.numCovariates))
-
-        # res = shgo(m.allocationFunction, args=(f,), bounds=bnds, constraints=cons)#, n=10000, iters=4)
-        # # res = shgo(lambda x: -(51+ 1.5449911694401008*(1- (0.9441308828628996 ** (np.exp(0.10847739229960603*x[0]+0.027716725008716442*x[1]+0.159319065848297*x[2]))))), bounds=bnds, constraints=cons, n=10000, iters=4)
-        # print(res)
-        # print(sum(res.x))
-
-    def setTrendTest(self, index):
-        """
-        description to be created at a later time
-        """
-        pass
-
     def setPlotStyle(self, style='-o', plotType="step"):
         """
         description to be created at a later time
@@ -329,93 +317,6 @@ class MainWindow(QMainWindow):
         self.plotSettings.plotType = plotType
         self.updateUI()
         # self.setDataView("view", self.dataViewIndex)
-
-    def updateUI(self):
-        """
-        Change Plot, Table and SideMenu
-        when the state of the Data object changes
-
-        Should be called explicitly
-        """
-        self.setDataView(self.viewType, self.dataViewIndex)
-
-    def setupMenu(self):
-        """
-        description to be created at a later time
-        """
-        self.menu = self.menuBar()      # initialize menu bar
-
-        # ---- File menu
-        fileMenu = self.menu.addMenu("File")
-        # open
-        openFile = QAction("Open", self)
-        openFile.setShortcut("Ctrl+O")
-        openFile.setStatusTip("Import Data File")
-        openFile.triggered.connect(self.fileOpened)
-        # exit
-        exitApp = QAction("Exit", self)
-        exitApp.setShortcut("Ctrl+Q")
-        exitApp.setStatusTip("Close application")
-        exitApp.triggered.connect(self.closeEvent)
-        # add actions to file menu
-        fileMenu.addAction(openFile)
-        fileMenu.addSeparator()
-        fileMenu.addAction(exitApp)
-
-        # ---- View menu
-        viewMenu = self.menu.addMenu("View")
-        # -- plotting style
-        # maybe want a submenu?
-        viewStyle = QActionGroup(viewMenu)
-        # points
-        viewPoints = QAction("Show Points", self, checkable=True)
-        viewPoints.setShortcut("Ctrl+P")
-        viewPoints.setStatusTip("Data shown as points on graphs")
-        viewPoints.triggered.connect(self.setPointsView)
-        viewStyle.addAction(viewPoints)
-        # lines
-        viewLines = QAction("Show Lines", self, checkable=True)
-        viewLines.setShortcut("Ctrl+L")
-        viewLines.setStatusTip("Data shown as lines on graphs")
-        viewLines.triggered.connect(self.setLineView)
-        viewStyle.addAction(viewLines)
-        # points and lines
-        viewBoth = QAction("Show Points and Lines", self, checkable=True)
-        viewBoth.setShortcut("Ctrl+B")
-        viewBoth.setStatusTip("Data shown as points and lines on graphs")
-        viewBoth.setChecked(True)
-        viewBoth.triggered.connect(self.setLineAndPointsView)
-        viewStyle.addAction(viewBoth)
-        # add actions to view menu
-        viewMenu.addActions(viewStyle.actions())
-        # -- graph display
-        graphStyle = QActionGroup(viewMenu)
-        # MVF
-        mvf = QAction("MVF Graph", self, checkable=True)
-        mvf.setShortcut("Ctrl+M")
-        mvf.setStatusTip("Graphs display MVF of data")
-        mvf.setChecked(True)
-        mvf.triggered.connect(self.setMVFView)
-        graphStyle.addAction(mvf)
-        # intensity
-        intensity = QAction("Intensity Graph", self, checkable=True)
-        intensity.setShortcut("Ctrl+I")
-        intensity.setStatusTip("Graphs display failure intensity")
-        intensity.triggered.connect(self.setIntensityView)
-        graphStyle.addAction(intensity)
-        # add actions to view menu
-        viewMenu.addSeparator()
-        viewMenu.addActions(graphStyle.actions())
-
-    #region Menu actions
-    def fileOpened(self):
-        files = QFileDialog.getOpenFileName(self, "Open profile", "", filter=("Data Files (*.csv *.xls *.xlsx)"))
-        # if a file was loaded
-        if files[0]:
-            self.data.importFile(files[0])      # imports loaded file
-            self.dataLoaded = True
-            logging.info("Data loaded from {0}".format(files[0]))
-            self.importFileSignal.emit()            # emits signal that file was imported successfully
 
     def setLineView(self):
         self.setPlotStyle(style='-')
@@ -440,8 +341,98 @@ class MainWindow(QMainWindow):
         logging.info("Data plots set to intensity view.")
         if self.dataLoaded:
             self.setRawDataView(self.dataViewIndex)
+
+    def changePlot2(self, selectedModels):
+        self.selectedModelNames = selectedModels
+        self.updateUI()
+
+    def updateUI(self):
+        """
+        Change Plot, Table and SideMenu
+        when the state of the Data object changes
+
+        Should be called explicitly
+        """
+        self.setDataView(self.viewType, self.dataViewIndex)
+
     #endregion
 
+    #region Estimation, allocation
+    def runModels(self, modelDetails):
+        """
+        Run selected models using selected metrics
+
+        Args:
+            modelDetails : dictionary of models and metrics to use for calculations
+        """
+        # disable buttons until estimation complete
+        self._main.tabs.tab1.sideMenu.runButton.setEnabled(False)
+        self._main.tabs.tab4.sideMenu.allocationButton.setEnabled(False)
+        modelsToRun = modelDetails["modelsToRun"]
+        metricNames = modelDetails["metricNames"]
+        if self.data:
+            self.estimationComplete = False # estimation not complete since it just started running
+            self._main.tabs.tab2.sideMenu.modelListWidget.clear()   # clear tab 2 list containing 
+                                                                    # previously computed models,
+                                                                    # only added when calculations complete
+            self._main.tabs.tab4.sideMenu.modelListWidget.clear()
+            self.computeWidget = ComputeWidget(modelsToRun, metricNames, self.data)
+            # DON'T WANT TO DISPLAY RESULTS IN ANOTHER WINDOW
+            # WANT TO DISPLAY ON TAB 2/3
+            self.computeWidget.results.connect(self.onEstimationComplete)     # signal emitted when estimation complete
+
+    def onEstimationComplete(self, results):
+        """
+        description to be created at a later time
+
+        Args:
+            results (dict): contains model objects
+        """
+        self.estimationComplete = True
+        self.estimationResults = results
+        self._main.tabs.tab1.sideMenu.runButton.setEnabled(True)    # re-enable button, can run another estimation
+        self._main.tabs.tab4.sideMenu.allocationButton.setEnabled(True)      # re-enable allocation button, can't run
+                                                                    # if estimation not complete
+        # self.setDataView("view", self.dataViewIndex)
+        self.updateUI()
+        # set initial model selected
+        # set plot
+
+        convergedNames = []
+        nonConvergedNames = []
+        for key, model in results.items():
+            if model.converged:
+                convergedNames.append(key)
+            else:
+                nonConvergedNames.append(key)
+
+        self._main.tabs.tab2.sideMenu.addSelectedModels(convergedNames) # add models to tab 2 list
+                                                                        # so they can be selected
+        self._main.tabs.tab2.sideMenu.addNonConvergedModels(nonConvergedNames)
+                                                                        # show which models didn't converge
+        self._main.tabs.tab3.addResultsToTable(results)
+        self._main.tabs.tab4.sideMenu.addSelectedModels(convergedNames) # add models to tab 4 list so they
+                                                                        # can be selected for allocation
+        logging.info("Estimation results: {0}".format(results))
+
+    def goodnessOfFit(self):
+        self._main.tabs.tab3.sideMenu.calcAHP(self.estimationResults)
+
+    def runAllocation(self, combinations):
+        B = self._main.tabs.tab4.sideMenu.budgetSpinBox.value()     # budget
+        f = self._main.tabs.tab4.sideMenu.failureSpinBox.value()    # number of failures (UNUSED)
+        # m = self.estimationResults[combinations[0]]     # model object
+
+        self.allocationResults = {}    # create a dictionary for allocation results
+        for i in range(len(combinations)):
+            name = combinations[i]
+            if " - (No covariates)" not in name:
+                m = self.estimationResults[name]  # model indexed by the name
+                self.allocationResults[name] = [EffortAllocation(m, B, f), m]
+
+        self._main.tabs.tab4.addResultsToTable(self.allocationResults, self.data)
+
+    #endregion
 
 class MainWidget(QWidget):
     """
@@ -763,6 +754,7 @@ class SideMenu3(QGridLayout):
     """
 
     # signals
+    comboBoxChangedSignal = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -775,30 +767,77 @@ class SideMenu3(QGridLayout):
         self.createLabel("AIC", 2, 0)
         self.createLabel("BIC", 3, 0)
         self.createLabel("SSE", 4, 0)
-        self.llfLineEdit = QSpinBox()
-        self.aicLineEdit = QSpinBox()
-        self.bicLineEdit = QSpinBox()
-        self.sseLineEdit = QSpinBox()
-        self.llfLineEdit.setRange(0, 10)
-        self.aicLineEdit.setRange(0, 10)
-        self.bicLineEdit.setRange(0, 10)
-        self.sseLineEdit.setRange(0, 10)
-        self.addWidget(self.llfLineEdit, 1, 1)
-        self.addWidget(self.aicLineEdit, 2, 1)
-        self.addWidget(self.bicLineEdit, 3, 1)
-        self.addWidget(self.sseLineEdit, 4, 1)
+        self.llfSpinBox = self.createSpinBox(0, 10, 1, 1)
+        self.aicSpinBox = self.createSpinBox(0, 10, 2, 1)
+        self.bicSpinBox = self.createSpinBox(0, 10, 3, 1)
+        self.sseSpinBox = self.createSpinBox(0, 10, 4, 1)
+        # self.addWidget(self.llfSpinBox, 1, 1)
+        # self.addWidget(self.aicSpinBox, 2, 1)
+        # self.addWidget(self.bicSpinBox, 3, 1)
+        # self.addWidget(self.sseSpinBox, 4, 1)
 
+        # vertical spacer at bottom of layout, keeps labels/spinboxes together at top of window
         vspacer = QSpacerItem(20, 40, QSizePolicy.Maximum, QSizePolicy.Expanding)
         self.addItem(vspacer, 5, 0, 1, -1)
-
-
-
         self.setColumnStretch(1, 1)
 
     def createLabel(self, text, row, col):
         label = QLabel(text)
         label.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum))
         self.addWidget(label, row, col)
+
+    def createSpinBox(self, minVal, maxVal, row, col):
+        spinBox = QSpinBox()
+        spinBox.setRange(minVal, maxVal)
+        spinBox.setValue(1) # give equal weighting of 1 by default
+        spinBox.valueChanged.connect(self.emitComboBoxChangedSignal)
+        self.addWidget(spinBox, row, col)
+        return spinBox
+
+    def emitComboBoxChangedSignal(self):
+        self.comboBoxChangedSignal.emit()
+
+    def calcAHP(self, results):
+        # numResults = len(results)
+        llf = []
+        aic = []
+        bic = []
+        sse = []
+        llfOut = []
+        aicOut = []
+        bicOut = []
+        sseOut = []
+
+        self.weightSum = self.calcWeightSum()
+
+        converged = 0   # number of converged models
+        for key, model in results.items():
+            if model.converged:
+                llf.append(model.llfVal)
+                aic.append(model.aicVal)
+                bic.append(model.bicVal)
+                sse.append(model.sseVal)
+                converged += 1
+
+        for i in range(converged):
+            llfOut.append(self.ahp(llf, i, self.llfSpinBox))
+            aicOut.append(self.ahp(aic, i, self.aicSpinBox))
+            bicOut.append(self.ahp(bic, i, self.bicSpinBox))
+            sseOut.append(self.ahp(sse, i, self.sseSpinBox))
+
+        print(llfOut)
+        print(aicOut)
+        print(bicOut)
+        print(sseOut)
+
+    def ahp(self, measureList, i, spinBox):
+        # print(measureList[i] - min(measureList))
+        # print(max(measureList) - min(measureList))
+        # print(spinBox.value()/self.weightSum)
+        return (measureList[i] - min(measureList)) / (max(measureList) - min(measureList)) * (spinBox.value()/self.weightSum)
+
+    def calcWeightSum(self):
+        return self.llfSpinBox.value() + self.aicSpinBox.value() + self.bicSpinBox.value() + self.sseSpinBox.value()
 
         # self.modelsGroup = QGroupBox("Select Models/Metrics for Allocation")
         # self.modelsGroup.setLayout(self.setupModelsGroup())
