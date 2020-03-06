@@ -36,6 +36,9 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
+# numpy for fast array operations
+import numpy as np
+
 # For handling debug output
 import logging
 
@@ -416,7 +419,9 @@ class MainWindow(QMainWindow):
         logging.info("Estimation results: {0}".format(results))
 
     def goodnessOfFit(self):
-        self._main.tabs.tab3.sideMenu.calcAHP(self.estimationResults)
+        if self.estimationComplete:
+            # self._main.tabs.tab3.sideMenu.calcAHP(self.estimationResults)
+            self._main.tabs.tab3.addResultsToTable(self.estimationResults)
 
     def runAllocation(self, combinations):
         B = self._main.tabs.tab4.sideMenu.budgetSpinBox.value()     # budget
@@ -714,35 +719,33 @@ class Tab3(QWidget):
         self.table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
                                                                     # column width fit to contents
         self.table.setRowCount(1)
-        self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE", "AHP"])
+        self.table.setColumnCount(8)
+        self.table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE", "AHP mean", "AHP median"])
         self.table.move(0,0)
 
     def addResultsToTable(self, results):
         # numResults = len(results)
-        llf = []
-        aic = []
-        bic = []
-        sse = []
-
         self.table.setSortingEnabled(False) # disable sorting while editing contents
         self.table.clear()
-        self.table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE", "AHP"])
+        self.table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE", "AHP mean", "AHP median"])
         self.table.setRowCount(len(results))    # set row count to include all model results, 
                                                 # even if not converged
         i = 0   # number of converged models
+
+
+        self.sideMenu.calcAHP(results)
+
+
         for key, model in results.items():
             if model.converged:
                 self.table.setItem(i, 0, QTableWidgetItem(model.name))
                 self.table.setItem(i, 1, QTableWidgetItem(model.metricString))
                 self.table.setItem(i, 2, QTableWidgetItem("{0:.2f}".format(model.llfVal)))
-                llf.append(model.llfVal)
                 self.table.setItem(i, 3, QTableWidgetItem("{0:.2f}".format(model.aicVal)))
-                aic.append(model.aicVal)
                 self.table.setItem(i, 4, QTableWidgetItem("{0:.2f}".format(model.bicVal)))
-                bic.append(model.bicVal)
                 self.table.setItem(i, 5, QTableWidgetItem("{0:.2f}".format(model.sseVal)))
-                sse.append(model.sseVal)
+                self.table.setItem(i, 6, QTableWidgetItem("{0:.2f}".format(self.sideMenu.meanOut[i])))
+                self.table.setItem(i, 7, QTableWidgetItem("{0:.2f}".format(self.sideMenu.medOut[i])))
                 i += 1
         self.table.setRowCount(i)   # set row count to only include converged models
         self.table.resizeColumnsToContents()    # resize column width after table is edited
@@ -803,10 +806,6 @@ class SideMenu3(QGridLayout):
         aic = []
         bic = []
         sse = []
-        llfOut = []
-        aicOut = []
-        bicOut = []
-        sseOut = []
 
         self.weightSum = self.calcWeightSum()
 
@@ -819,22 +818,39 @@ class SideMenu3(QGridLayout):
                 sse.append(model.sseVal)
                 converged += 1
 
-        for i in range(converged):
-            llfOut.append(self.ahp(llf, i, self.llfSpinBox))
-            aicOut.append(self.ahp(aic, i, self.aicSpinBox))
-            bicOut.append(self.ahp(bic, i, self.bicSpinBox))
-            sseOut.append(self.ahp(sse, i, self.sseSpinBox))
+        llfOut = np.zeros(converged)    # create np arrays, num of elements = num of converged
+        aicOut = np.zeros(converged)
+        bicOut = np.zeros(converged)
+        sseOut = np.zeros(converged)
 
-        print(llfOut)
-        print(aicOut)
-        print(bicOut)
-        print(sseOut)
+        for i in range(converged):
+            llfOut[i] = self.ahp(llf, i, self.llfSpinBox)
+            aicOut[i] = self.ahp(aic, i, self.aicSpinBox)
+            bicOut[i] = self.ahp(bic, i, self.bicSpinBox)
+            sseOut[i] = self.ahp(sse, i, self.sseSpinBox)
+
+        ahp_array = np.array([llfOut, aicOut, bicOut, sseOut])   # array of goodness of fit arrays
+        self.meanOut = np.mean(ahp_array, axis=0)  # mean of each goodness of fit measure,
+                                                    # for each model/metric combination
+        self.medOut = np.median(ahp_array, axis=0)
+
+        # print(llfOut)
+        # print(aicOut)
+        # print(bicOut)
+        # print(sseOut)
 
     def ahp(self, measureList, i, spinBox):
         # print(measureList[i] - min(measureList))
         # print(max(measureList) - min(measureList))
         # print(spinBox.value()/self.weightSum)
-        return (measureList[i] - min(measureList)) / (max(measureList) - min(measureList)) * (spinBox.value()/self.weightSum)
+
+        try:
+            # if all weights equal 0, get divide by zero error
+            ahp_val = (measureList[i] - min(measureList)) / (max(measureList) - min(measureList)) * (spinBox.value()/self.weightSum)
+        except ZeroDivisionError:
+            # treat as if equal weighting, all ones
+            ahp_val = (measureList[i] - min(measureList)) / (max(measureList) - min(measureList)) * (1/4) # times 1/4, as if equal weighting
+        return ahp_val
 
     def calcWeightSum(self):
         return self.llfSpinBox.value() + self.aicSpinBox.value() + self.bicSpinBox.value() + self.sseSpinBox.value()
