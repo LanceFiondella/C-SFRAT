@@ -99,7 +99,7 @@ class MainWindow(QMainWindow):
         # self._main.tabs.tab1.sideMenu.runModelSignal.connect(self._main.tabs.tab2.sideMenu.addSelectedModels)    # fill tab 2 models group with selected models
         self._main.tabs.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2)
         # connect tab2 list changed to refreshing tab 2 plot
-        self._main.tabs.tab3.sideMenu.comboBoxChangedSignal.connect(self.goodnessOfFit)
+        self._main.tabs.tab3.sideMenu.comboBoxChangedSignal.connect(self.runGoodnessOfFit)
         self._main.tabs.tab4.sideMenu.runAllocationSignal.connect(self.runAllocation)
 
         self.initUI()
@@ -418,9 +418,9 @@ class MainWindow(QMainWindow):
                                                                         # can be selected for allocation
         logging.info("Estimation results: {0}".format(results))
 
-    def goodnessOfFit(self):
+    def runGoodnessOfFit(self):
         if self.estimationComplete:
-            # self._main.tabs.tab3.sideMenu.calcAHP(self.estimationResults)
+            # self._main.tabs.tab3.sideMenu.goodnessOfFit(self.estimationResults)
             self._main.tabs.tab3.addResultsToTable(self.estimationResults)
 
     def runAllocation(self, combinations):
@@ -719,21 +719,25 @@ class Tab3(QWidget):
         self.table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
                                                                     # column width fit to contents
         self.table.setRowCount(1)
-        self.table.setColumnCount(8)
-        self.table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE", "AHP mean", "AHP median"])
+        self.table.setColumnCount(10)
+        self.table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
+                                              "SSE", "Uniform selection (mean)", "Uniform selection (median)",
+                                              "Weighted selection (mean)", "Weighted selection (median)"])
         self.table.move(0,0)
 
     def addResultsToTable(self, results):
         # numResults = len(results)
         self.table.setSortingEnabled(False) # disable sorting while editing contents
         self.table.clear()
-        self.table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE", "AHP mean", "AHP median"])
+        self.table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
+                                              "SSE", "Uniform selection (mean)", "Uniform selection (median)",
+                                              "Weighted selection (mean)", "Weighted selection (median)"])
         self.table.setRowCount(len(results))    # set row count to include all model results, 
                                                 # even if not converged
         i = 0   # number of converged models
 
 
-        self.sideMenu.calcAHP(results)
+        self.sideMenu.goodnessOfFit(results)
 
 
         for key, model in results.items():
@@ -744,8 +748,11 @@ class Tab3(QWidget):
                 self.table.setItem(i, 3, QTableWidgetItem("{0:.2f}".format(model.aicVal)))
                 self.table.setItem(i, 4, QTableWidgetItem("{0:.2f}".format(model.bicVal)))
                 self.table.setItem(i, 5, QTableWidgetItem("{0:.2f}".format(model.sseVal)))
-                self.table.setItem(i, 6, QTableWidgetItem("{0:.2f}".format(self.sideMenu.meanOut[i])))
-                self.table.setItem(i, 7, QTableWidgetItem("{0:.2f}".format(self.sideMenu.medOut[i])))
+                self.table.setItem(i, 6, QTableWidgetItem("{0:.2f}".format(self.sideMenu.meanOutUniform[i])))
+                self.table.setItem(i, 7, QTableWidgetItem("{0:.2f}".format(self.sideMenu.medOutUniform[i])))
+                self.table.setItem(i, 8, QTableWidgetItem("{0:.2f}".format(self.sideMenu.meanOut[i])))
+                self.table.setItem(i, 9, QTableWidgetItem("{0:.2f}".format(self.sideMenu.medOut[i])))
+
                 i += 1
         self.table.setRowCount(i)   # set row count to only include converged models
         self.table.resizeColumnsToContents()    # resize column width after table is edited
@@ -800,7 +807,7 @@ class SideMenu3(QGridLayout):
     def emitComboBoxChangedSignal(self):
         self.comboBoxChangedSignal.emit()
 
-    def calcAHP(self, results):
+    def goodnessOfFit(self, results):
         # numResults = len(results)
         llf = []
         aic = []
@@ -818,38 +825,79 @@ class SideMenu3(QGridLayout):
                 sse.append(model.sseVal)
                 converged += 1
 
+        # print("llf =", llf)
+        # print("aic =", aic)
+        # print("bic =", bic)
+        # print("sse =", sse)
+
+        llfOutUniform = np.zeros(converged)    # create np arrays, num of elements = num of converged
+        aicOutUniform = np.zeros(converged)
+        bicOutUniform = np.zeros(converged)
+        sseOutUniform = np.zeros(converged)
+
         llfOut = np.zeros(converged)    # create np arrays, num of elements = num of converged
         aicOut = np.zeros(converged)
         bicOut = np.zeros(converged)
         sseOut = np.zeros(converged)
 
         for i in range(converged):
-            llfOut[i] = self.ahp(llf, i, self.llfSpinBox)
-            aicOut[i] = self.ahp(aic, i, self.aicSpinBox)
-            bicOut[i] = self.ahp(bic, i, self.bicSpinBox)
-            sseOut[i] = self.ahp(sse, i, self.sseSpinBox)
+            llfOutUniform[i] = self.ahp(llf, i, self.llfSpinBox, True)
+            aicOutUniform[i] = self.ahp(aic, i, self.aicSpinBox, True)
+            bicOutUniform[i] = self.ahp(bic, i, self.bicSpinBox, True)
+            sseOutUniform[i] = self.ahp(sse, i, self.sseSpinBox, True)
+            llfOut[i] = self.ahp(llf, i, self.llfSpinBox, False)
+            aicOut[i] = self.ahp(aic, i, self.aicSpinBox, False)
+            bicOut[i] = self.ahp(bic, i, self.bicSpinBox, False)
+            sseOut[i] = self.ahp(sse, i, self.sseSpinBox, False)
 
-        ahp_array = np.array([llfOut, aicOut, bicOut, sseOut])   # array of goodness of fit arrays
-        self.meanOut = np.mean(ahp_array, axis=0)  # mean of each goodness of fit measure,
+        ahpArrayUniform = np.array([llfOutUniform, aicOutUniform, bicOutUniform, sseOutUniform])
+        ahpArray = np.array([llfOut, aicOut, bicOut, sseOut])   # array of goodness of fit arrays
+
+        self.meanOutUniform = np.median(ahpArrayUniform, axis=0)
+        self.medOutUniform = np.median(ahpArrayUniform, axis=0)
+        self.meanOut = np.mean(ahpArray, axis=0)  # mean of each goodness of fit measure,
                                                     # for each model/metric combination
-        self.medOut = np.median(ahp_array, axis=0)
+        self.medOut = np.median(ahpArray, axis=0)
 
-        # print(llfOut)
-        # print(aicOut)
-        # print(bicOut)
-        # print(sseOut)
+        # print("llfOut =", llfOut)
+        # print("aicOut =", aicOut)
+        # print("bicOut =", bicOut)
+        # print("sseOut =", sseOut)
 
-    def ahp(self, measureList, i, spinBox):
-        # print(measureList[i] - min(measureList))
-        # print(max(measureList) - min(measureList))
-        # print(spinBox.value()/self.weightSum)
+    def ahpNegative(self, measureList, i, spinBox, uniform):
+        if uniform:
+            weight = 1
+        else:
+            try:
+                weight = spinBox.value()/self.weightSum
+            except ZeroDivisionError:
+                weight = 1.0/4.0
+        
+        ahp_val = (measureList[i] - min(measureList)) / (max(measureList) - min(measureList)) * weight
 
-        try:
-            # if all weights equal 0, get divide by zero error
-            ahp_val = (measureList[i] - min(measureList)) / (max(measureList) - min(measureList)) * (spinBox.value()/self.weightSum)
-        except ZeroDivisionError:
-            # treat as if equal weighting, all ones
-            ahp_val = (measureList[i] - min(measureList)) / (max(measureList) - min(measureList)) * (1/4) # times 1/4, as if equal weighting
+        return ahp_val
+
+    def ahp(self, measureList, i, spinBox, uniform):
+        """
+        negative is bool. Calculating weight for LLF is different because its values are negative. Specified
+        by True, otherwise False.
+
+        uniform is bool. If calculating with uniform (no) weighting, uniform = True.
+        """
+        # print("num =", measureList[i] - min(measureList))
+        # print("den =", max(measureList) - min(measureList))
+        # print("weight =", spinBox.value()/self.weightSum)
+
+        if uniform:
+            weight = 1
+        else:
+            try:
+                weight = spinBox.value()/self.weightSum
+            except ZeroDivisionError:
+                weight = 1.0/4.0
+
+        ahp_val = (measureList[i] - max(measureList)) / (min(measureList) - max(measureList)) * weight
+        
         return ahp_val
 
     def calcWeightSum(self):
