@@ -29,7 +29,7 @@ from PyQt5.QtWidgets import QMainWindow, qApp, QMessageBox, QWidget, QTabWidget,
                             QTableWidget, QTableWidgetItem, QAbstractScrollArea, \
                             QSpinBox, QDoubleSpinBox, QSpacerItem, QSizePolicy
 from PyQt5.QtCore import pyqtSignal
-#from PyQt5.QtGui import QIntValidator, QDoubleValidator
+from PyQt5.QtGui import QFont   #, QIntValidator, QDoubleValidator
 
 # Matplotlib imports for graphs/plots
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -725,6 +725,9 @@ class Tab3(QWidget):
                                               "Weighted selection (mean)", "Weighted selection (median)"])
         self.table.move(0,0)
 
+        self.font = QFont() # allows table cells to be bold
+        self.font.setBold(True)
+
     def addResultsToTable(self, results):
         # numResults = len(results)
         self.table.setSortingEnabled(False) # disable sorting while editing contents
@@ -736,9 +739,13 @@ class Tab3(QWidget):
                                                 # even if not converged
         i = 0   # number of converged models
 
-
         self.sideMenu.goodnessOfFit(results)
 
+        # store the index of model combinations that have the highest value, will bold these cells
+        bestMeanUniform = np.argmax(self.sideMenu.meanOutUniform)
+        bestMedUniform = np.argmax(self.sideMenu.medOutUniform)
+        bestMean = np.argmax(self.sideMenu.meanOut)
+        bestMed = np.argmax(self.sideMenu.medOut)
 
         for key, model in results.items():
             if model.converged:
@@ -752,11 +759,15 @@ class Tab3(QWidget):
                 self.table.setItem(i, 7, QTableWidgetItem("{0:.2f}".format(self.sideMenu.medOutUniform[i])))
                 self.table.setItem(i, 8, QTableWidgetItem("{0:.2f}".format(self.sideMenu.meanOut[i])))
                 self.table.setItem(i, 9, QTableWidgetItem("{0:.2f}".format(self.sideMenu.medOut[i])))
-
                 i += 1
         self.table.setRowCount(i)   # set row count to only include converged models
         self.table.resizeColumnsToContents()    # resize column width after table is edited
         self.table.setSortingEnabled(True)      # re-enable sorting after table is edited
+
+        self.table.item(bestMeanUniform, 6).setFont(self.font)
+        self.table.item(bestMedUniform, 7).setFont(self.font)
+        self.table.item(bestMean, 8).setFont(self.font)
+        self.table.item(bestMed, 9).setFont(self.font)
 
 class SideMenu3(QGridLayout):
     """
