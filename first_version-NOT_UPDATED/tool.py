@@ -1,3 +1,21 @@
+#----------------------------------------------------------------#
+# TODO:
+# simplify ui code, make into separate methods/classes
+# how will table data be entered?
+#   ignore first line? only parse floats?
+# what file should be the "main" file? should the main ui file
+#   call the functions?
+# make sure everything that needs to be is a np array, not list
+# select hazard function
+# MSE vs SSE?
+# make some of the covariate variables global? reduce the number
+#   of parameters needed to pass to methods
+# checking on other datasets
+# using only a subset of metrics
+# making UI easier to use for someone who doesn't understand the math
+# command line arguments, what to print for debugging   
+#------------------------------------------------------------------------#
+
 # -*- coding: utf-8 -*-
 
 # Form implementation generated from reading ui file 'tool.ui'
@@ -26,24 +44,10 @@ import global_variables as gv
 import csv, codecs, threading
 import os
 
-#----------------------------------------------------------------#
-#                       TO DO:
-# simplify ui code, make into separate methods/classes
-# how will table data be entered?
-#   ignore first line? only parse floats?
-# what file should be the "main" file? should the main ui file
-#   call the functions?
-# make sure everything that needs to be is a np array, not list
-# select hazard function
-# MSE vs SSE?
-# make some of the covariate variables global? reduce the number
-#   of parameters needed to pass to methods
-#----------------------------------------------------------------#
-
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1280, 720)
+        MainWindow.resize(1080, 720)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
