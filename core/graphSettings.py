@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker  # to force integers for bar chart x axis values
 from PyQt5.QtCore import QSettings
 
 from core.dataClass import PandasModel
@@ -27,12 +28,16 @@ class PlotSettings:
 
     def generatePlot(self, ax, x, y, title="None", xLabel="X", yLabel="Y"):
         ax = self.setupPlot(ax, title=title, xLabel=xLabel, yLabel=yLabel)
-        plotMethod = getattr(ax, self.plotType)
+        plotMethod = getattr(ax, self.plotType)     # equivalent to ax.plotType, depends on what plot type is
         if self.plotType == "step":
             # can only have "post" parameter if using a step function
-            plotMethod(x, y, self.style, markerSize=self.markerSize, where="post")
+            plotMethod(x, y, self.style, markerSize=self.markerSize, where="post")  # ax.step()
+        elif self.plotType == "bar":
+            # ax.set_xticks(x)
+            ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+            plotMethod(x, y, color='skyblue')    # ax.bar()
         else:
-            plotMethod(x, y, self.style, markerSize=self.markerSize)
+            plotMethod(x, y, self.style, markerSize=self.markerSize)    # ax.plot()
         return ax
 
     def setupPlot(self, ax, title="None", xLabel="X", yLabel="Y"):

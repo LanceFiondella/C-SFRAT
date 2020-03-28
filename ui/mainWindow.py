@@ -298,6 +298,7 @@ class MainWindow(QMainWindow):
         """
         called by setDataView
         """
+        self.plotSettings.plotType = "bar"
         self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe.iloc[:, 1], title="Intensity", xLabel="time", yLabel="failures")
         if self.estimationComplete:
             self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe.iloc[:, 0], dataframe.iloc[:, 1], title="Intensity", xLabel="time", yLabel="failures")
@@ -830,7 +831,7 @@ class Tab4(QWidget):
                                                                     # column width fit to contents
         table.setRowCount(1)
         table.setColumnCount(3)
-        table.setHorizontalHeaderLabels(["Model Name", "Covariates", "H"])
+        table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Estimated failures"])
         table.move(0,0)
 
         return table
