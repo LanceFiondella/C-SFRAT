@@ -68,11 +68,6 @@ class Comparison():
         else:
             try:
                 weight = spinBox.value()/self._weightSum
-
-
-                print(spinBox.value())
-
-
             except ZeroDivisionError:
                 weight = 1.0/4.0
         

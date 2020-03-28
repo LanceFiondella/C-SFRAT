@@ -278,9 +278,13 @@ class MainWindow(QMainWindow):
         """
         called by setDataView
         """
-        self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe["Cumulative"], title="MVF", xLabel="time", yLabel="failures")
+        # self.plotSettings.plotType = "plot" # if continous
+        self.plotSettings.plotType = "step" # if step
+        self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe["Cumulative"],
+                                                 title="", xLabel="Cumulative time", yLabel="Cumulative failures")
         if self.estimationComplete:
-            self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe.iloc[:, 0], dataframe["Cumulative"], title="MVF", xLabel="time", yLabel="failures")
+            self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe.iloc[:, 0], dataframe["Cumulative"],
+                                                      title="", xLabel="Cumulative time", yLabel="Cumulative failures")
             self.plotSettings.plotType = "plot"
             # for model in self.estimationResults.values():
             #     # add line for model if selected
@@ -299,9 +303,11 @@ class MainWindow(QMainWindow):
         called by setDataView
         """
         self.plotSettings.plotType = "bar"
-        self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe.iloc[:, 1], title="Intensity", xLabel="time", yLabel="failures")
+        self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe.iloc[:, 1],
+                                                 title="", xLabel="Cumulative time", yLabel="Failures")
         if self.estimationComplete:
-            self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe.iloc[:, 0], dataframe.iloc[:, 1], title="Intensity", xLabel="time", yLabel="failures")
+            self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe.iloc[:, 0], dataframe.iloc[:, 1],
+                                                      title="", xLabel="Cumulative time", yLabel="Failures")
             self.plotSettings.plotType = "plot"
             # for model in self.estimationResults.values():
             #     # add line for model if selected
