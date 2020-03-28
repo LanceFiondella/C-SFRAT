@@ -4,7 +4,7 @@ import numpy as np
 from core.model import Model
 
 class NegativeBinomial2(Model):
-    name = "NB2"
+    name = "Negative Binomial (Order 2)"
     coxParameterEstimateRange = [0.0, 0.01]
     shapeParameterEstimateRange = [0.09, 0.1]
 

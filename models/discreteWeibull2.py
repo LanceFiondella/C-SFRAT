@@ -4,7 +4,7 @@ import numpy as np
 from core.model import Model
 
 class DiscreteWeibull2(Model):
-    name = "DW2"
+    name = "Discrete Weibull (Order 2)"
     coxParameterEstimateRange = [0.0, 0.01]
     shapeParameterEstimateRange = [0.998, 0.9999]
 

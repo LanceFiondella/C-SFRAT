@@ -47,6 +47,7 @@ from ui.commonWidgets import PlotWidget, PlotAndTable, ComputeWidget, TaskThread
 from core.dataClass import Data
 from core.graphSettings import PlotSettings
 from core.allocation import EffortAllocation
+from core.comparison import Comparison
 import models
 
 
@@ -719,10 +720,10 @@ class Tab3(QWidget):
         self.table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
                                                                     # column width fit to contents
         self.table.setRowCount(1)
-        self.table.setColumnCount(10)
-        self.table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
-                                              "SSE", "Uniform selection (mean)", "Uniform selection (median)",
-                                              "Weighted selection (mean)", "Weighted selection (median)"])
+        columnLabels = ["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
+                        "SSE", "Model ranking (no weights)", "Model ranking (user-specified weights)"]
+        self.table.setColumnCount(len(columnLabels))
+        self.table.setHorizontalHeaderLabels(columnLabels)
         self.table.move(0,0)
 
         self.font = QFont() # allows table cells to be bold
@@ -733,41 +734,31 @@ class Tab3(QWidget):
         self.table.setSortingEnabled(False) # disable sorting while editing contents
         self.table.clear()
         self.table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
-                                              "SSE", "Uniform selection (mean)", "Uniform selection (median)",
-                                              "Weighted selection (mean)", "Weighted selection (median)"])
+                                              "SSE", "Model ranking (no weights)", "Model ranking (user-specified weights)"])
+                                              #"Weighted selection (mean)", "Weighted selection (median)"])
         self.table.setRowCount(len(results))    # set row count to include all model results, 
                                                 # even if not converged
         i = 0   # number of converged models
 
-        self.sideMenu.goodnessOfFit(results)
-
-        # store the index of model combinations that have the highest value, will bold these cells
-        bestMeanUniform = np.argmax(self.sideMenu.meanOutUniform)
-        bestMedUniform = np.argmax(self.sideMenu.medOutUniform)
-        bestMean = np.argmax(self.sideMenu.meanOut)
-        bestMed = np.argmax(self.sideMenu.medOut)
+        self.sideMenu.comparison.goodnessOfFit(results, self.sideMenu)
 
         for key, model in results.items():
             if model.converged:
                 self.table.setItem(i, 0, QTableWidgetItem(model.name))
                 self.table.setItem(i, 1, QTableWidgetItem(model.metricString))
-                self.table.setItem(i, 2, QTableWidgetItem("{0:.2f}".format(model.llfVal)))
-                self.table.setItem(i, 3, QTableWidgetItem("{0:.2f}".format(model.aicVal)))
-                self.table.setItem(i, 4, QTableWidgetItem("{0:.2f}".format(model.bicVal)))
-                self.table.setItem(i, 5, QTableWidgetItem("{0:.2f}".format(model.sseVal)))
-                self.table.setItem(i, 6, QTableWidgetItem("{0:.2f}".format(self.sideMenu.meanOutUniform[i])))
-                self.table.setItem(i, 7, QTableWidgetItem("{0:.2f}".format(self.sideMenu.medOutUniform[i])))
-                self.table.setItem(i, 8, QTableWidgetItem("{0:.2f}".format(self.sideMenu.meanOut[i])))
-                self.table.setItem(i, 9, QTableWidgetItem("{0:.2f}".format(self.sideMenu.medOut[i])))
+                self.table.setItem(i, 2, QTableWidgetItem("{0:.3f}".format(model.llfVal)))
+                self.table.setItem(i, 3, QTableWidgetItem("{0:.3f}".format(model.aicVal)))
+                self.table.setItem(i, 4, QTableWidgetItem("{0:.3f}".format(model.bicVal)))
+                self.table.setItem(i, 5, QTableWidgetItem("{0:.3f}".format(model.sseVal)))
+                self.table.setItem(i, 6, QTableWidgetItem("{0:.3f}".format(self.sideMenu.comparison.meanOutUniform[i])))
+                self.table.setItem(i, 7, QTableWidgetItem("{0:.3f}".format(self.sideMenu.comparison.meanOut[i])))
                 i += 1
         self.table.setRowCount(i)   # set row count to only include converged models
         self.table.resizeColumnsToContents()    # resize column width after table is edited
         self.table.setSortingEnabled(True)      # re-enable sorting after table is edited
 
-        self.table.item(bestMeanUniform, 6).setFont(self.font)
-        self.table.item(bestMedUniform, 7).setFont(self.font)
-        self.table.item(bestMean, 8).setFont(self.font)
-        self.table.item(bestMed, 9).setFont(self.font)
+        self.table.item(self.sideMenu.comparison.bestMeanUniform, 6).setFont(self.font)
+        self.table.item(self.sideMenu.comparison.bestMean, 7).setFont(self.font)
 
 class SideMenu3(QGridLayout):
     """
@@ -780,6 +771,7 @@ class SideMenu3(QGridLayout):
     def __init__(self):
         super().__init__()
         self.setupSideMenu()
+        self.comparison = Comparison()
 
     def setupSideMenu(self):
         self.createLabel("Metric", 0, 0)
@@ -792,10 +784,6 @@ class SideMenu3(QGridLayout):
         self.aicSpinBox = self.createSpinBox(0, 10, 2, 1)
         self.bicSpinBox = self.createSpinBox(0, 10, 3, 1)
         self.sseSpinBox = self.createSpinBox(0, 10, 4, 1)
-        # self.addWidget(self.llfSpinBox, 1, 1)
-        # self.addWidget(self.aicSpinBox, 2, 1)
-        # self.addWidget(self.bicSpinBox, 3, 1)
-        # self.addWidget(self.sseSpinBox, 4, 1)
 
         # vertical spacer at bottom of layout, keeps labels/spinboxes together at top of window
         vspacer = QSpacerItem(20, 40, QSizePolicy.Maximum, QSizePolicy.Expanding)
@@ -817,114 +805,6 @@ class SideMenu3(QGridLayout):
 
     def emitComboBoxChangedSignal(self):
         self.comboBoxChangedSignal.emit()
-
-    def goodnessOfFit(self, results):
-        # numResults = len(results)
-        llf = []
-        aic = []
-        bic = []
-        sse = []
-
-        self.weightSum = self.calcWeightSum()
-
-        converged = 0   # number of converged models
-        for key, model in results.items():
-            if model.converged:
-                llf.append(model.llfVal)
-                aic.append(model.aicVal)
-                bic.append(model.bicVal)
-                sse.append(model.sseVal)
-                converged += 1
-
-        # print("llf =", llf)
-        # print("aic =", aic)
-        # print("bic =", bic)
-        # print("sse =", sse)
-
-        llfOutUniform = np.zeros(converged)    # create np arrays, num of elements = num of converged
-        aicOutUniform = np.zeros(converged)
-        bicOutUniform = np.zeros(converged)
-        sseOutUniform = np.zeros(converged)
-
-        llfOut = np.zeros(converged)    # create np arrays, num of elements = num of converged
-        aicOut = np.zeros(converged)
-        bicOut = np.zeros(converged)
-        sseOut = np.zeros(converged)
-
-        for i in range(converged):
-            llfOutUniform[i] = self.ahp(llf, i, self.llfSpinBox, True)
-            aicOutUniform[i] = self.ahp(aic, i, self.aicSpinBox, True)
-            bicOutUniform[i] = self.ahp(bic, i, self.bicSpinBox, True)
-            sseOutUniform[i] = self.ahp(sse, i, self.sseSpinBox, True)
-            llfOut[i] = self.ahp(llf, i, self.llfSpinBox, False)
-            aicOut[i] = self.ahp(aic, i, self.aicSpinBox, False)
-            bicOut[i] = self.ahp(bic, i, self.bicSpinBox, False)
-            sseOut[i] = self.ahp(sse, i, self.sseSpinBox, False)
-
-        ahpArrayUniform = np.array([llfOutUniform, aicOutUniform, bicOutUniform, sseOutUniform])
-        ahpArray = np.array([llfOut, aicOut, bicOut, sseOut])   # array of goodness of fit arrays
-
-        self.meanOutUniform = np.median(ahpArrayUniform, axis=0)
-        self.medOutUniform = np.median(ahpArrayUniform, axis=0)
-        self.meanOut = np.mean(ahpArray, axis=0)  # mean of each goodness of fit measure,
-                                                    # for each model/metric combination
-        self.medOut = np.median(ahpArray, axis=0)
-
-        # print("llfOut =", llfOut)
-        # print("aicOut =", aicOut)
-        # print("bicOut =", bicOut)
-        # print("sseOut =", sseOut)
-
-    def ahpNegative(self, measureList, i, spinBox, uniform):
-        if uniform:
-            weight = 1
-        else:
-            try:
-                weight = spinBox.value()/self.weightSum
-            except ZeroDivisionError:
-                weight = 1.0/4.0
-        
-        ahp_val = (measureList[i] - min(measureList)) / (max(measureList) - min(measureList)) * weight
-
-        return ahp_val
-
-    def ahp(self, measureList, i, spinBox, uniform):
-        """
-        negative is bool. Calculating weight for LLF is different because its values are negative. Specified
-        by True, otherwise False.
-
-        uniform is bool. If calculating with uniform (no) weighting, uniform = True.
-        """
-        # print("num =", measureList[i] - min(measureList))
-        # print("den =", max(measureList) - min(measureList))
-        # print("weight =", spinBox.value()/self.weightSum)
-
-        if uniform:
-            weight = 1
-        else:
-            try:
-                weight = spinBox.value()/self.weightSum
-            except ZeroDivisionError:
-                weight = 1.0/4.0
-
-        ahp_val = (measureList[i] - max(measureList)) / (min(measureList) - max(measureList)) * weight
-        
-        return ahp_val
-
-    def calcWeightSum(self):
-        return self.llfSpinBox.value() + self.aicSpinBox.value() + self.bicSpinBox.value() + self.sseSpinBox.value()
-
-        # self.modelsGroup = QGroupBox("Select Models/Metrics for Allocation")
-        # self.modelsGroup.setLayout(self.setupModelsGroup())
-        # self.optionsGroup = QGroupBox("Allocation Parameters")
-        # self.optionsGroup.setLayout(self.setupOptionsGroup())
-        # self.setupAllocationButton()
-
-        # self.addWidget(self.modelsGroup, 75)
-        # self.addWidget(self.optionsGroup, 25)
-        # self.addWidget(self.allocationButton)
-
-        # self.addStretch(1)
 #endregion
 
 #region tab4_test
