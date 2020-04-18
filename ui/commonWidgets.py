@@ -10,6 +10,16 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas, \
                                     NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
+
+
+
+
+
+import logging
+
+
+
+
 class PlotWidget(QWidget):
     def __init__(self):
         super().__init__()
@@ -125,3 +135,25 @@ class TaskThread(QThread):
                 result[runName] = m
                 self.modelFinished.emit()
         self.taskFinished.emit(result)
+
+class SymbolicThread(QThread):
+    """
+    Runs the symbolic computation for newly imported data on its own thread
+    """
+
+    symbolicSignal = pyqtSignal()
+
+    def __init__(self, modelList, data):
+        super().__init__()
+        self.modelList = modelList
+        self.data = data
+
+    def run(self):
+        # logging.info(f"modelList = {models.modelList}")
+        logging.info("RUNNING SYMBOLIC THREAD")
+        for model in self.modelList.values():
+            # need to initialize models so they have the imported data
+            instantiatedModel = model(data=self.data.getData(), metricNames=self.data.metricNames)
+            model.lambdaFunctionAll = instantiatedModel.symAll()
+            logging.info(f"Lambda function created for {model.name} model")
+        self.symbolicSignal.emit()

@@ -7,7 +7,13 @@ import scipy.optimize
 
 import logging
 
+import models   # maybe??
+
 class Model(ABC):
+
+    # lambdaFunctionAll = None
+    maxCovariates = None
+
     def __init__(self, *args, **kwargs):
         """
         Initialize Model
@@ -25,7 +31,9 @@ class Model(ABC):
         self.totalFailures = self.cumulativeFailures[-1]
         # list of arrays or array of arrays?
         self.covariateData = [self.data[name].values for name in self.metricNames]
-        self.numCovariates = len(self.covariateData)
+        # logging.info(f"covariate data = {self.covariateData}")
+        # logging.info(f"")
+        self.numCovariates = len(self.covariateData) 
         self.converged = False
         self.setupMetricString()
 
@@ -103,9 +111,9 @@ class Model(ABC):
                                                                     # (low, high, size)
                                                                     # size is numCovariates + 1 to have initial estimate for b
         betasEstimate = np.random.uniform(self.coxParameterEstimateRange[0], self.coxParameterEstimateRange[1], self.numCovariates)
-        print(self.shapeParameterEstimateRange)
+        # print(self.shapeParameterEstimateRange)
         bEstimate = np.random.uniform(self.shapeParameterEstimateRange[0], self.shapeParameterEstimateRange[1], 1)
-        return np.insert(betasEstimate, 0, bEstimate)
+        return np.insert(betasEstimate, 0, bEstimate)   # insert b in the 0th location of betaEstimate array
 
 
     def LLF_sym(self, hazard):
@@ -182,17 +190,17 @@ class Model(ABC):
     def optimizeSolution(self, fd, B):
         logging.info("Solving for MLEs...")
 
-        # solution = scipy.optimize.fsolve(fd, x0=B)
+        solution = scipy.optimize.fsolve(fd, x0=B)
 
-        try:
-            solution = scipy.optimize.broyden1(fd, xin=B)
-            logging.info("Using broyden1")
-        except scipy.optimize.nonlin.NoConvergence:
-            solution = scipy.optimize.fsolve(fd, x0=B)
-            logging.info("Using fsolve")
-        except:
-            logging.info("Could Not Converge")
-            solution = [0 for i in range(self.numCovariates + 1)]
+        # try:
+        #     logging.info("Using broyden1")
+        #     solution = scipy.optimize.broyden1(fd, xin=B)
+        # except scipy.optimize.nonlin.NoConvergence:
+        #     logging.info("Using fsolve")
+        #     solution = scipy.optimize.fsolve(fd, x0=B)
+        # except:
+        #     logging.info("Could Not Converge")
+        #     solution = [0 for i in range(self.numCovariates + 1)]
 
 
         #solution = scipy.optimize.broyden2(fd, xin=B)          #Does not work (Seems to work well until the 3 covariates then crashes)
@@ -304,13 +312,43 @@ class Model(ABC):
 
     def runEstimation(self):
         initial = self.initialEstimates()
-        logging.info("Initial estimates: {0}".format(initial))
-        f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
-        bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
-        logging.info("Log-likelihood differentiated.")
-        logging.info("Converting symbolic equation to numpy...")
-        fd = self.convertSym(x, bh, "numpy")
-        logging.info("Symbolic equation converted.")
+        # logging.info("Initial estimates: {0}".format(initial))
+        # f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
+        # bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
+        # logging.info("Log-likelihood differentiated.")
+        # logging.info("Converting symbolic equation to numpy...")
+        # fd = self.convertSym(x, bh, "numpy")
+
+
+        # b, beta1, beta2, beta3
+        # logging.info("fd after convert = {0}".format(fd))
+
+        # need class of specific model being used, lambda function stored as class variable
+        # logging.info(f"name = {self.__class__.__name__}")
+        m = models.modelList[self.__class__.__name__]
+
+        # ex. (max covariates = 3) for 3 covariates, zero_array should be length 0
+        # for no covariates, zero_array should be length 3
+        numZeros = Model.maxCovariates - self.numCovariates
+        zero_array = np.zeros(numZeros)   # create empty array, size of num covariates
+        # create new lambda function that calls lambda function for all covariates
+        # for no covariates, concatenating array a with zero element array produces a
+
+
+
+        initial = np.concatenate((initial, zero_array), axis=0)
+
+        # fd = lambda a: m.lambdaFunctionAll(np.concatenate((a, zero_array), axis=0))
+        fd = m.lambdaFunctionAll
+
+
+
+
+
+
+        logging.info(f"INITIAL ESTIMATES = {initial}")
+        # logging.info(f"PASSING INITIAL ESTIMATES = {fd(initial)}")
+
         sol = self.optimizeSolution(fd, initial)
         logging.info("Optimized solution: {0}".format(sol))
 
@@ -343,3 +381,38 @@ class Model(ABC):
         logging.info("MVF values: {0}".format(self.mvfList))
         logging.info("Intensity values: {0}".format(self.intensityList))
 
+    def symAll(self):
+        """
+        Called in mainWindow
+        Creates symbolic LLF for model with all metrics, and differentiates
+        """
+        # f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
+        # # bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
+        # # for i in range(self.numCovariates):
+        # bh = [0 for i in range(self.numCovariates)]
+        # # for i in range(self.numCovariates, 0, -1):
+        # #     # n, n-1, ..., 3, 2, 1 [NOT 0]
+        # #     # x[1:i+1] = 0
+        # #     bh[i-1] = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
+        # #     x[i:self.numCovariates + 1] = 0
+        # for i in range(self.numCovariates):
+        #     x_copy = x.subs()
+        #     logging.info("x = {0}".format(x))
+        #     x_copy[1:i+1] = [0 for j in range(i)]
+        #     logging.info("x_copy = {0}".format(x_copy))
+        #     bh[i] = np.array([diff(f, x_copy[j]) for j in range(self.numCovariates + 1)])
+        #     logging.info("bh[{0}] = {1}".format(i, bh[i]))
+
+        Model.maxCovariates = self.numCovariates
+        f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
+        bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
+        # Model.lambdaFunctionAll = self.convertSym(x, bh, "numpy")
+
+        return self.convertSym(x, bh, "numpy")
+
+
+        # lambdaFunctions = [0 for i in range(self.numCovariates)]
+        # lambdaFunctions[self.numCovariates - 1] = self.convertSym(x, bh, "numpy")
+        # for i in range(self.numCovariates - 1, -1, -1):
+        #     # lambdaFunctions[i] = 
+        #     print(lambdaFunctions[2]([0, 0, 0, 0]))

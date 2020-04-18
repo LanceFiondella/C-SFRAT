@@ -18,6 +18,7 @@
 # names of tabs in tab 2?
 # self.viewType is never updated, we don't use updateUI()
 # sometimes metric list doesn't load until interacted with
+# use f strings instead of format
 #------------------------------------------------------------------------------------#
 
 # PyQt5 imports for UI elements
@@ -43,7 +44,7 @@ import numpy as np
 import logging
 
 # Local imports
-from ui.commonWidgets import PlotWidget, PlotAndTable, ComputeWidget, TaskThread
+from ui.commonWidgets import PlotWidget, PlotAndTable, ComputeWidget, TaskThread, SymbolicThread
 from core.dataClass import Data
 from core.graphSettings import PlotSettings
 from core.allocation import EffortAllocation
@@ -87,6 +88,7 @@ class MainWindow(QMainWindow):
         # flags
         self.dataLoaded = False
         self.estimationComplete = False
+        self.symbolicComplete = False
 
         # tab 1 plot and table
         self.ax = self._main.tabs.tab1.plotAndTable.figure.add_subplot(111)
@@ -196,23 +198,49 @@ class MainWindow(QMainWindow):
 
     #region Importing, plotting
     def fileOpened(self):
+        """
+        sets self.dataLoaded = True flag
+        """
         files = QFileDialog.getOpenFileName(self, "Open profile", "", filter=("Data Files (*.csv *.xls *.xlsx)"))
         # if a file was loaded
         if files[0]:
+            self.symbolicComplete = False   # reset flag, need to run symbolic functions before estimation
+
             self.data.importFile(files[0])      # imports loaded file
             self.dataLoaded = True
             logging.info("Data loaded from {0}".format(files[0]))
             self.importFileSignal.emit()            # emits signal that file was imported successfully
 
+            self.runSymbolic()
+
     def importFile(self):
         """
-        Import selected file
+        Loads imported data into UI
         """
         self._main.tabs.tab1.sideMenu.sheetSelect.clear()   # clear sheet names from previous file
         self._main.tabs.tab1.sideMenu.sheetSelect.addItems(self.data.sheetNames)    # add sheet names from new file
 
         self.setDataView("view", self.dataViewIndex)
         # self.setMetricList()
+
+    def runSymbolic(self):
+        logging.info("ENTERING runSymbolic FUNCTION")
+        self.symbolicThread = SymbolicThread(models.modelList, self.data)
+        self.symbolicThread.symbolicSignal.connect(self.onSymbolicComplete)
+        self.symbolicThread.start()
+
+        # MOVED TO commonWidgets, SymbolicThread class
+        # logging.info(f"modelList = {models.modelList}")
+        # for m in models.modelList.values():
+        #     # need to initialize models so they have the imported data
+        #     instantiatedModel = m(data=self.data.getData(), metricNames=self.data.metricNames)
+        #     m.lambdaFunctionAll = instantiatedModel.symAll()
+        #     logging.info(f"Lambda function created for {m.name} model")
+
+    def onSymbolicComplete(self):
+        logging.info("ENTERING runSymbolic FUNCTION")
+        self.symbolicComplete = True
+        logging.info(f"Symbolic calculations completed.")
 
     def changeSheet(self, index):
         """
