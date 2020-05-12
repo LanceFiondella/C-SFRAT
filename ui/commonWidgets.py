@@ -10,15 +10,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas, \
                                     NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
-
-
-
-
-
 import logging
-
-
-
 
 class PlotWidget(QWidget):
     def __init__(self):
@@ -38,8 +30,6 @@ class PlotAndTable(QTabWidget):
     """
     A widget containing a plot on tab 1, and a table on tab 2.
     Inherited from QTabWidget.
-
-
     """
     def __init__(self, plotTabLabel, tableTabLabel):
         """
@@ -122,6 +112,9 @@ class TaskThread(QThread):
         self.data = data
 
     def run(self):
+        self.nextCalculation.emit("symbolic equations") # window says that symbolic equations are being calculated
+        while(not SymbolicThread.complete):
+            pass    # wait until symbolic equations are calculated, do nothing until then
         result = {}
         for model in self.modelsToRun:
             for metricCombination in self.metricNames:
@@ -142,6 +135,7 @@ class SymbolicThread(QThread):
     """
 
     symbolicSignal = pyqtSignal()
+    complete = False    # if symbolic calculations are complete = True
 
     def __init__(self, modelList, data):
         super().__init__()
@@ -150,10 +144,12 @@ class SymbolicThread(QThread):
 
     def run(self):
         # logging.info(f"modelList = {models.modelList}")
+        SymbolicThread.complete = False # set flag to False when starting calculations
         logging.info("RUNNING SYMBOLIC THREAD")
         for model in self.modelList.values():
             # need to initialize models so they have the imported data
             instantiatedModel = model(data=self.data.getData(), metricNames=self.data.metricNames)
-            model.lambdaFunctionAll = instantiatedModel.symAll()
+            model.lambdaFunctionAll = instantiatedModel.symAll()    # saved as class variable for each model
             logging.info(f"Lambda function created for {model.name} model")
+        SymbolicThread.complete = True  # calculations complete, set flag to True
         self.symbolicSignal.emit()

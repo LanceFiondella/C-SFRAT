@@ -190,25 +190,28 @@ class Model(ABC):
     def optimizeSolution(self, fd, B):
         logging.info("Solving for MLEs...")
 
-        solution = scipy.optimize.fsolve(fd, x0=B)
+        # solution = scipy.optimize.fsolve(fd, x0=B)
 
-        # try:
-        #     logging.info("Using broyden1")
-        #     solution = scipy.optimize.broyden1(fd, xin=B)
-        # except scipy.optimize.nonlin.NoConvergence:
-        #     logging.info("Using fsolve")
-        #     solution = scipy.optimize.fsolve(fd, x0=B)
-        # except:
-        #     logging.info("Could Not Converge")
-        #     solution = [0 for i in range(self.numCovariates + 1)]
+        try:
+            logging.info("Using broyden1")
+            solution = scipy.optimize.broyden1(fd, xin=B, iter=100)
+        except scipy.optimize.nonlin.NoConvergence:
+            logging.info("Using fsolve")
+            solution = scipy.optimize.fsolve(fd, x0=B)
+        except:
+            logging.info("Could Not Converge")
+            solution = [0 for i in range(self.numCovariates + 1)]
 
 
         #solution = scipy.optimize.broyden2(fd, xin=B)          #Does not work (Seems to work well until the 3 covariates then crashes)
         #solution = scipy.optimize.anderson(fd, xin=B)          #Works for DW2 - DS1  - EstB{0.998, 0.999} Does not work for DS2
         #solution = scipy.optimize.excitingmixing(fd, xin=B)    #Does not work
+
         #solution = scipy.optimize.newton_krylov(fd, xin=B)     #Does not work
+
         #solution = scipy.optimize.linearmixing(fd, xin=B)      #Does not work
         #solution = scipy.optimize.diagbroyden(fd, xin=B)       #Does not Work
+
         #solution = scipy.optimize.root(fd, x0=B, method='hybr')
         #solution = scipy.optimize.fsolve(fd, x0=B)
         logging.info("MLEs solved.")
@@ -240,11 +243,13 @@ class Model(ABC):
         pass
 
     def AIC(self, h, betas):
-        p = len(betas) + 1 + 1   # number of covariates + number of hazard rate parameters + 1 (omega)
+        # +2 variables for any other algorithm
+        p = len(betas) + 1 #+ 1   # number of covariates + number of hazard rate parameters + 1 (omega)
         return 2 * p - np.multiply(2, self.LLF(h, betas))
 
     def BIC(self, h, betas):
-        p = len(betas) + 1 + 1   # number of covariates + number of hazard rate parameters + 1 (omega)
+        # +2 variables for any other algorithm
+        p = len(betas) + 1 #+ 1   # number of covariates + number of hazard rate parameters + 1 (omega)
         return p * np.log(self.n) - 2 * self.LLF(h, betas)
 
     def SSE(self, fitted, actual):
@@ -403,7 +408,7 @@ class Model(ABC):
         #     bh[i] = np.array([diff(f, x_copy[j]) for j in range(self.numCovariates + 1)])
         #     logging.info("bh[{0}] = {1}".format(i, bh[i]))
 
-        Model.maxCovariates = self.numCovariates
+        Model.maxCovariates = self.numCovariates    # UNNECESSARY, use self.data.numCovariates
         f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
         bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
         # Model.lambdaFunctionAll = self.convertSym(x, bh, "numpy")
