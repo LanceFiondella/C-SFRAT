@@ -214,8 +214,8 @@ class MainWindow(QMainWindow):
         files = QFileDialog.getOpenFileName(self, "Open profile", "", filter=("Data Files (*.csv *.xls *.xlsx)"))
         # if a file was loaded
         if files[0]:
+            self._main.tabs.tab1.sideMenu.runButton.setDisabled(True)
             self.symbolicComplete = False   # reset flag, need to run symbolic functions before estimation
-
             self.data.importFile(files[0])      # imports loaded file
             self.dataLoaded = True
             logging.info("Data loaded from {0}".format(files[0]))
@@ -251,6 +251,7 @@ class MainWindow(QMainWindow):
         logging.info("ENTERING runSymbolic FUNCTION")
         self.symbolicComplete = True
         logging.info(f"Symbolic calculations completed.")
+        self._main.tabs.tab1.sideMenu.runButton.setDisabled(False)
 
     def changeSheet(self, index):
         """
