@@ -43,16 +43,6 @@ class Data:
             self._currentSheet = 0
             logging.info("Cannot set sheet to index {0} since the data does not contain a sheet with that index. Sheet index instead set to 0.".format(index))
 
-    # @property
-    # def numCovariates(self):
-    #     self._numCovariates = len(self.dataSet[self.sheetNames[self._currentSheet]].columns) - 3
-    #     logging.debug("{0} covariates.".format(self._numCovariates))
-    #     return self._numCovariates
-
-    # @numCovariates.setter
-    # def numCovariates(self):
-    #     pass
-
     def setupMetricNameDictionary(self):
         """
         For allocation table. Allows the effort allocation to be placed in correct column.
@@ -84,7 +74,7 @@ class Data:
                 raise KeyError("Column 'FC' containing failure count not found in imported file.")
             if "T" not in data:
                 # data["T"] = pd.Series([i+1 for i in range(data["FC"].size)])
-                data.insert(loc=0, column="T", value=pd.Series([i+1 for i in range(data["FC"].size)]))
+                data.insert(loc=0, column='T', value=pd.Series([i+1 for i in range(data['FC'].size)]))
             dataSet[sheet] = self.processRawData(data)
             numCov = self.initialNumCovariates(data)
             if self.containsHeader:
@@ -96,7 +86,7 @@ class Data:
     # data not processed, currently
     def processRawData(self, data):
         """
-        Adds column for cumulative failures
+        Add column for cumulative failures
         Args:
             data : raw pandas dataframe
         Returns:
@@ -104,6 +94,7 @@ class Data:
         """
         # print(data)
         data["Cumulative"] = data["FC"].cumsum()  # add column for cumulative failures
+        data['IF'] = data['T'].diff()
         # print(data)
         return data
 

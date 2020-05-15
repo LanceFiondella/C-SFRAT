@@ -44,12 +44,13 @@ import numpy as np
 import logging
 
 # Local imports
+import models
 from ui.commonWidgets import PlotWidget, PlotAndTable, ComputeWidget, TaskThread, SymbolicThread
 from core.dataClass import Data
 from core.graphSettings import PlotSettings
 from core.allocation import EffortAllocation
 from core.comparison import Comparison
-import models
+from core.trendTests import *
 
 
 class MainWindow(QMainWindow):
@@ -79,6 +80,8 @@ class MainWindow(QMainWindow):
 
         # set data
         self.data = Data()
+        self.trendTests = {cls.__name__: cls for
+                           cls in TrendTest.__subclasses__()}
         self.plotSettings = PlotSettings()
         self.selectedModelNames = []
 
@@ -177,21 +180,28 @@ class MainWindow(QMainWindow):
         viewStyle.addAction(viewBoth)
         # add actions to view menu
         viewMenu.addActions(viewStyle.actions())
+
         # -- graph display
         graphStyle = QActionGroup(viewMenu)
         # MVF
-        mvf = QAction("MVF Graph", self, checkable=True)
-        mvf.setShortcut("Ctrl+M")
-        mvf.setStatusTip("Graphs display MVF of data")
-        mvf.setChecked(True)
-        mvf.triggered.connect(self.setMVFView)
-        graphStyle.addAction(mvf)
+        self.mvf = QAction("MVF Graph", self, checkable=True)
+        self.mvf.setShortcut("Ctrl+M")
+        self.mvf.setStatusTip("Graphs display MVF of data")
+        self.mvf.setChecked(True)
+        self.mvf.triggered.connect(self.setMVFView)
+        graphStyle.addAction(self.mvf)
         # intensity
-        intensity = QAction("Intensity Graph", self, checkable=True)
-        intensity.setShortcut("Ctrl+I")
-        intensity.setStatusTip("Graphs display failure intensity")
-        intensity.triggered.connect(self.setIntensityView)
-        graphStyle.addAction(intensity)
+        self.intensity = QAction("Intensity Graph", self, checkable=True)
+        self.intensity.setShortcut("Ctrl+I")
+        self.intensity.setStatusTip("Graphs display failure intensity")
+        self.intensity.triggered.connect(self.setIntensityView)
+        graphStyle.addAction(self.intensity)
+        # trend test
+        viewTest = QAction("View Trend", self, checkable=True)
+        viewTest.setShortcut('Ctrl+T')
+        viewTest.setStatusTip('View Trend Test')
+        viewTest.triggered.connect(self._main.tabs.tab1.sideMenu.testChanged)
+        graphStyle.addAction(viewTest)
         # add actions to view menu
         viewMenu.addSeparator()
         viewMenu.addActions(graphStyle.actions())
@@ -292,9 +302,11 @@ class MainWindow(QMainWindow):
 
         if self.dataViewIndex == 0:     # changed from index to self.dataViewIndex
             # MVF
+            self.mvf.setChecked(True)
             self.createMVFPlot(dataframe)
         if self.dataViewIndex == 1:     # changed from index to self.dataViewIndex
             # Intensity
+            self.intensity.setChecked(True)
             self.createIntensityPlot(dataframe)
 
         # redraw figures
@@ -302,12 +314,32 @@ class MainWindow(QMainWindow):
         self._main.tabs.tab1.plotAndTable.figure.canvas.draw()
         self._main.tabs.tab2.plot.figure.canvas.draw()
 
+    def setTrendTest(self, index):
+        """
+        Set the view to a trend test
+
+        Args:
+            index: index of the list of trend test
+        """
+        trendTest = list(self.trendTests.values())[index]()
+        trendData = trendTest.run(self.data.getData())
+        self.ax = self.plotSettings.generatePlot(self.ax, trendData['X'],
+                                                 trendData['Y'],
+                                                 title=trendTest.name,
+                                                 xLabel=trendTest.xAxisLabel,
+                                                 yLabel=trendTest.yAxisLabel)
+        self._main.tabs.tab1.plotAndTable.figure.canvas.draw()
+
     def createMVFPlot(self, dataframe):
         """
         called by setDataView
         """
         # self.plotSettings.plotType = "plot" # if continous
         self.plotSettings.plotType = "step" # if step
+
+        self._main.tabs.tab1.sideMenu.testSelect.setDisabled(True)  # disable trend tests when displaying imported data
+        self._main.tabs.tab1.sideMenu.confidenceSpinBox.setDisabled(True)
+
         self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe["Cumulative"],
                                                  title="", xLabel="Cumulative time", yLabel="Cumulative failures")
         if self.estimationComplete:
@@ -331,6 +363,10 @@ class MainWindow(QMainWindow):
         called by setDataView
         """
         self.plotSettings.plotType = "bar"
+
+        self._main.tabs.tab1.sideMenu.testSelect.setDisabled(True)  # disable trend tests when displaying imported data
+        self._main.tabs.tab1.sideMenu.confidenceSpinBox.setDisabled(True)
+
         self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe.iloc[:, 1],
                                                  title="", xLabel="Cumulative time", yLabel="Failures")
         if self.estimationComplete:
@@ -531,15 +567,16 @@ class SideMenu1(QVBoxLayout):
     """
 
     # signals
-    viewChangedSignal = pyqtSignal(str, int)    # should this be before init?
+    viewChangedSignal = pyqtSignal(str, int)
     runModelSignal = pyqtSignal(dict)
+
 
     def __init__(self):
         super().__init__()
         self.setupSideMenu()
 
     def setupSideMenu(self):
-        self.sheetGroup = QGroupBox("Select Sheet")
+        self.sheetGroup = QGroupBox("Select Data")
         self.sheetGroup.setLayout(self.setupSheetGroup())
         self.addWidget(self.sheetGroup)
 
@@ -558,14 +595,34 @@ class SideMenu1(QVBoxLayout):
         self.addStretch(1)
 
         # signals
-        self.sheetSelect.currentIndexChanged.connect(self.emitSheetChangedSignal)
+        self.sheetSelect.currentIndexChanged.connect(self.emitSheetChangedSignal)   # when sheet selection changed
+        self.testSelect.currentIndexChanged.connect(self.testChanged)   # when trend test selection changed
 
     def setupSheetGroup(self):
         sheetGroupLayout = QVBoxLayout()
         # sheetGroupLayout.addWidget(QLabel("Select sheet"))
 
         self.sheetSelect = QComboBox()
+        self.testSelect = QComboBox()   # select trend test
+        
+        trendTests = {cls.__name__: cls for
+                      cls in TrendTest.__subclasses__()}
+        self.testSelect.addItems([test.name for test in
+                                  trendTests.values()])
+        self.testSelect.setEnabled(False)   # begin disabled, showing imported data on startup, not trend test
+
+        self.confidenceSpinBox = QDoubleSpinBox()
+        self.confidenceSpinBox.setRange(0.0, 1.0)
+        self.confidenceSpinBox.setSingleStep(0.01)  # step by 0.01
+        self.confidenceSpinBox.setValue(0.95) # default value
+        self.confidenceSpinBox.setDisabled(True)    # disabled on start up
+
+        sheetGroupLayout.addWidget(QLabel("Select Sheet"))
         sheetGroupLayout.addWidget(self.sheetSelect)
+        sheetGroupLayout.addWidget(QLabel("Select Trend Test"))
+        sheetGroupLayout.addWidget(self.testSelect)
+        sheetGroupLayout.addWidget(QLabel("Specify Laplace Confidence Level"))
+        sheetGroupLayout.addWidget(self.confidenceSpinBox)
 
         return sheetGroupLayout
 
@@ -651,6 +708,13 @@ class SideMenu1(QVBoxLayout):
 
     def emitSheetChangedSignal(self):
         self.viewChangedSignal.emit("sheet", self.sheetSelect.currentIndex())
+
+    def testChanged(self):
+        self.testSelect.setEnabled(True)
+        self.confidenceSpinBox.setEnabled(True)
+        # self.viewMode.setEnabled(False)
+        self.viewChangedSignal.emit('trend', self.testSelect.currentIndex())
+
 #endregion
 
 #region Tab 2
@@ -810,7 +874,7 @@ class SideMenu3(QGridLayout):
 
     def setupSideMenu(self):
         self.createLabel("Metric", 0, 0)
-        self.createLabel("Weighting", 0, 1)
+        self.createLabel("weights (0-10)", 0, 1)
         self.createLabel("LLF", 1, 0)
         self.createLabel("AIC", 2, 0)
         self.createLabel("BIC", 3, 0)
@@ -842,7 +906,7 @@ class SideMenu3(QGridLayout):
         self.comboBoxChangedSignal.emit()
 #endregion
 
-#region tab4_test
+#region tab4
 class Tab4(QWidget):
 
     def __init__(self):
