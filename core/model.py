@@ -27,7 +27,7 @@ class Model(ABC):
         self.t = self.data.iloc[:, 0].values            # failure times, from first column of dataframe
         self.failures = self.data.iloc[:, 1].values     # number of failures, from second column of dataframe
         self.n = len(self.failures)                     # number of discrete time segments
-        self.cumulativeFailures = self.data["Cumulative"].values
+        self.cumulativeFailures = self.data["CFC"].values
         self.totalFailures = self.cumulativeFailures[-1]
         # list of arrays or array of arrays?
         self.covariateData = [self.data[name].values for name in self.metricNames]

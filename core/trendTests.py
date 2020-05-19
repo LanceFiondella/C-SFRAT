@@ -27,6 +27,8 @@ class TrendTest(ABC):
         """
         return pd.DataFrame({'X-axis': [0], 'Y-axis': [0]})
 
+    # def convertDataframe(self, data):
+    #     pass
 
 class LaplaceTest(TrendTest):
     """
@@ -48,7 +50,7 @@ class LaplaceTest(TrendTest):
             laplace[i] = ((((1/(i))*cur_sum) - (data['T'][i]/2)) /
                           (data['T'][i]*(1/(12*(i))**(0.5))))
 
-        return pd.DataFrame({'X': data['FC'], 'Y': laplace})
+        return pd.DataFrame({'X': data['FN'], 'Y': laplace})
 
 
 class AverageTest(TrendTest):
@@ -67,4 +69,4 @@ class AverageTest(TrendTest):
         for i in range(len(data)):
             avg[i] = sum(data['IF'][0:i+1])/(i+1)
 
-        return pd.DataFrame({'X': data['FC'], 'Y': avg})
+        return pd.DataFrame({'X': data['FN'], 'Y': avg})

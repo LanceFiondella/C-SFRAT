@@ -341,10 +341,10 @@ class MainWindow(QMainWindow):
         self._main.tabs.tab1.sideMenu.testSelect.setDisabled(True)  # disable trend tests when displaying imported data
         self._main.tabs.tab1.sideMenu.confidenceSpinBox.setDisabled(True)
 
-        self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe["Cumulative"],
+        self.ax = self.plotSettings.generatePlot(self.ax, dataframe['T'], dataframe["CFC"],
                                                  title="", xLabel="Cumulative time", yLabel="Cumulative failures")
         if self.estimationComplete:
-            self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe.iloc[:, 0], dataframe["Cumulative"],
+            self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe['T'], dataframe["CFC"],
                                                       title="", xLabel="Cumulative time", yLabel="Cumulative failures")
             self.plotSettings.plotType = "plot"
             # for model in self.estimationResults.values():
@@ -368,10 +368,10 @@ class MainWindow(QMainWindow):
         self._main.tabs.tab1.sideMenu.testSelect.setDisabled(True)  # disable trend tests when displaying imported data
         self._main.tabs.tab1.sideMenu.confidenceSpinBox.setDisabled(True)
 
-        self.ax = self.plotSettings.generatePlot(self.ax, dataframe.iloc[:, 0], dataframe.iloc[:, 1],
+        self.ax = self.plotSettings.generatePlot(self.ax, dataframe['T'], dataframe.iloc[:, 1],
                                                  title="", xLabel="Cumulative time", yLabel="Failures")
         if self.estimationComplete:
-            self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe.iloc[:, 0], dataframe.iloc[:, 1],
+            self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe['T'], dataframe['FC'],
                                                       title="", xLabel="Cumulative time", yLabel="Failures")
             self.plotSettings.plotType = "plot"
             # for model in self.estimationResults.values():

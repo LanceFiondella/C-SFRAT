@@ -21,6 +21,7 @@ class Data:
         """
         self.sheetNames = ["None"]
         self._currentSheet = 0
+        self.STATIC_COLUMNS = 5 # 5 for T, FC, CFC, FN, IF columns
         self.dataSet = {"None": None}
         # self._numCovariates = 0
         self.numCovariates = 0
@@ -41,7 +42,8 @@ class Data:
             logging.info("Current sheet index set to {0}.".format(index))
         else:
             self._currentSheet = 0
-            logging.info("Cannot set sheet to index {0} since the data does not contain a sheet with that index. Sheet index instead set to 0.".format(index))
+            logging.info("Cannot set sheet to index {0} since the data does not contain a sheet with that index.\
+                          Sheet index instead set to 0.".format(index))
 
     def setupMetricNameDictionary(self):
         """
@@ -54,9 +56,15 @@ class Data:
             i += 1
 
     def setNumCovariates(self):
-        # -3 columns for failure times, number of failures, and cumulative failures
-        numCov = len(self.dataSet[self.sheetNames[self._currentSheet]].columns) - 3
-        self.numCovariates = numCov
+        """
+        Sets number of covariates for each sheet
+        """
+        # subtract columns for failure times, number of failures, and cumulative failures
+        numCov = len(self.dataSet[self.sheetNames[self._currentSheet]].columns) - self.STATIC_COLUMNS
+        if numCov >= 0:
+            self.numCovariates = numCov
+        else:
+            self.numCovariates = 0
 
     def setData(self, dataSet):
         """
@@ -93,9 +101,50 @@ class Data:
             data : processed pandas dataframe
         """
         # print(data)
-        data["Cumulative"] = data["FC"].cumsum()  # add column for cumulative failures
+        data["CFC"] = data["FC"].cumsum()  # add column for cumulative failures
         data['IF'] = data['T'].diff()
-        # print(data)
+        data['IF'].iloc[0] = data['T'].iloc[0]
+
+        # 
+        FTData = pd.DataFrame()
+        FT = []
+        for i, fc in enumerate(data['FC']):
+            if fc != 0:
+                if i == 0:
+                    fails = np.array([(j+0.5)*float(data['T'][i]) /
+                                     float(fc) for j in range(int(fc))])
+                    for fail in fails:
+                        FT.append(fail)
+                elif i > 0:
+                    fails = np.array([(j+0.5)*float(data['T'][i] -
+                                      data['T'][i-1]) /
+                                     float(fc) for j in range(int(fc))])
+                    for fail in fails:
+                        FT.append(data['T'][i]+fail)
+        FTData['FT'] = pd.Series(FT)
+        data['FN'] = pd.Series([i+1 for i in range(FTData['FT'].size)])
+
+        return data
+
+    def processFT(self, data):
+        """
+        Processes raw FT data to fill in any gaps
+        Args:
+            data: Raw pandas dataframe
+        Returns:
+            data: Processed pandas dataframe
+        """
+        # failure time
+        if 'FT' not in data:
+            data["FT"] = data["IF"].cumsum()
+
+        # inter failure time
+        elif 'IF' not in data:
+            data['IF'] = data['FT'].diff()
+            data['IF'].iloc[0] = data['FT'].iloc[0]
+
+        if 'FN' not in data:
+            data['FN'] = pd.Series([i+1 for i in range(data['FT'].size)])
         return data
 
     def metricsUnnamed(self, data, numCov):
@@ -117,7 +166,7 @@ class Data:
         """
         Calculates the number of covariates on a given sheet
         """
-        numCov = len(data.columns) - 3
+        numCov = len(data.columns) - self.STATIC_COLUMNS
         # logging.debug("{0} covariates.".format(self._numCovariates))
         return numCov
 
@@ -170,7 +219,7 @@ class Data:
         self._currentSheet = 0
         self.setData(data)
         self.setNumCovariates()
-        self.metricNames = self.dataSet[self.sheetNames[self._currentSheet]].columns.values[2:-1]
+        self.metricNames = self.dataSet[self.sheetNames[self._currentSheet]].columns.values[2:2+self.numCovariates]
         self.getMetricNameCombinations()
         self.setupMetricNameDictionary()
 

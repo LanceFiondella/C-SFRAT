@@ -32,6 +32,7 @@ class PlotSettings:
         if self.plotType == "step":
             # can only have "post" parameter if using a step function
             plotMethod(x, y, self.style, markerSize=self.markerSize, where="post")  # ax.step()
+            # plotMethod(x, y, self.style, markerSize=self.markerSize)  # ax.step()
         elif self.plotType == "bar":
             # ax.set_xticks(x)
             ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
