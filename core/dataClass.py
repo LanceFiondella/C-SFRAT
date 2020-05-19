@@ -1,4 +1,4 @@
-import logging
+import logging as log
 import os.path
 
 import pandas as pd
@@ -39,11 +39,11 @@ class Data:
     def currentSheet(self, index):
         if index < len(self.sheetNames) and index >= 0:
             self._currentSheet = index
-            logging.info("Current sheet index set to {0}.".format(index))
+            log.info("Current sheet index set to %d.", index)
         else:
             self._currentSheet = 0
-            logging.info("Cannot set sheet to index {0} since the data does not contain a sheet with that index.\
-                          Sheet index instead set to 0.".format(index))
+            log.info("Cannot set sheet to index %d since the data does not contain a sheet with that index.\
+                      Sheet index instead set to 0.", index)
 
     def setupMetricNameDictionary(self):
         """
@@ -167,7 +167,7 @@ class Data:
         Calculates the number of covariates on a given sheet
         """
         numCov = len(data.columns) - self.STATIC_COLUMNS
-        # logging.debug("{0} covariates.".format(self._numCovariates))
+        # log.debug("%d covariates.", self._numCovariates)
         return numCov
 
     def renameHeader(self, data, numCov):

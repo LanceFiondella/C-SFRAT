@@ -5,7 +5,7 @@ import sympy as sym
 from sympy import symbols, diff, exp, lambdify, DeferredVector, factorial, Symbol, Idx, IndexedBase
 import scipy.optimize
 
-import logging
+import logging as log
 
 import models   # maybe??
 
@@ -31,19 +31,19 @@ class Model(ABC):
         self.totalFailures = self.cumulativeFailures[-1]
         # list of arrays or array of arrays?
         self.covariateData = [self.data[name].values for name in self.metricNames]
-        # logging.info(f"covariate data = {self.covariateData}")
-        # logging.info(f"")
+        # log.info(f"covariate data = {self.covariateData}")
+        # log.info(f"")
         self.numCovariates = len(self.covariateData) 
         self.converged = False
         self.setupMetricString()
 
         # logging
-        logging.info("Failure times: {0}".format(self.t))
-        logging.info("Number of time segments: {0}".format(self.n))
-        logging.info("Failures: {0}".format(self.failures))
-        logging.info("Cumulative failures: {0}".format(self.cumulativeFailures))
-        logging.info("Total failures: {0}".format(self.totalFailures))
-        logging.info("Number of covariates: {0}".format(self.numCovariates))
+        log.info("Failure times: %s", self.t)
+        log.info("Number of time segments: %d", self.n)
+        log.info("Failures: %s", self.failures)
+        log.info("Cumulative failures: %s", self.cumulativeFailures)
+        log.info("Total failures: %d", self.totalFailures)
+        log.info("Number of covariates: %d", self.numCovariates)
 
     ################################################
     # Properties/Members all models must implement #
@@ -188,18 +188,18 @@ class Model(ABC):
         return firstTerm + secondTerm + thirdTerm - fourthTerm
 
     def optimizeSolution(self, fd, B):
-        logging.info("Solving for MLEs...")
+        log.info("Solving for MLEs...")
 
         # solution = scipy.optimize.fsolve(fd, x0=B)
 
         try:
-            logging.info("Using broyden1")
+            log.info("Using broyden1")
             solution = scipy.optimize.broyden1(fd, xin=B, iter=100)
         except scipy.optimize.nonlin.NoConvergence:
-            logging.info("Using fsolve")
+            log.info("Using fsolve")
             solution = scipy.optimize.fsolve(fd, x0=B)
         except:
-            logging.info("Could Not Converge")
+            log.info("Could Not Converge")
             solution = [0 for i in range(self.numCovariates + 1)]
 
 
@@ -214,8 +214,8 @@ class Model(ABC):
 
         #solution = scipy.optimize.root(fd, x0=B, method='hybr')
         #solution = scipy.optimize.fsolve(fd, x0=B)
-        logging.info("MLEs solved.")
-        logging.info(solution)
+        log.info("MLEs solved.")
+        log.info("Solution: %s", solution)
         return solution
 
     def calcOmega(self, h, betas):
@@ -317,19 +317,19 @@ class Model(ABC):
 
     def runEstimation(self):
         initial = self.initialEstimates()
-        # logging.info("Initial estimates: {0}".format(initial))
+        # log.info("Initial estimates: %s", initial)
         # f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
         # bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
-        # logging.info("Log-likelihood differentiated.")
-        # logging.info("Converting symbolic equation to numpy...")
+        # log.info("Log-likelihood differentiated.")
+        # log.info("Converting symbolic equation to numpy...")
         # fd = self.convertSym(x, bh, "numpy")
 
 
         # b, beta1, beta2, beta3
-        # logging.info("fd after convert = {0}".format(fd))
+        # log.info("fd after convert = %s", fd)
 
         # need class of specific model being used, lambda function stored as class variable
-        # logging.info(f"name = {self.__class__.__name__}")
+        # log.info("name = %s", self.__class__.__name__)
         m = models.modelList[self.__class__.__name__]
 
         # ex. (max covariates = 3) for 3 covariates, zero_array should be length 0
@@ -351,11 +351,11 @@ class Model(ABC):
 
 
 
-        logging.info(f"INITIAL ESTIMATES = {initial}")
-        # logging.info(f"PASSING INITIAL ESTIMATES = {fd(initial)}")
+        log.info("INITIAL ESTIMATES = %s", initial)
+        # log.info(f"PASSING INITIAL ESTIMATES = {fd(initial)}")
 
         sol = self.optimizeSolution(fd, initial)
-        logging.info("Optimized solution: {0}".format(sol))
+        log.info("Optimized solution: %s", sol)
 
         self.b = sol[0]
         self.betas = sol[1:]
@@ -364,13 +364,13 @@ class Model(ABC):
 
     def modelFitting(self, hazard, betas):
         self.omega = self.calcOmega(hazard, betas)
-        logging.info("Calculated omega: {0}".format(self.omega))
+        log.info("Calculated omega: %s", self.omega)
         self.llfVal = self.LLF(hazard, betas)      # log likelihood value
-        logging.info("Calculated log-likelihood value: {0}".format(self.llfVal))
+        log.info("Calculated log-likelihood value: %s", self.llfVal)
         self.aicVal = self.AIC(hazard, betas)
-        logging.info("Calculated AIC: {0}".format(self.aicVal))
+        log.info("Calculated AIC: %s", self.aicVal)
         self.bicVal = self.BIC(hazard, betas)
-        logging.info("Calculated BIC: {0}".format(self.bicVal))
+        log.info("Calculated BIC: %s", self.bicVal)
         self.mvfList = self.MVF_all(hazard, self.omega, betas)
 
         # temporary
@@ -380,11 +380,11 @@ class Model(ABC):
             self.converged = True
 
         self.sseVal = self.SSE(self.mvfList, self.cumulativeFailures)
-        logging.info("Calculated SSE: {0}".format(self.sseVal))
+        log.info("Calculated SSE: %s", self.sseVal)
         self.intensityList = self.intensityFit(self.mvfList)
 
-        logging.info("MVF values: {0}".format(self.mvfList))
-        logging.info("Intensity values: {0}".format(self.intensityList))
+        log.info("MVF values: %s", self.mvfList)
+        log.info("Intensity values: %s", self.intensityList)
 
     def symAll(self):
         """
@@ -402,11 +402,11 @@ class Model(ABC):
         # #     x[i:self.numCovariates + 1] = 0
         # for i in range(self.numCovariates):
         #     x_copy = x.subs()
-        #     logging.info("x = {0}".format(x))
+        #     log.info("x = {0}".format(x))
         #     x_copy[1:i+1] = [0 for j in range(i)]
-        #     logging.info("x_copy = {0}".format(x_copy))
+        #     log.info("x_copy = {0}".format(x_copy))
         #     bh[i] = np.array([diff(f, x_copy[j]) for j in range(self.numCovariates + 1)])
-        #     logging.info("bh[{0}] = {1}".format(i, bh[i]))
+        #     log.info("bh[{0}] = {1}".format(i, bh[i]))
 
         Model.maxCovariates = self.numCovariates    # UNNECESSARY, use self.data.numCovariates
         f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function

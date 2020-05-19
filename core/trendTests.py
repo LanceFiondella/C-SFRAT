@@ -1,9 +1,6 @@
-
-import pandas as pd
-import logging as log
-import numpy as np
 from abc import ABC, abstractmethod, abstractproperty
-
+import pandas as pd
+import numpy as np
 
 class TrendTest(ABC):
     name = 'Trend test name not set'

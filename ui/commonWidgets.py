@@ -10,7 +10,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas, \
                                     NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
-import logging
+import logging as log
 
 class PlotWidget(QWidget):
     def __init__(self):
@@ -107,6 +107,7 @@ class TaskThread(QThread):
     # predict points?
     def __init__(self, modelsToRun, metricNames, data):
         super().__init__()
+        self.abort = False  # True when app closed, so thread stops running
         self.modelsToRun = modelsToRun
         self.metricNames = metricNames
         self.data = data
@@ -114,10 +115,16 @@ class TaskThread(QThread):
     def run(self):
         self.nextCalculation.emit("symbolic equations") # window says that symbolic equations are being calculated
         while(not SymbolicThread.complete):
+            # check if application has been closed
+            if self.abort:
+                return  # get out of run method
             pass    # wait until symbolic equations are calculated, do nothing until then
         result = {}
         for model in self.modelsToRun:
             for metricCombination in self.metricNames:
+                # check if application has been closed
+                if self.abort:
+                    return  # get out of run method
                 metricNames = ", ".join(metricCombination)
                 if (metricCombination == ["No covariates"]):
                     metricCombination = []
@@ -139,17 +146,21 @@ class SymbolicThread(QThread):
 
     def __init__(self, modelList, data):
         super().__init__()
+        self.abort = False  # True when app closed, so thread stops running
         self.modelList = modelList
         self.data = data
 
     def run(self):
-        # logging.info(f"modelList = {models.modelList}")
-        SymbolicThread.complete = False # set flag to False when starting calculations
-        logging.info("RUNNING SYMBOLIC THREAD")
+        # log.info(f"modelList = {models.modelList}")
+        # SymbolicThread.complete = False # set flag to False when starting calculations
+        log.info("RUNNING SYMBOLIC THREAD")
         for model in self.modelList.values():
+            # check if application has been closed
+            if self.abort:
+                return  # get out of run method
             # need to initialize models so they have the imported data
             instantiatedModel = model(data=self.data.getData(), metricNames=self.data.metricNames)
             model.lambdaFunctionAll = instantiatedModel.symAll()    # saved as class variable for each model
-            logging.info(f"Lambda function created for {model.name} model")
+            log.info("Lambda function created for %s model", model.name)
         SymbolicThread.complete = True  # calculations complete, set flag to True
         self.symbolicSignal.emit()

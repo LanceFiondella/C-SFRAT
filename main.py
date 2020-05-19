@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse  # to handle command line arguments
-import logging # to handle debug output
+import logging as log # to handle debug output
 import sys
 
 from PyQt5.QtWidgets import QApplication  # for UI
@@ -9,7 +9,7 @@ from PyQt5.QtCore import Qt  # for UI
 
 from ui.mainWindow import MainWindow
 
-# log = logging.getLogger("ui.mainWindow")
+# log = log.getLogger("ui.mainWindow")
 
 def main(debug):
     """
@@ -18,7 +18,7 @@ def main(debug):
     Args
         debug : 
     """
-    logging.info("Starting Covariate Tool application.")
+    log.info("Starting Covariate Tool application.")
     app = QApplication(sys.argv)
     mainWindow = MainWindow(debug)
     sys.exit(app.exec_())
@@ -34,15 +34,15 @@ if __name__ == "__main__":
 
     if args.debug:
         debug = True
-        logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.DEBUG)
-        logging.debug("In DEBUG mode.")
+        log.basicConfig(format="%(levelname)s: %(message)s", level=log.DEBUG)
+        log.debug("In DEBUG mode.")
     elif args.verbose:
         # if using verbose output set logging to display level and message
         # print anything level debug or higher
-        logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
-        logging.info("Using verbose output.")
+        log.basicConfig(format="%(levelname)s: %(message)s", level=log.INFO)
+        log.info("Using verbose output.")
     else:
         # if not using verbose output only print errors and warnings
-        logging.basicConfig(format="%(levelname)s: %(message)s")
+        log.basicConfig(format="%(levelname)s: %(message)s")
 
     main(debug)

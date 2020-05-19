@@ -41,7 +41,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # For handling debug output
-import logging
+import logging as log
 
 # Local imports
 import models
@@ -109,13 +109,34 @@ class MainWindow(QMainWindow):
         self._main.tabs.tab4.sideMenu.runAllocationSignal.connect(self.runAllocation)
 
         self.initUI()
-        logging.info("UI loaded.")
+        log.info("UI loaded.")
 
     def closeEvent(self, event):
         """
-        description to be created at a later time
+        Called when application is closed by user. Quits all threads,
+        and shuts down app.
         """
-        logging.info("Covariate Tool application closed.")
+        log.info("Covariate Tool application closed.")
+
+        # --- stop running threads ---
+        # stop symbolic thread 
+        try:
+            # self.symbolicThread.quit()
+            self.symbolicThread.abort = True
+            self.symbolicThread.wait()
+        except AttributeError:
+            pass
+
+        # stop model estimation thread
+        try:
+            # self.computeWidget.computeTask.quit()
+            self.computeWidget.computeTask.abort = True
+            self.computeWidget.computeTask.wait()
+        except AttributeError:
+            # should catch if computeWidget not an attribute of mainWindow,
+            # or if computeTask not yet an attribute of computeWidget
+            pass
+        
         qApp.quit()
 
     def initUI(self):
@@ -211,14 +232,15 @@ class MainWindow(QMainWindow):
         """
         sets self.dataLoaded = True flag
         """
-        files = QFileDialog.getOpenFileName(self, "Open profile", "", filter=("Data Files (*.csv *.xls *.xlsx)"))
+        # default location is datasets directory
+        files = QFileDialog.getOpenFileName(self, "Open profile", "datasets", filter=("Data Files (*.csv *.xls *.xlsx)"))
         # if a file was loaded
         if files[0]:
             self._main.tabs.tab1.sideMenu.runButton.setDisabled(True)
             self.symbolicComplete = False   # reset flag, need to run symbolic functions before estimation
             self.data.importFile(files[0])      # imports loaded file
             self.dataLoaded = True
-            logging.info("Data loaded from {0}".format(files[0]))
+            log.info("Data loaded from %s", files[0])
             self.importFileSignal.emit()            # emits signal that file was imported successfully
 
             self.runSymbolic()
@@ -234,23 +256,23 @@ class MainWindow(QMainWindow):
         # self.setMetricList()
 
     def runSymbolic(self):
-        logging.info("ENTERING runSymbolic FUNCTION")
+        log.info("ENTERING runSymbolic FUNCTION")
         self.symbolicThread = SymbolicThread(models.modelList, self.data)
         self.symbolicThread.symbolicSignal.connect(self.onSymbolicComplete)
         self.symbolicThread.start()
 
         # MOVED TO commonWidgets, SymbolicThread class
-        # logging.info(f"modelList = {models.modelList}")
+        # log.info(f"modelList = {models.modelList}")
         # for m in models.modelList.values():
         #     # need to initialize models so they have the imported data
         #     instantiatedModel = m(data=self.data.getData(), metricNames=self.data.metricNames)
         #     m.lambdaFunctionAll = instantiatedModel.symAll()
-        #     logging.info(f"Lambda function created for {m.name} model")
+        #     log.info(f"Lambda function created for {m.name} model")
 
     def onSymbolicComplete(self):
-        logging.info("ENTERING runSymbolic FUNCTION")
+        log.info("ENTERING runSymbolic FUNCTION")
         self.symbolicComplete = True
-        logging.info(f"Symbolic calculations completed.")
+        log.info("Symbolic calculations completed.")
         self._main.tabs.tab1.sideMenu.runButton.setDisabled(False)
 
     def changeSheet(self, index):
@@ -269,8 +291,8 @@ class MainWindow(QMainWindow):
         self._main.tabs.tab1.sideMenu.metricListWidget.clear()
         if self.dataLoaded:
             self._main.tabs.tab1.sideMenu.metricListWidget.addItems(self.data.metricNameCombinations)
-            logging.info("{0} covariate metrics on this sheet: {1}".format(self.data.numCovariates,
-                                                                    self.data.metricNames))
+            log.info("%d covariate metrics on this sheet: %s", self.data.numCovariates,
+                                                               self.data.metricNames)
 
     def setDataView(self, viewType, index):
         """
@@ -396,25 +418,25 @@ class MainWindow(QMainWindow):
 
     def setLineView(self):
         self.setPlotStyle(style='-')
-        logging.info("Plot style set to line view.")
+        log.info("Plot style set to line view.")
 
     def setPointsView(self):
         self.setPlotStyle(style='o', plotType='plot')
-        logging.info("Plot style set to points view.")
+        log.info("Plot style set to points view.")
 
     def setLineAndPointsView(self):
         self.setPlotStyle(style='-o')
-        logging.info("Plot style set to line and points view.")
+        log.info("Plot style set to line and points view.")
 
     def setMVFView(self):
         self.dataViewIndex = 0
-        logging.info("Data plots set to MVF view.")
+        log.info("Data plots set to MVF view.")
         if self.dataLoaded:
             self.setRawDataView(self.dataViewIndex)
 
     def setIntensityView(self):
         self.dataViewIndex = 1
-        logging.info("Data plots set to intensity view.")
+        log.info("Data plots set to intensity view.")
         if self.dataLoaded:
             self.setRawDataView(self.dataViewIndex)
 
@@ -489,7 +511,7 @@ class MainWindow(QMainWindow):
         self._main.tabs.tab3.addResultsToTable(results)
         self._main.tabs.tab4.sideMenu.addSelectedModels(convergedNames) # add models to tab 4 list so they
                                                                         # can be selected for allocation
-        logging.info("Estimation results: {0}".format(results))
+        log.info("Estimation results: %s", results)
 
     def runGoodnessOfFit(self):
         if self.estimationComplete:
@@ -632,7 +654,7 @@ class SideMenu1(QVBoxLayout):
         self.modelListWidget = QListWidget()
         loadedModels = [model.name for model in models.modelList.values()]
         self.modelListWidget.addItems(loadedModels)
-        logging.info("{0} model(s) loaded: {1}".format(len(loadedModels), loadedModels))
+        log.info("%d model(s) loaded: %s", len(loadedModels), loadedModels)
         self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)       # able to select multiple models
         modelGroupLayout.addWidget(self.modelListWidget)
 
@@ -670,7 +692,7 @@ class SideMenu1(QVBoxLayout):
         only emitted if at least one model and at least one
         metric is selected.
         """
-        logging.info("Run button pressed.")
+        log.info("Run button pressed.")
         # get model names as strings
         
         selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
@@ -688,10 +710,10 @@ class SideMenu1(QVBoxLayout):
                                       "metricNames": selectedMetricNames})
                                       #"metricNames": metricNames})
                                       
-            logging.info("Run models signal emitted. Models = {0}, metrics = {1}".format(selectedModelNames, selectedMetricNames))
+            log.info("Run models signal emitted. Models = %s, metrics = %s", selectedModelNames, selectedMetricNames)
         elif self.modelListWidget.count() > 0 and self.metricListWidget.count() > 0:
             # data loaded but not selected
-            logging.warning("Must select at least one model.")
+            log.warning("Must select at least one model.")
             msgBox = QMessageBox()
             msgBox.setIcon(QMessageBox.Warning)
             msgBox.setText("Model not selected")
@@ -699,7 +721,7 @@ class SideMenu1(QVBoxLayout):
             msgBox.setWindowTitle("Warning")
             msgBox.exec_()
         else:
-            logging.warning("No data found. Data must be loaded in CSV or Excel format.")
+            log.warning("No data found. Data must be loaded in CSV or Excel format.")
             msgBox = QMessageBox()
             msgBox.setIcon(QMessageBox.Warning)
             msgBox.setText("No data found")
@@ -795,7 +817,7 @@ class SideMenu2(QVBoxLayout):
 
     def emitModelChangedSignal(self):
         selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
-        logging.info("Selected models: {0}".format(selectedModelNames))
+        log.info("Selected models: %s", selectedModelNames)
         self.modelChangedSignal.emit(selectedModelNames)
 
 #endregion
@@ -1055,10 +1077,10 @@ class SideMenu4(QVBoxLayout):
         selectedCombinationNames = [item.text() for item in self.modelListWidget.selectedItems()]
         if selectedCombinationNames:
             selectedCombinationNames = [item.text() for item in self.modelListWidget.selectedItems()]
-            logging.info("Selected for Allocation: {0}".format(selectedCombinationNames))
+            log.info("Selected for Allocation: %s", selectedCombinationNames)
             self.runAllocationSignal.emit(selectedCombinationNames)
         else:
-            logging.warning("Must select at least one model/metric combination for allocation.")
+            log.warning("Must select at least one model/metric combination for allocation.")
             msgBox = QMessageBox()
             msgBox.setIcon(QMessageBox.Warning)
             msgBox.setText("No selection made for allocation")
