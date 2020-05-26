@@ -86,5 +86,5 @@ class SideMenu2(QVBoxLayout):
 
     def emitModelChangedSignal(self):
         selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
-        log.info("Selected models: %s", selectedModelNames)
+        log.debug("Selected models: %s", selectedModelNames)
         self.modelChangedSignal.emit(selectedModelNames)

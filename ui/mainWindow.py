@@ -47,8 +47,10 @@ from core.graphSettings import PlotSettings
 from core.allocation import EffortAllocation
 from core.trendTests import *
 
-
 class MainWindow(QMainWindow):
+    """
+    The main application window, called by running main.py
+    """
     # signals
     importFileSignal = pyqtSignal()
 

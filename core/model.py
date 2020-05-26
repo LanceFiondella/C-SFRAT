@@ -1,11 +1,14 @@
 from abc import ABC, abstractmethod, abstractproperty
 
+import logging as log
+
+import time   # for testing
+
 import numpy as np
 import sympy as sym
 from sympy import symbols, diff, exp, lambdify, DeferredVector, factorial, Symbol, Idx, IndexedBase
 import scipy.optimize
-
-import logging as log
+from scipy.special import factorial
 
 import models   # maybe??
 
@@ -38,12 +41,12 @@ class Model(ABC):
         self.setupMetricString()
 
         # logging
-        log.info("Failure times: %s", self.t)
-        log.info("Number of time segments: %d", self.n)
-        log.info("Failures: %s", self.failures)
-        log.info("Cumulative failures: %s", self.cumulativeFailures)
-        log.info("Total failures: %d", self.totalFailures)
-        log.info("Number of covariates: %d", self.numCovariates)
+        # log.info("Failure times: %s", self.t)
+        # log.info("Number of time segments: %d", self.n)
+        # log.info("Failures: %s", self.failures)
+        # log.info("Cumulative failures: %s", self.cumulativeFailures)
+        # log.info("Total failures: %d", self.totalFailures)
+        # log.info("Number of covariates: %d", self.numCovariates)
 
     ################################################
     # Properties/Members all models must implement #
@@ -115,8 +118,7 @@ class Model(ABC):
         bEstimate = np.random.uniform(self.shapeParameterEstimateRange[0], self.shapeParameterEstimateRange[1], 1)
         return np.insert(betasEstimate, 0, bEstimate)   # insert b in the 0th location of betaEstimate array
 
-
-    def LLF_sym(self, hazard):
+    def LLF_sym_old(self, hazard):
         # x[0] = b
         # x[1:] = beta1, beta2, ..
 
@@ -151,6 +153,259 @@ class Model(ABC):
 
         f = firstTerm + secondTerm + thirdTerm - fourthTerm
         return f, x
+
+    def LLF_sym(self, hazard):
+        x = DeferredVector('x')
+
+        failures = np.array(self.failures)
+        covariateData = np.array(self.covariateData)
+        h = np.array([hazard(i, x[0]) for i in range(self.n)])
+
+
+        failure_sum = np.sum(failures)
+
+        term1 = np.sum(np.log(np.math.factorial(failures[i])) for i in range(self.n))
+        term2 = failure_sum
+
+        oneMinusB = np.array([sym.Pow((1.0 - hazard(i, x[0])), sym.prod([sym.exp(x[j] * covariateData[j - 1][i]) for j in range(1, self.numCovariates + 1)])) for i in range(self.n)])
+        # print(oneMinusB)
+
+        # oneMinusB = oneMinusB.reshape((oneMinusB.shape[0],))
+
+        term3_num = np.sum(failures)
+        term3_den1 = np.sum(np.subtract(1.0, oneMinusB))
+
+
+        # for i in range(self.n):
+        #     for k in range(i):
+        #         for j in range(self.numCovariates):
+        #             np.power((1.0 - h[i]), np.array(np.exp(betas[j] * self.covariateData[j][k])))
+
+        exponent = np.array([np.prod([[x[j] * covariateData[j - 1][k] for j in range(1, self.numCovariates + 1)] for k in range(i)]) for i in range(self.n)])
+        # print(exponent)
+
+        # np.array([np.product([[betas[j] * cov[j][k] for j in range(3)] for k in range(i)]) for i in range(15)])
+
+        product_array = np.array(np.power(np.subtract(1.0, h), exponent))
+        # print(product_array)
+        # product_array = np.array([(np.power((1.0 - h[i]), np.array([np.exp(betas[j] * self.covariateData[j][k]) for j in range(self.numCovariates)])) for k in range(i)) for i in range(self.n)])
+        # print(type(product_array))
+        term3_den2 = np.prod(product_array)
+        term3 = sym.log(term3_num/(term3_den1 * term3_den2)) * failure_sum
+
+
+        # print(oneMinusB)
+        # print(term3_den2)
+        # print(self.failures)
+
+        a = np.subtract(1.0, oneMinusB)
+        # print("a =", a, "of type", type(a))
+        # print("term3_den2 =", term3_den2, "of type", type(term3_den2))
+        # b = np.prod(a, term3_den2)
+        b = a * term3_den2
+        # print(b[0])
+        c = np.array([sym.log(b[i]) for i in range(b.shape[0])])
+        # print("c =", c, "of type", type(c))
+        # print("failures =", failures, "of type", type(failures))
+        d = np.multiply(c, failures)
+        term4 = np.sum(d)
+
+        # term4 = np.sum(np.prod(np.log(np.prod(np.subtract(1.0, oneMinusB), term3_den2)), np.array(self.failures)))
+
+        f = -term1 - term2 + term3 + term4
+
+
+        return f, x
+
+    def LLF_sym_new2(self, hazard):
+        x = DeferredVector('x')
+
+        failures = np.array(self.failures)
+        covariateData = np.array(self.covariateData)
+
+        h = np.array([hazard(i, x[0]) for i in range(self.n)])
+
+
+        failure_sum = np.sum(failures)
+
+        term1 = np.sum(np.log(factorial(failures)))
+        term2 = failure_sum
+
+        oneMinusB_array = np.subtract(1.0, h)
+
+        covTransposed = covariateData.transpose()
+        # exponent_product = np.zeros((len(covTransposed), self.numCovariates))
+        exponent_product = [[0 for j in range(self.numCovariates)] for i in range(len(covTransposed))]
+
+        # print(x[1] * covTransposed[0][0])
+
+        for i in range(self.n):
+            for j in range(self.numCovariates):
+                exponent_product[i][j] = x[j + 1] * covTransposed[i][j]
+            exponent_product[i] = np.sum(exponent_product[i])
+
+        # print(exponent_product)
+
+        # exponent = np.exp(np.array(exponent_product))
+        exponent = np.array([sym.exp(exponent_product[i]) for i in range(len(exponent_product))])
+        # print(exponent)
+
+        denom1 = np.power(oneMinusB_array, exponent)
+
+        term3_num = np.sum(failures)
+        term3_den1_array = np.subtract(1.0, denom1)
+
+        ########
+
+        # for k in range(self.n):
+        #     for i in range(k):
+        #         for j in range(self.numCovariates):
+        #             exponent_product[i][j] = x[j + 1] * covTransposed[i][j]
+        #         exponent_product[i] = np.sum(exponent_product[i])
+
+        # term3_den2 = np.zeros(self.n)
+        term3_den2 = [0 for i in range(self.n)]
+        for k in range(self.n):
+            # already calculated (1 - b)^(exp(beta*cov))
+            # can just use slicing for that array
+            # print(denom1[0:k + 1])
+            # subset = denom1[0:k + 1]
+            # prod_temp = 1
+            # prod_temp = [(prod_temp * i) for i in subset]
+            term3_den2[k] = np.prod(denom1[0:k + 1])
+            # print(prod_temp)
+            # term3_den2[k] = prod_temp
+
+        # exponent = np.array([np.prod([[x[j] * covariateData[j - 1][k] for j in range(1, self.numCovariates + 1)] for k in range(i)]) for i in range(self.n)])
+
+        product_array = np.multiply(term3_den1_array, term3_den2)
+        term3_den = np.sum(product_array)
+
+        term3 = sym.log(term3_num/term3_den) * failure_sum
+
+        # a = np.subtract(1.0, oneMinusB)
+        # b = a * term3_den2
+        # c = np.array([sym.log(b[i]) for i in range(b.shape[0])])
+        # d = np.multiply(c, failures)
+        # term4 = np.sum(d)
+
+        # print(type(product_array))
+        log_term = [sym.log(i) for i in product_array]
+        a = np.array(log_term) * failures
+        # a = np.log(product_array) * failures
+        term4 = np.sum(a)
+        
+        f = -term1 - term2 + term3 + term4
+
+        return f, x
+
+    def LLF_sym_new3(self, hazard):
+        x = DeferredVector('x')
+
+        failures = np.array(self.failures)
+        covariateData = np.array(self.covariateData)
+        h = np.array([hazard(i, x[0]) for i in range(self.n)])
+
+
+        failure_sum = np.sum(failures)
+
+        term1 = np.sum(np.log(np.math.factorial(failures[i])) for i in range(self.n))
+        term2 = failure_sum
+
+        oneMinusB = np.array([sym.Pow((1.0 - hazard(i, x[0])), sym.prod([sym.exp(x[j] * covariateData[j - 1][i]) for j in range(1, self.numCovariates + 1)])) for i in range(self.n)])
+
+        term3_num = np.sum(failures)
+        # term3_den1 = np.sum(np.subtract(1.0, oneMinusB))
+
+        # exponent = np.array([np.prod([[x[j] * covariateData[j - 1][k] for j in range(1, self.numCovariates + 1)] for k in range(i)]) for i in range(self.n)])
+        term3_den2_array = np.array([np.product(oneMinusB[0:k + 1]) for k in range(self.n)])
+        term3_den1_array = np.subtract(1, oneMinusB)
+
+        product_array = term3_den1_array * term3_den2_array
+
+        term3 = sym.log(term3_num/np.sum(product_array)) * failure_sum
+
+        # a = np.subtract(1.0, oneMinusB)
+        # b = a * term3_den2
+        # c = np.array([sym.log(b[i]) for i in range(b.shape[0])])
+        # d = np.multiply(c, failures)
+        # term4 = np.sum(d)
+
+
+        a = np.array([sym.log(i) for i in product_array])
+        b = a * failures
+
+        term4 = np.sum(b)
+
+        f = -term1 - term2 + term3 + term4
+
+        return f, x
+
+    def newLLF(self, h, betas):
+        # term1 = np.sum(np.log(np.math.factorial(self.failures[i])) for i in range(self.n))
+        # term2 = np.sum(self.failures)
+        # term3_num = np.sum(self.failures)
+        # term3_den1 = np.sum(1 - np.power((1.0 - betas[0]), (np.exp(betas[j] * self.covariateData[j][i]) for j in range(self.numCovariates))) for i in range(self.n))
+        # term3_den2 = np.prod((np.power((1.0 - betas[0]), (np.exp(betas[j] * self.covariateData[j][k]) for j in range(self.numCovariates))) for k in range(i)) for i in range(self.n))
+        # term4_1 = np.sum(np.log((1 - np.power((1 - betas[0]), (np.exp(betas[j] * self.covariateData[j][i]) for j in range(self.numCovariates))) for i in range(self.n)) * term3_den2))
+        # # term4_2
+
+        # return -term1 - term2 + np.log(term3_num/(term3_den1 * term3_den2)) * term2 + 
+        failures = np.array(self.failures)
+        betas = np.array(self.betas)
+        covariateData = np.array(self.covariateData)
+
+
+        failure_sum = np.sum(failures)
+
+        term1 = np.sum(np.log(np.math.factorial(failures[i])) for i in range(self.n))
+        term2 = failure_sum
+
+        oneMinusB = np.array([np.power((1.0 - h[i]), np.prod(np.array([np.exp(betas[j] * covariateData[j][i]) for j in range(self.numCovariates)]))) for i in range(self.n)])
+        # print(oneMinusB)
+
+        # oneMinusB = oneMinusB.reshape((oneMinusB.shape[0],))
+
+        term3_num = np.sum(failures)
+        term3_den1 = np.sum(np.subtract(1.0, oneMinusB))
+
+
+        # for i in range(self.n):
+        #     for k in range(i):
+        #         for j in range(self.numCovariates):
+        #             np.power((1.0 - h[i]), np.array(np.exp(betas[j] * self.covariateData[j][k])))
+
+        exponent = np.array([np.prod([[betas[j] * covariateData[j][k] for j in range(self.numCovariates)] for k in range(i)]) for i in range(self.n)])
+        # print(exponent)
+
+        # np.array([np.product([[betas[j] * cov[j][k] for j in range(3)] for k in range(i)]) for i in range(15)])
+
+        product_array = np.array(np.power(np.subtract(1.0, h), exponent))
+        # print(product_array)
+        # product_array = np.array([(np.power((1.0 - h[i]), np.array([np.exp(betas[j] * self.covariateData[j][k]) for j in range(self.numCovariates)])) for k in range(i)) for i in range(self.n)])
+        # print(type(product_array))
+        term3_den2 = np.prod(product_array)
+        term3 = np.log(term3_num/(term3_den1 * term3_den2)) * failure_sum
+
+
+        # print(oneMinusB)
+        # print(term3_den2)
+        # print(self.failures)
+
+        a = np.subtract(1.0, oneMinusB)
+        # print("a =", a, "of type", type(a))
+        # print("term3_den2 =", term3_den2, "of type", type(term3_den2))
+        # b = np.prod(a, term3_den2)
+        b = a * term3_den2
+        c = np.log(b)
+        # print("c =", c, "of type", type(c))
+        # print("failures =", failures, "of type", type(failures))
+        d = np.multiply(c, failures)
+        term4 = np.sum(d)
+
+        # term4 = np.sum(np.prod(np.log(np.prod(np.subtract(1.0, oneMinusB), term3_den2)), np.array(self.failures)))
+
+        return -term1 - term2 + term3 + term4
 
     def convertSym(self, x, bh, target):
         return lambdify(x, bh, target)
@@ -190,20 +445,20 @@ class Model(ABC):
     def optimizeSolution(self, fd, B):
         log.info("Solving for MLEs...")
 
-        # solution = scipy.optimize.fsolve(fd, x0=B)
+        solution = scipy.optimize.fsolve(fd, x0=B)
 
-        try:
-            log.info("Using broyden1")
-            solution = scipy.optimize.broyden1(fd, xin=B, iter=100)
-        except scipy.optimize.nonlin.NoConvergence:
-            log.info("Using fsolve")
-            solution = scipy.optimize.fsolve(fd, x0=B)
-        except:
-            log.info("Could Not Converge")
-            solution = [0 for i in range(self.numCovariates + 1)]
+        # try:
+        #     log.info("Using broyden1")
+        #     solution = scipy.optimize.broyden1(fd, xin=B, iter=250)
+        # except scipy.optimize.nonlin.NoConvergence:
+        #     log.info("Using fsolve")
+        #     solution = scipy.optimize.fsolve(fd, x0=B)
+        # except:
+        #     log.info("Could Not Converge")
+        #     solution = [0 for i in range(self.numCovariates + 1)]
 
 
-        #solution = scipy.optimize.broyden2(fd, xin=B)          #Does not work (Seems to work well until the 3 covariates then crashes)
+        # solution = scipy.optimize.broyden2(fd, xin=B)          #Does not work (Seems to work well until the 3 covariates then crashes)
         #solution = scipy.optimize.anderson(fd, xin=B)          #Works for DW2 - DS1  - EstB{0.998, 0.999} Does not work for DS2
         #solution = scipy.optimize.excitingmixing(fd, xin=B)    #Does not work
 
@@ -274,6 +529,91 @@ class Model(ABC):
                 sum2 = sum2 * ((1 - h[i])**(TempTerm2))
             prodlist.append(sum1 * sum2)
         return omega * sum(prodlist)
+
+    def MVF_new(self, h, omega, betas, stop):
+        betas = np.array(self.betas[0:self.numCovariates])
+        print("STOP =", stop)
+
+        term2 = []  # need to append, use list first then convert to np array after
+
+        if self.numCovariates == 0:
+            oneMinusB_array = np.subtract(1.0, h[0:stop + 1])
+            term1 = np.subtract(1.0, oneMinusB_array)
+
+            for k in range(stop + 1):
+                oneMinusB_array = np.subtract(1.0, h[0:k + 1])
+                term2.append(np.prod(oneMinusB_array))
+        else:
+            covArray = np.array(self.covariateData)
+            print("COV DATA =", covArray)
+            covariateData = np.array(covArray[:, 0:stop + 1])
+            print("NEW COVARIATE DATA =", covariateData)
+            covTransposed = covariateData.transpose()
+
+            temp = np.zeros(len(covTransposed))
+            for i in range(len(covTransposed)):
+                temp[i] = np.sum(betas * covTransposed[i])
+
+            # np.multiply(betas, covariateData)
+
+            exponent1 = np.exp(temp)
+            # oneMinusB_array = np.array([1.0 - h[i]] for i in range(stop + 1))
+            oneMinusB_array = np.subtract(1.0, h[:stop + 1])
+            term1 = np.subtract(1.0, np.power(oneMinusB_array, exponent1))
+
+            for k in range(stop + 1):
+                cov_subset = covariateData[:, 0:k+1]
+                subset_transposed = cov_subset.transpose()
+                print("k cov data =", cov_subset)
+                print("transposed =", subset_transposed)
+                # print("transpose =", np.transpose(np.array([betas,] * covariateData[:, 0:k+1].shape[0])))
+                # res = covariateData[:, 0:k] * np.transpose(np.array([betas,] * covariateData[:, 0:k+1].shape[0]))
+
+                # res = np.multiply(betas[:, None], covariateData[:, 0:k+1])
+                res = np.zeros(len(subset_transposed))
+                print(len(subset_transposed))
+                for i in range(len(subset_transposed)):
+                    res[i] = np.sum(betas * subset_transposed[i])
+
+                # res = np.zeros(self.numCovariates)
+
+                # for i in range(len(betas)):
+                #     # res = 0
+                #     # res = res + betas[i] * 
+                #     res[i] = betas[i] * covariateData[i, 0:k+1]
+
+                # for i in range(len(covariateData[:, 0:k+1])):
+                #     res = betas[1]
+
+                # exponent2 = np.exp(np.multiply(betas, covariateData[:, 0:k]))
+                exponent2 = np.exp(res)
+                oneMinusB_array = np.subtract(1.0, h[0:k+1])
+                print(oneMinusB_array)
+                print(exponent2)
+                powerTerm = np.power(oneMinusB_array, exponent2)
+                term2.append(np.prod(powerTerm))
+
+        # term2 = np.array(term2)
+
+        t1 = term1 * np.prod(term2)
+
+        return omega * np.sum(t1)
+
+        # t1 = np.sum(term1)
+        # t2 = np.sum(term2)
+
+        # exponent1 = np.prod(np.array([np.exp(betas[j] * covariateData[j][i]) for j in range(self.numCovariates)]))
+        # oneMinusB = np.array([np.power((1.0 - h[i]), exponent1) for i in range(stop + 1)])
+        # term3_den1 = np.sum(np.subtract(1.0, oneMinusB))
+        # exponent = np.array([np.prod([[betas[j] * covariateData[j][k] for j in range(self.numCovariates)] for k in range(i-1)]) for i in range(stop + 1)])
+
+        # product_array = np.array(np.power(np.subtract(1.0, h[:stop + 1]), exponent))
+        # term3_den2 = np.prod(product_array)
+        # term3 = term3_den1 * term3_den2
+
+        # return omega * np.sum(term3)
+
+        # return omega * t1 * t2
 
     def MVF_all(self, h, omega, betas):
         mvfList = np.array([self.MVF(h, self.omega, betas, dataPoints) for dataPoints in range(self.n)])
@@ -354,8 +694,13 @@ class Model(ABC):
         log.info("INITIAL ESTIMATES = %s", initial)
         # log.info(f"PASSING INITIAL ESTIMATES = {fd(initial)}")
 
+        t1_start = time.process_time()
+
         sol = self.optimizeSolution(fd, initial)
         log.info("Optimized solution: %s", sol)
+
+        t1_stop = time.process_time()
+        print("optimization time:", t1_stop - t1_start)
 
         self.b = sol[0]
         self.betas = sol[1:]
@@ -365,8 +710,24 @@ class Model(ABC):
     def modelFitting(self, hazard, betas):
         self.omega = self.calcOmega(hazard, betas)
         log.info("Calculated omega: %s", self.omega)
+
+        # t1_start = time.process_time()
+        # for i in range(10000):
+        #     self.llfVal = self.LLF(hazard, betas)      # log likelihood value
+        # t1_stop = time.process_time()
+        # log.info("Calculated log-likelihood value: %s", self.llfVal)
+        # print("original elapsed time =", t1_stop - t1_start)
+
+        # t2_start = time.process_time()
+        # for i in range(10000):
+        #     newLLFval = self.newLLF(hazard, betas)
+        # t2_stop = time.process_time()
+        # log.info("New log-likelihood value: %s", newLLFval)
+        # print("new elapsed time =", t2_stop - t2_start)
+
         self.llfVal = self.LLF(hazard, betas)      # log likelihood value
         log.info("Calculated log-likelihood value: %s", self.llfVal)
+
         self.aicVal = self.AIC(hazard, betas)
         log.info("Calculated AIC: %s", self.aicVal)
         self.bicVal = self.BIC(hazard, betas)
@@ -408,12 +769,18 @@ class Model(ABC):
         #     bh[i] = np.array([diff(f, x_copy[j]) for j in range(self.numCovariates + 1)])
         #     log.info("bh[{0}] = {1}".format(i, bh[i]))
 
+        t1_start = time.process_time()
         Model.maxCovariates = self.numCovariates    # UNNECESSARY, use self.data.numCovariates
         f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
         bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
         # Model.lambdaFunctionAll = self.convertSym(x, bh, "numpy")
 
-        return self.convertSym(x, bh, "numpy")
+        # return self.convertSym(x, bh, "numpy")
+
+        f = self.convertSym(x, bh, "numpy")
+        t1_stop = time.process_time()
+        print("time to convert:", t1_stop - t1_start)
+        return f
 
 
         # lambdaFunctions = [0 for i in range(self.numCovariates)]
