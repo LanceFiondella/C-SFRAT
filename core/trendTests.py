@@ -40,11 +40,11 @@ class LaplaceTest(TrendTest):
 
     def run(self, data):
         laplace = pd.Series(0)  # 0 gives workable series
-        cum_sum = np.cumsum(data['T'])
+        cum_sum = np.cumsum(data['FT'])
         for i in range(1, len(data)):
             # cur_sum = sum(data['FT'][:i])
             cur_sum = cum_sum[i-1]
-            laplace[i] = ((((1/(i))*cur_sum) - (data['T'][i]/2)) /
+            laplace[i] = ((((1/(i))*cur_sum) - (data['FT'][i]/2)) /
                           (data['T'][i]*(1/(12*(i))**(0.5))))
 
         return pd.DataFrame({'X': data['FN'], 'Y': laplace})

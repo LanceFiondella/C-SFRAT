@@ -37,11 +37,11 @@ class SideMenu2(QVBoxLayout):
 
     def setupSideMenu(self):
         self.modelsGroup = QGroupBox("Select Model Results")
-        self.nonConvergedGroup = QGroupBox("Did Not Converge")
+        # self.nonConvergedGroup = QGroupBox("Did Not Converge")
         self.modelsGroup.setLayout(self.setupModelsGroup())
-        self.nonConvergedGroup.setLayout(self.setupNonConvergedGroup())
-        self.addWidget(self.modelsGroup, 60)
-        self.addWidget(self.nonConvergedGroup, 40)
+        # self.nonConvergedGroup.setLayout(self.setupNonConvergedGroup())
+        self.addWidget(self.modelsGroup)
+        # self.addWidget(self.nonConvergedGroup, 40)
 
         self.addStretch(1)
 
@@ -57,12 +57,12 @@ class SideMenu2(QVBoxLayout):
 
         return modelGroupLayout
 
-    def setupNonConvergedGroup(self):
-        nonConvergedGroupLayout = QVBoxLayout()
-        self.nonConvergedListWidget = QListWidget()
-        nonConvergedGroupLayout.addWidget(self.nonConvergedListWidget)
+    # def setupNonConvergedGroup(self):
+    #     nonConvergedGroupLayout = QVBoxLayout()
+    #     self.nonConvergedListWidget = QListWidget()
+    #     nonConvergedGroupLayout.addWidget(self.nonConvergedListWidget)
 
-        return nonConvergedGroupLayout
+    #     return nonConvergedGroupLayout
 
     def addSelectedModels(self, modelNames):
         """
@@ -81,10 +81,10 @@ class SideMenu2(QVBoxLayout):
 
         self.modelListWidget.addItems(modelNames)
 
-    def addNonConvergedModels(self, nonConvergedNames):
-        self.nonConvergedListWidget.addItems(nonConvergedNames)
+    # def addNonConvergedModels(self, nonConvergedNames):
+    #     self.nonConvergedListWidget.addItems(nonConvergedNames)
 
     def emitModelChangedSignal(self):
         selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
-        log.info("Selected models: %s", selectedModelNames)
+        log.debug("Selected models: %s", selectedModelNames)
         self.modelChangedSignal.emit(selectedModelNames)

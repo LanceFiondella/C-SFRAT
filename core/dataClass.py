@@ -21,7 +21,7 @@ class Data:
         """
         self.sheetNames = ["None"]
         self._currentSheet = 0
-        self.STATIC_COLUMNS = 5 # 5 for T, FC, CFC, FN, IF columns
+        self.STATIC_COLUMNS = 6 # 6 for T, FC, CFC, FN, FT, IF columns
         self.dataSet = {"None": None}
         # self._numCovariates = 0
         self.numCovariates = 0
@@ -69,11 +69,8 @@ class Data:
     def setData(self, dataSet):
         """
         Processes raw sheet data into data required by models
-
         failure times | number of failures | metric 1 | metric 2 | ...
-
         Column titles not required, data assumed to be in this format
-
         Args:
             dataSet : dictionary of raw data imported in importFile()
         """
@@ -102,8 +99,6 @@ class Data:
         """
         # print(data)
         data["CFC"] = data["FC"].cumsum()  # add column for cumulative failures
-        data['IF'] = data['T'].diff()
-        data['IF'].iloc[0] = data['T'].iloc[0]
 
         # 
         FTData = pd.DataFrame()
@@ -122,7 +117,10 @@ class Data:
                     for fail in fails:
                         FT.append(data['T'][i]+fail)
         FTData['FT'] = pd.Series(FT)
+        data['FT'] = FTData['FT']
         data['FN'] = pd.Series([i+1 for i in range(FTData['FT'].size)])
+        data['IF'] = data['FT'].diff()
+        data['IF'].iloc[0] = data['FT'].iloc[0]
 
         return data
 

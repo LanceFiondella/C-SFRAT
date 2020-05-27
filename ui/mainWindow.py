@@ -97,6 +97,7 @@ class MainWindow(QMainWindow):
         self.importFileSignal.connect(self.importFile)
         self._main.tabs.tab1.sideMenu.viewChangedSignal.connect(self.setDataView)
         self._main.tabs.tab1.sideMenu.runModelSignal.connect(self.runModels)    # run models when signal is received
+        self._main.tabs.tab1.sideMenu.confidenceSignal.connect(self.updateLaplaceConfidencePlot)
         # self._main.tabs.tab1.sideMenu.runModelSignal.connect(self._main.tabs.tab2.sideMenu.addSelectedModels)    # fill tab 2 models group with selected models
         self._main.tabs.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2)
         # connect tab2 list changed to refreshing tab 2 plot
@@ -119,7 +120,8 @@ class MainWindow(QMainWindow):
             # self.symbolicThread.quit()
             self.symbolicThread.abort = True
             self.symbolicThread.wait()
-        except AttributeError:
+        except (AttributeError, RuntimeError):
+            # should do something with RuntimeError
             pass
 
         # stop model estimation thread
@@ -346,7 +348,19 @@ class MainWindow(QMainWindow):
                                                  title=trendTest.name,
                                                  xLabel=trendTest.xAxisLabel,
                                                  yLabel=trendTest.yAxisLabel)
-        self._main.tabs.tab1.plotAndTable.figure.canvas.draw()
+        # add additional horizontal lines for confidence levels
+        if trendTest.name == "Laplace Trend Test":
+            PlotSettings.addLaplaceLines(self.ax)   # add dotted lines, these don't change
+            # add line indicating user-specified confidence level
+            # when Laplace plot first shown, use the current value of spinbox
+            PlotSettings.addSpecifiedConfidenceLine(self.ax, self._main.tabs.tab1.sideMenu.confidenceSpinBox.value())
+                                    
+        self._main.tabs.tab1.plotAndTable.figure.canvas.draw()  # need to re-draw figure
+
+    def updateLaplaceConfidencePlot(self, confidence):
+        # update line indicating user-specified confidence level
+        PlotSettings.addSpecifiedConfidenceLine(self.ax, confidence)
+        self._main.tabs.tab1.plotAndTable.figure.canvas.draw()  # need to re-draw figure
 
     def createMVFPlot(self, dataframe):
         """
@@ -499,14 +513,17 @@ class MainWindow(QMainWindow):
             else:
                 nonConvergedNames.append(key)
 
+        log.info("DID NOT CONVERGE: %s", nonConvergedNames)
+
         self._main.tabs.tab2.sideMenu.addSelectedModels(convergedNames) # add models to tab 2 list
                                                                         # so they can be selected
-        self._main.tabs.tab2.sideMenu.addNonConvergedModels(nonConvergedNames)
+        # self._main.tabs.tab2.sideMenu.addNonConvergedModels(nonConvergedNames)
                                                                         # show which models didn't converge
         self._main.tabs.tab3.addResultsToTable(results)
         self._main.tabs.tab4.sideMenu.addSelectedModels(convergedNames) # add models to tab 4 list so they
                                                                         # can be selected for allocation
-        log.info("Estimation results: %s", results)
+        log.debug("Estimation results: %s", results)
+        log.info("Estimation complete.")
 
     def runGoodnessOfFit(self):
         if self.estimationComplete:

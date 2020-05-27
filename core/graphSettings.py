@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker  # to force integers for bar chart x axis values
 from PyQt5.QtCore import QSettings
+from scipy.stats import norm
 
 from core.dataClass import PandasModel
 
@@ -48,6 +49,21 @@ class PlotSettings:
         ax.set_xlabel(xLabel)
         ax.set_ylabel(yLabel)
         return ax
+
+    @staticmethod
+    def addLaplaceLines(ax):
+        # values taken from SFRAT R code
+        ax.axhline(y=norm.ppf(0.1), color='silver', linestyle='dotted')
+        ax.axhline(y=norm.ppf(0.05), color='silver', linestyle='dotted')
+        ax.axhline(y=norm.ppf(0.01), color='silver', linestyle='dotted')
+        ax.axhline(y=norm.ppf(0.001), color='silver', linestyle='dotted')
+        ax.axhline(y=norm.ppf(0.0000001), color='silver', linestyle='dotted')
+        ax.axhline(y=norm.ppf(0.0000000001), color='silver', linestyle='dotted')
+
+    @staticmethod
+    def addSpecifiedConfidenceLine(ax, confidence):
+        ax.lines[-1].remove()
+        ax.axhline(y=norm.ppf(1.0 - confidence), color='red', linestyle='-')
 
     def addLine(self, ax, x, y, label="None"):
         plotMethod = getattr(ax, self.plotType)

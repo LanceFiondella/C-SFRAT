@@ -1,11 +1,13 @@
 from abc import ABC, abstractmethod, abstractproperty
 
+import logging as log
+
+import time   # for testing
+
 import numpy as np
 import sympy as sym
 from sympy import symbols, diff, exp, lambdify, DeferredVector, factorial, Symbol, Idx, IndexedBase
 import scipy.optimize
-
-import logging as log
 
 import models   # maybe??
 
@@ -190,17 +192,17 @@ class Model(ABC):
     def optimizeSolution(self, fd, B):
         log.info("Solving for MLEs...")
 
-        # solution = scipy.optimize.fsolve(fd, x0=B)
+        solution = scipy.optimize.fsolve(fd, x0=B)
 
-        try:
-            log.info("Using broyden1")
-            solution = scipy.optimize.broyden1(fd, xin=B, iter=100)
-        except scipy.optimize.nonlin.NoConvergence:
-            log.info("Using fsolve")
-            solution = scipy.optimize.fsolve(fd, x0=B)
-        except:
-            log.info("Could Not Converge")
-            solution = [0 for i in range(self.numCovariates + 1)]
+        # try:
+        #     log.info("Using broyden1")
+        #     solution = scipy.optimize.broyden1(fd, xin=B, iter=100)
+        # except scipy.optimize.nonlin.NoConvergence:
+        #     log.info("Using fsolve")
+        #     solution = scipy.optimize.fsolve(fd, x0=B)
+        # except:
+        #     log.info("Could Not Converge")
+        #     solution = [0 for i in range(self.numCovariates + 1)]
 
 
         #solution = scipy.optimize.broyden2(fd, xin=B)          #Does not work (Seems to work well until the 3 covariates then crashes)
@@ -354,7 +356,10 @@ class Model(ABC):
         log.info("INITIAL ESTIMATES = %s", initial)
         # log.info(f"PASSING INITIAL ESTIMATES = {fd(initial)}")
 
+        optimize_start = time.process_time()
         sol = self.optimizeSolution(fd, initial)
+        optimize_stop = time.process_time()
+        log.info("optimization time: %s", optimize_stop - optimize_start)
         log.info("Optimized solution: %s", sol)
 
         self.b = sol[0]
@@ -413,7 +418,12 @@ class Model(ABC):
         bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
         # Model.lambdaFunctionAll = self.convertSym(x, bh, "numpy")
 
-        return self.convertSym(x, bh, "numpy")
+        t1_start = time.process_time()
+        f = self.convertSym(x, bh, "numpy")
+        t1_stop = time.process_time()
+        log.info("time to convert symbolic function: %s", t1_stop - t1_start)
+
+        return f
 
 
         # lambdaFunctions = [0 for i in range(self.numCovariates)]

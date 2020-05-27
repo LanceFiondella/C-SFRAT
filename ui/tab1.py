@@ -35,7 +35,7 @@ class SideMenu1(QVBoxLayout):
     # signals
     viewChangedSignal = pyqtSignal(str, int)
     runModelSignal = pyqtSignal(dict)
-
+    confidenceSignal = pyqtSignal(float)
 
     def __init__(self):
         super().__init__()
@@ -82,6 +82,7 @@ class SideMenu1(QVBoxLayout):
         self.confidenceSpinBox.setSingleStep(0.01)  # step by 0.01
         self.confidenceSpinBox.setValue(0.95) # default value
         self.confidenceSpinBox.setDisabled(True)    # disabled on start up
+        self.confidenceSpinBox.valueChanged.connect(self.emitConfidenceSignal)
 
         sheetGroupLayout.addWidget(QLabel("Select Sheet"))
         sheetGroupLayout.addWidget(self.sheetSelect)
@@ -180,3 +181,6 @@ class SideMenu1(QVBoxLayout):
         self.confidenceSpinBox.setEnabled(True)
         # self.viewMode.setEnabled(False)
         self.viewChangedSignal.emit('trend', self.testSelect.currentIndex())
+
+    def emitConfidenceSignal(self):
+        self.confidenceSignal.emit(self.confidenceSpinBox.value())
