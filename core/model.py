@@ -8,7 +8,7 @@ import numpy as np
 import sympy as sym
 from sympy import symbols, diff, exp, lambdify, DeferredVector, factorial, Symbol, Idx, IndexedBase
 import scipy.optimize
-from scipy.special import factorial
+from scipy.special import factorial as npfactorial
 
 import models   # maybe??
 
@@ -118,7 +118,7 @@ class Model(ABC):
         bEstimate = np.random.uniform(self.shapeParameterEstimateRange[0], self.shapeParameterEstimateRange[1], 1)
         return np.insert(betasEstimate, 0, bEstimate)   # insert b in the 0th location of betaEstimate array
 
-    def LLF_sym_old(self, hazard):
+    def LLF_sym(self, hazard):
         # x[0] = b
         # x[1:] = beta1, beta2, ..
 
@@ -154,7 +154,8 @@ class Model(ABC):
         f = firstTerm + secondTerm + thirdTerm - fourthTerm
         return f, x
 
-    def LLF_sym(self, hazard):
+    def LLF_sym_new1(self, hazard):
+        # fast, but incorrect
         x = DeferredVector('x')
 
         failures = np.array(self.failures)
@@ -164,7 +165,8 @@ class Model(ABC):
 
         failure_sum = np.sum(failures)
 
-        term1 = np.sum(np.log(np.math.factorial(failures[i])) for i in range(self.n))
+        # term1 = np.sum(np.log(np.math.factorial(failures[i])) for i in range(self.n))
+        term1 = np.sum(np.log(npfactorial(failures[i])) for i in range(self.n))
         term2 = failure_sum
 
         oneMinusB = np.array([sym.Pow((1.0 - hazard(i, x[0])), sym.prod([sym.exp(x[j] * covariateData[j - 1][i]) for j in range(1, self.numCovariates + 1)])) for i in range(self.n)])
@@ -228,7 +230,7 @@ class Model(ABC):
 
         failure_sum = np.sum(failures)
 
-        term1 = np.sum(np.log(factorial(failures)))
+        term1 = np.sum(np.log(npfactorial(failures)))
         term2 = failure_sum
 
         oneMinusB_array = np.subtract(1.0, h)
@@ -309,7 +311,7 @@ class Model(ABC):
 
         failure_sum = np.sum(failures)
 
-        term1 = np.sum(np.log(np.math.factorial(failures[i])) for i in range(self.n))
+        term1 = np.sum(np.log(npfactorial(failures[i])) for i in range(self.n))
         term2 = failure_sum
 
         oneMinusB = np.array([sym.Pow((1.0 - hazard(i, x[0])), sym.prod([sym.exp(x[j] * covariateData[j - 1][i]) for j in range(1, self.numCovariates + 1)])) for i in range(self.n)])
