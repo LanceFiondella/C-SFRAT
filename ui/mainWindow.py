@@ -17,6 +17,7 @@
 #   should try other scipy functions
 # self.viewType is never updated, we don't use updateUI()
 # sometimes metric list doesn't load until interacted with
+# bar chart isn't ideal for large datasets
 #------------------------------------------------------------------------------------#
 
 # For handling debug output
@@ -294,13 +295,16 @@ class MainWindow(QMainWindow):
 
     def setDataView(self, viewType, index):
         """
-        Set the data to be displayed. 
-        Called whenever a menu item is changed
+        Set the data to be displayed.
+        Called whenever a menu item is changed, called when trend test changed.
 
         Args:
             viewType: string that determines view
             index: index of the dataview list
         """
+
+        # enable/disable confidence level spin box
+        print(index)
         if self.data.getData() is not None:
             if viewType == "view":
                 self.setRawDataView(index)
@@ -344,24 +348,30 @@ class MainWindow(QMainWindow):
         """
         trendTest = list(self.trendTests.values())[index]()
         trendData = trendTest.run(self.data.getData())
+        self.plotSettings.plotType = "step" # want step plot for trend tests
         self.ax = self.plotSettings.generatePlot(self.ax, trendData['X'],
                                                  trendData['Y'],
                                                  title=trendTest.name,
                                                  xLabel=trendTest.xAxisLabel,
                                                  yLabel=trendTest.yAxisLabel)
         # add additional horizontal lines for confidence levels
-        if trendTest.name == "Laplace Trend Test":
-            PlotSettings.addLaplaceLines(self.ax)   # add dotted lines, these don't change
+        if self.dataLoaded and trendTest.name == "Laplace Trend Test":
+            # enable spin box
+            self._main.tabs.tab1.sideMenu.confidenceSpinBox.setEnabled(True)
+            PlotSettings.addLaplaceLines(self.ax, self._main.tabs.tab1.sideMenu.confidenceSpinBox.value())   # add dotted lines, these don't change
             # add line indicating user-specified confidence level
             # when Laplace plot first shown, use the current value of spinbox
-            PlotSettings.addSpecifiedConfidenceLine(self.ax, self._main.tabs.tab1.sideMenu.confidenceSpinBox.value())
+            # PlotSettings.addSpecifiedConfidenceLine(self.ax, self._main.tabs.tab1.sideMenu.confidenceSpinBox.value())
+        elif trendTest.name == "Running Arithmetic Average":
+            self._main.tabs.tab1.sideMenu.confidenceSpinBox.setDisabled(True)
                                     
         self._main.tabs.tab1.plotAndTable.figure.canvas.draw()  # need to re-draw figure
 
     def updateLaplaceConfidencePlot(self, confidence):
-        # update line indicating user-specified confidence level
-        PlotSettings.addSpecifiedConfidenceLine(self.ax, confidence)
-        self._main.tabs.tab1.plotAndTable.figure.canvas.draw()  # need to re-draw figure
+        if self.dataLoaded:
+            # update line indicating user-specified confidence level
+            PlotSettings.updateConfidenceLine(self.ax, confidence)
+            self._main.tabs.tab1.plotAndTable.figure.canvas.draw()  # need to re-draw figure
 
     def createMVFPlot(self, dataframe):
         """
@@ -396,6 +406,7 @@ class MainWindow(QMainWindow):
         called by setDataView
         """
         self.plotSettings.plotType = "bar"
+        # self.plotSettings.plotType = "step"
 
         self._main.tabs.tab1.sideMenu.testSelect.setDisabled(True)  # disable trend tests when displaying imported data
         self._main.tabs.tab1.sideMenu.confidenceSpinBox.setDisabled(True)

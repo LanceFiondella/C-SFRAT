@@ -33,9 +33,10 @@ class SideMenu1(QVBoxLayout):
     """
 
     # signals
-    viewChangedSignal = pyqtSignal(str, int)
-    runModelSignal = pyqtSignal(dict)
+    viewChangedSignal = pyqtSignal(str, int)    # changes based on trend test select box
+                                                # for enabling/disabling confidence spin box
     confidenceSignal = pyqtSignal(float)
+    runModelSignal = pyqtSignal(dict)
 
     def __init__(self):
         super().__init__()
@@ -181,6 +182,7 @@ class SideMenu1(QVBoxLayout):
         self.confidenceSpinBox.setEnabled(True)
         # self.viewMode.setEnabled(False)
         self.viewChangedSignal.emit('trend', self.testSelect.currentIndex())
+        # index 0 = laplace, index 1 = running arithmetic average
 
     def emitConfidenceSignal(self):
         self.confidenceSignal.emit(self.confidenceSpinBox.value())

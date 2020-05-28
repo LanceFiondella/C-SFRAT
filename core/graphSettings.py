@@ -51,7 +51,7 @@ class PlotSettings:
         return ax
 
     @staticmethod
-    def addLaplaceLines(ax):
+    def addLaplaceLines(ax, confidence):
         # values taken from SFRAT R code
         ax.axhline(y=norm.ppf(0.1), color='silver', linestyle='dotted')
         ax.axhline(y=norm.ppf(0.05), color='silver', linestyle='dotted')
@@ -59,11 +59,16 @@ class PlotSettings:
         ax.axhline(y=norm.ppf(0.001), color='silver', linestyle='dotted')
         ax.axhline(y=norm.ppf(0.0000001), color='silver', linestyle='dotted')
         ax.axhline(y=norm.ppf(0.0000000001), color='silver', linestyle='dotted')
+        ax.axhline(y=norm.ppf(1.0 - confidence), color='red', linestyle='-')    # specified confidence level
 
     @staticmethod
-    def addSpecifiedConfidenceLine(ax, confidence):
-        ax.lines[-1].remove()
-        ax.axhline(y=norm.ppf(1.0 - confidence), color='red', linestyle='-')
+    def updateConfidenceLine(ax, confidence):
+        # ax.lines[-1].remove()
+        # ax.axhline(y=norm.ppf(1.0 - confidence), color='red', linestyle='-')
+
+        # running arithmetic average only has one line, don't want to change that one
+        if len(ax.lines) > 1: 
+            ax.lines[-1].set_ydata(norm.ppf(1.0 - confidence))
 
     def addLine(self, ax, x, y, label="None"):
         plotMethod = getattr(ax, self.plotType)
