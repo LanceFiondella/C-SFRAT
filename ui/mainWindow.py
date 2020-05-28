@@ -101,6 +101,7 @@ class MainWindow(QMainWindow):
         # self._main.tabs.tab1.sideMenu.runModelSignal.connect(self._main.tabs.tab2.sideMenu.addSelectedModels)    # fill tab 2 models group with selected models
         self._main.tabs.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2)
         # connect tab2 list changed to refreshing tab 2 plot
+        self._main.tabs.tab2.sideMenu.failureChangedSignal.connect(self.runPrediction)
         self._main.tabs.tab3.sideMenu.comboBoxChangedSignal.connect(self.runGoodnessOfFit)
         self._main.tabs.tab4.sideMenu.runAllocationSignal.connect(self.runAllocation)
 
@@ -543,6 +544,19 @@ class MainWindow(QMainWindow):
                 self.allocationResults[name] = [EffortAllocation(m, B, f), m]
 
         self._main.tabs.tab4.addResultsToTable(self.allocationResults, self.data)
+
+    def runPrediction(self, failures):
+        """
+        Called when failure spin box value is changed.
+        """
+        # run prediction on currently selected combinations in tab 2
+        # print(self._main.tabs.tab2.sideMenu.modelListWidget.selectedItems())
+        if self.estimationComplete:
+            name = self._main.tabs.tab2.sideMenu.modelListWidget.selectedItems()[0].text()  # gets first selected item
+            m = self.estimationResults[name]  # model indexed by the name
+            total_points, mvfList = m.prediction(failures)
+            print(total_points)
+            print(mvfList)
 
     #endregion
 

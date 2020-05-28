@@ -11,8 +11,9 @@ class DiscreteWeibull2(Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def calcHazard(self, b):
-        return [1 - np.power(b, (np.square(i) - np.square(i - 1))) for i in range(1, self.n+1)]
+    def calcHazard(self, b, n):
+        # return [1 - np.power(b, (np.square(i) - np.square(i - 1))) for i in range(1, self.n+1)]
+        return [1 - np.power(b, (np.square(i) - np.square(i - 1))) for i in range(1, n+1)]
 
     def hazardFunction(self, i, b):
         # b = symbols("b")   

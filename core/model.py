@@ -364,7 +364,8 @@ class Model(ABC):
 
         self.b = sol[0]
         self.betas = sol[1:]
-        hazard = self.calcHazard(self.b)
+        hazard = self.calcHazard(self.b, self.n)
+        self.hazard = hazard    # for MVF prediction, don't want to calculate again
         self.modelFitting(hazard, self.betas)
 
     def modelFitting(self, hazard, betas):
@@ -431,3 +432,35 @@ class Model(ABC):
         # for i in range(self.numCovariates - 1, -1, -1):
         #     # lambdaFunctions[i] = 
         #     print(lambdaFunctions[2]([0, 0, 0, 0]))
+
+    def MVF_prediction(self, covariateData, hazard, stop):
+        # can clean this up to use less loops, probably
+        prodlist = []
+        for i in range(stop + 1):     # CHANGED THIS FROM self.n + 1 !!!
+            sum1 = 1
+            sum2 = 1
+            TempTerm1 = 1
+            for j in range(self.numCovariates):
+                TempTerm1 = TempTerm1 * np.exp(covariateData[j][i] * self.betas[j])
+            sum1 = 1-((1 - hazard[i]) ** (TempTerm1))
+            for k in range(i):
+                TempTerm2 = 1
+                for j in range(self.numCovariates):
+                    TempTerm2 = TempTerm2 * np.exp(covariateData[j][k] * self.betas[j])
+                sum2 = sum2 * ((1 - hazard[i])**(TempTerm2))
+            prodlist.append(sum1 * sum2)
+        return self.omega * sum(prodlist)
+
+    def prediction(self, failures):
+        total_points = self.n + failures
+        zero_array = np.zeros(failures) # to append to existing covariate data
+        new_covData = [0 for i in range(self.numCovariates)]
+
+        hazard = self.calcHazard(self.b, total_points)  # calculate new values for hazard function
+
+        for j in range(self.numCovariates):
+            new_covData[j] = np.append(self.covariateData[j], zero_array)
+        print(new_covData)
+        mvfList = np.array([self.MVF_prediction(new_covData, hazard, dataPoints) for dataPoints in range(total_points)])
+
+        return (total_points, mvfList)

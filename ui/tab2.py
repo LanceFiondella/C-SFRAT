@@ -3,7 +3,8 @@ import logging as log
 
 # PyQt5 imports for UI elements
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, \
-                            QGroupBox, QListWidget, QAbstractItemView
+                            QGroupBox, QListWidget, QAbstractItemView, \
+                            QSpinBox
 from PyQt5.QtCore import pyqtSignal
 
 # Local imports
@@ -30,6 +31,7 @@ class SideMenu2(QVBoxLayout):
 
     # signals
     modelChangedSignal = pyqtSignal(list)    # changes based on selection of models in tab 2
+    failureChangedSignal = pyqtSignal(int)   # changes based on failure spin box
 
     def __init__(self):
         super().__init__()
@@ -37,11 +39,11 @@ class SideMenu2(QVBoxLayout):
 
     def setupSideMenu(self):
         self.modelsGroup = QGroupBox("Select Model Results")
-        # self.nonConvergedGroup = QGroupBox("Did Not Converge")
+        self.failureGroup = QGroupBox("Number of Failures to Predict")
         self.modelsGroup.setLayout(self.setupModelsGroup())
-        # self.nonConvergedGroup.setLayout(self.setupNonConvergedGroup())
+        self.failureGroup.setLayout(self.setupFailureGroup())
         self.addWidget(self.modelsGroup)
-        # self.addWidget(self.nonConvergedGroup, 40)
+        self.addWidget(self.failureGroup)
 
         self.addStretch(1)
 
@@ -57,12 +59,15 @@ class SideMenu2(QVBoxLayout):
 
         return modelGroupLayout
 
-    # def setupNonConvergedGroup(self):
-    #     nonConvergedGroupLayout = QVBoxLayout()
-    #     self.nonConvergedListWidget = QListWidget()
-    #     nonConvergedGroupLayout.addWidget(self.nonConvergedListWidget)
+    def setupFailureGroup(self):
+        failureGroupLayout = QVBoxLayout()
+        self.failureSpinBox = QSpinBox()
+        self.failureSpinBox.setMinimum(0)
+        self.failureSpinBox.setValue(0)
+        self.failureSpinBox.valueChanged.connect(self.emitFailureChangedSignal)
+        failureGroupLayout.addWidget(self.failureSpinBox)
 
-    #     return nonConvergedGroupLayout
+        return failureGroupLayout
 
     def addSelectedModels(self, modelNames):
         """
@@ -81,10 +86,10 @@ class SideMenu2(QVBoxLayout):
 
         self.modelListWidget.addItems(modelNames)
 
-    # def addNonConvergedModels(self, nonConvergedNames):
-    #     self.nonConvergedListWidget.addItems(nonConvergedNames)
-
     def emitModelChangedSignal(self):
         selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
         log.debug("Selected models: %s", selectedModelNames)
         self.modelChangedSignal.emit(selectedModelNames)
+
+    def emitFailureChangedSignal(self, failures):
+        self.failureChangedSignal.emit(failures)

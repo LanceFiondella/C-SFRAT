@@ -12,8 +12,9 @@ class Geometric(Model):
     # def __init__(self, *args, **kwargs):
     #     super().__init__(*args, **kwargs)
 
-    def calcHazard(self, b):
-        return [b for i in range(self.n)]
+    def calcHazard(self, b, n):
+        # return [b for i in range(self.n)]
+        return [b for i in range(n)]
 
     def hazardFunction(self, i, b):
         # b = symbols("b")

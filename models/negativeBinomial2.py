@@ -11,8 +11,9 @@ class NegativeBinomial2(Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def calcHazard(self, b):
-        return [(i * np.square(b))/(1 + b * (i - 1)) for i in range(1, self.n + 1)]
+    def calcHazard(self, b, n):
+        # return [(i * np.square(b))/(1 + b * (i - 1)) for i in range(1, self.n + 1)]
+        return [(i * np.square(b))/(1 + b * (i - 1)) for i in range(1, n + 1)]
 
     def hazardFunction(self, i, b):
         # b = symbols("b")   
