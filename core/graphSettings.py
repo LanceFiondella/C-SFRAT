@@ -74,3 +74,7 @@ class PlotSettings:
         plotMethod = getattr(ax, self.plotType)
         plotMethod(x, y, self.style, markerSize=self.markerSize, label=label)
         return ax
+
+    @staticmethod
+    def predictionPlot(ax):
+        pass

@@ -8,6 +8,7 @@ import numpy as np
 import sympy as sym
 from sympy import symbols, diff, exp, lambdify, DeferredVector, factorial, Symbol, Idx, IndexedBase
 import scipy.optimize
+from scipy.special import factorial as npfactorial
 
 import models   # maybe??
 
@@ -152,6 +153,71 @@ class Model(ABC):
         fourthTerm = sum(factTerm)
 
         f = firstTerm + secondTerm + thirdTerm - fourthTerm
+        return f, x
+
+    def LLF_sym_new(self, hazard):
+        # fast, but incorrect
+        x = DeferredVector('x')
+
+        failures = np.array(self.failures)
+        covariateData = np.array(self.covariateData)
+        h = np.array([hazard(i, x[0]) for i in range(self.n)])
+
+
+        failure_sum = np.sum(failures)
+
+        # term1 = np.sum(np.log(np.math.factorial(failures[i])) for i in range(self.n))
+        term1 = np.sum(np.log(npfactorial(failures[i])) for i in range(self.n))
+        term2 = failure_sum
+
+        oneMinusB = np.array([sym.Pow((1.0 - hazard(i, x[0])), sym.prod([sym.exp(x[j] * covariateData[j - 1][i]) for j in range(1, self.numCovariates + 1)])) for i in range(self.n)])
+        # print(oneMinusB)
+
+        # oneMinusB = oneMinusB.reshape((oneMinusB.shape[0],))
+
+        term3_num = np.sum(failures)
+        term3_den1 = np.sum(np.subtract(1.0, oneMinusB))
+
+
+        # for i in range(self.n):
+        #     for k in range(i):
+        #         for j in range(self.numCovariates):
+        #             np.power((1.0 - h[i]), np.array(np.exp(betas[j] * self.covariateData[j][k])))
+
+        exponent = np.array([np.prod([[x[j] * covariateData[j - 1][k] for j in range(1, self.numCovariates + 1)] for k in range(i)]) for i in range(self.n)])
+        # print(exponent)
+
+        # np.array([np.product([[betas[j] * cov[j][k] for j in range(3)] for k in range(i)]) for i in range(15)])
+
+        product_array = np.array(np.power(np.subtract(1.0, h), exponent))
+        # print(product_array)
+        # product_array = np.array([(np.power((1.0 - h[i]), np.array([np.exp(betas[j] * self.covariateData[j][k]) for j in range(self.numCovariates)])) for k in range(i)) for i in range(self.n)])
+        # print(type(product_array))
+        term3_den2 = np.prod(product_array)
+        term3 = sym.log(term3_num/(term3_den1 * term3_den2)) * failure_sum
+
+
+        # print(oneMinusB)
+        # print(term3_den2)
+        # print(self.failures)
+
+        a = np.subtract(1.0, oneMinusB)
+        # print("a =", a, "of type", type(a))
+        # print("term3_den2 =", term3_den2, "of type", type(term3_den2))
+        # b = np.prod(a, term3_den2)
+        b = a * term3_den2
+        # print(b[0])
+        c = np.array([sym.log(b[i]) for i in range(b.shape[0])])
+        # print("c =", c, "of type", type(c))
+        # print("failures =", failures, "of type", type(failures))
+        d = np.multiply(c, failures)
+        term4 = np.sum(d)
+
+        # term4 = np.sum(np.prod(np.log(np.prod(np.subtract(1.0, oneMinusB), term3_den2)), np.array(self.failures)))
+
+        f = -term1 - term2 + term3 + term4
+
+
         return f, x
 
     def convertSym(self, x, bh, target):

@@ -18,6 +18,8 @@
 # self.viewType is never updated, we don't use updateUI()
 # sometimes metric list doesn't load until interacted with
 # bar chart isn't ideal for large datasets
+# clean up prediction plot:
+#   - having multiple 
 #------------------------------------------------------------------------------------#
 
 # For handling debug output
@@ -274,6 +276,22 @@ class MainWindow(QMainWindow):
         log.info("Symbolic calculations completed.")
         self._main.tabs.tab1.sideMenu.runButton.setDisabled(False)
 
+    def redrawPlot(self, tabNumber):
+        """
+        Redraw plot for the provided tab number.
+
+        Args:
+                tabNumber : tab number containing figure to redraw
+        """
+        if tabNumber == 1:
+            self._main.tabs.tab1.plotAndTable.figure.canvas.draw()
+        elif tabNumber == 2:
+            # rescale plot: https://stackoverflow.com/questions/10944621/dynamically-updating-plot-in-matplotlib
+            self.ax2.relim()
+            self.ax2.autoscale_view()
+            self._main.tabs.tab2.plot.figure.canvas.draw()
+            
+
     def changeSheet(self, index):
         """
         Change the current sheet displayed
@@ -281,9 +299,9 @@ class MainWindow(QMainWindow):
         Args:
             index : index of the sheet
         """
-        self.data.currentSheet = index      # store 
+        self.data.currentSheet = index      # store
         self.setDataView("view", self.dataViewIndex)
-        self._main.tabs.tab1.plotAndTable.figure.canvas.draw()
+        self.redrawPlot(1)
         self.setMetricList()
 
     def setMetricList(self):
@@ -336,8 +354,8 @@ class MainWindow(QMainWindow):
 
         # redraw figures
         self.ax2.legend()
-        self._main.tabs.tab1.plotAndTable.figure.canvas.draw()
-        self._main.tabs.tab2.plot.figure.canvas.draw()
+        self.redrawPlot(1)
+        self.redrawPlot(2)
 
     def setTrendTest(self, index):
         """
@@ -365,13 +383,13 @@ class MainWindow(QMainWindow):
         elif trendTest.name == "Running Arithmetic Average":
             self._main.tabs.tab1.sideMenu.confidenceSpinBox.setDisabled(True)
                                     
-        self._main.tabs.tab1.plotAndTable.figure.canvas.draw()  # need to re-draw figure
+        self.redrawPlot(1)  # need to re-draw figure
 
     def updateLaplaceConfidencePlot(self, confidence):
         if self.dataLoaded:
             # update line indicating user-specified confidence level
             PlotSettings.updateConfidenceLine(self.ax, confidence)
-            self._main.tabs.tab1.plotAndTable.figure.canvas.draw()  # need to re-draw figure
+            self.redrawPlot(1)  # need to re-draw figure
 
     def createMVFPlot(self, dataframe):
         """
@@ -388,13 +406,11 @@ class MainWindow(QMainWindow):
         if self.estimationComplete:
             self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe['T'], dataframe["CFC"],
                                                       title="", xLabel="Cumulative time", yLabel="Cumulative failures")
+
+            # add vertical line at last element of original data
+            self.ax2.axvline(x=dataframe['T'].iloc[-1], color='red', linestyle='dotted')
+
             self.plotSettings.plotType = "plot"
-            # for model in self.estimationResults.values():
-            #     # add line for model if selected
-            #     if model.name in self.selectedModelNames:
-            #         self.plotSettings.addLine(self.ax2, model.t, model.mvfList, model.name)
-
-
             # model name and metric combination!
             for modelName in self.selectedModelNames:
                 # add line for model if selected
@@ -562,12 +578,24 @@ class MainWindow(QMainWindow):
         """
         # run prediction on currently selected combinations in tab 2
         # print(self._main.tabs.tab2.sideMenu.modelListWidget.selectedItems())
-        if self.estimationComplete:
+        itemsSelected = len(self._main.tabs.tab2.sideMenu.modelListWidget.selectedItems())
+        # check to make sure that model combinations are selected before running prediction
+        if self.estimationComplete and itemsSelected > 0:
             name = self._main.tabs.tab2.sideMenu.modelListWidget.selectedItems()[0].text()  # gets first selected item
             m = self.estimationResults[name]  # model indexed by the name
             total_points, mvfList = m.prediction(failures)
-            print(total_points)
             print(mvfList)
+
+            x = np.arange(1, total_points + 1)  # create x axis
+            # self.plotSettings.addLine(self.ax2, x, mvfList, "Prediction")
+            self.ax2.lines[-1].set_xdata(x)
+            self.ax2.lines[-1].set_ydata(mvfList)
+
+            print(len(self.ax2.lines))
+
+            # redraw figure
+            self.ax2.legend()
+            self.redrawPlot(2)
 
     #endregion
 

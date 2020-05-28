@@ -42,8 +42,8 @@ class SideMenu2(QVBoxLayout):
         self.failureGroup = QGroupBox("Number of Failures to Predict")
         self.modelsGroup.setLayout(self.setupModelsGroup())
         self.failureGroup.setLayout(self.setupFailureGroup())
-        self.addWidget(self.modelsGroup)
-        self.addWidget(self.failureGroup)
+        self.addWidget(self.modelsGroup, 7)
+        self.addWidget(self.failureGroup, 1)
 
         self.addStretch(1)
 
