@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QWidget, QMessageBox, QHBoxLayout, QVBoxLayout, QLab
                             QGroupBox, QListWidget, QPushButton, QAbstractItemView, \
                             QFileDialog, QCheckBox, QScrollArea, QGridLayout, \
                             QTableWidget, QTableWidgetItem, QAbstractScrollArea, \
-                            QSpinBox, QDoubleSpinBox
+                            QSpinBox, QDoubleSpinBox, QHeaderView
 from PyQt5.QtCore import pyqtSignal
 
 class Tab4(QWidget):
@@ -19,9 +19,9 @@ class Tab4(QWidget):
         self.mainLayout = QHBoxLayout() # main tab layout
 
         self.sideMenu = SideMenu4()
-        self.mainLayout.addLayout(self.sideMenu, 25)
+        self.mainLayout.addLayout(self.sideMenu, 15)
         self.table = self.setupTable()
-        self.mainLayout.addWidget(self.table, 75)
+        self.mainLayout.addWidget(self.table, 85)
         self.setLayout(self.mainLayout)
 
     def setupTable(self):
@@ -32,6 +32,8 @@ class Tab4(QWidget):
         table.setRowCount(1)
         table.setColumnCount(3)
         table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Estimated failures"])
+        header = table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeToContents)
         table.move(0,0)
 
         return table
@@ -103,9 +105,9 @@ class SideMenu4(QVBoxLayout):
         self.optionsGroup.setLayout(self.setupOptionsGroup())
         self.setupAllocationButton()
 
-        self.addWidget(self.modelsGroup, 75)
-        self.addWidget(self.optionsGroup, 25)
-        self.addWidget(self.allocationButton)
+        self.addWidget(self.modelsGroup, 7)
+        self.addWidget(self.optionsGroup, 1)
+        self.addWidget(self.allocationButton, 1)
 
         self.addStretch(1)
 
@@ -142,14 +144,14 @@ class SideMenu4(QVBoxLayout):
 
     def addSelectedModels(self, modelNames):
         """
-        Results on no covariates not added to list
+        Results with no covariates not added to list
 
         Args:
             modelNames (list): list of strings, name of each model
         """
 
         for name in modelNames:
-            if " - (No covariates)" not in name:
+            if " (No covariates)" not in name:
                 self.modelListWidget.addItem(name)
 
     def emitRunAllocationSignal(self):

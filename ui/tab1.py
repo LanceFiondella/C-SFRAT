@@ -21,9 +21,9 @@ class Tab1(QWidget):
         self.horizontalLayout = QHBoxLayout()       # main layout
 
         self.sideMenu = SideMenu1()
-        self.horizontalLayout.addLayout(self.sideMenu, 25)
+        self.horizontalLayout.addLayout(self.sideMenu, 15)
         self.plotAndTable = PlotAndTable("Plot", "Table")
-        self.horizontalLayout.addWidget(self.plotAndTable, 75)
+        self.horizontalLayout.addWidget(self.plotAndTable, 85)
 
         self.setLayout(self.horizontalLayout)
 
@@ -45,19 +45,19 @@ class SideMenu1(QVBoxLayout):
     def setupSideMenu(self):
         self.sheetGroup = QGroupBox("Select Data")
         self.sheetGroup.setLayout(self.setupSheetGroup())
-        self.addWidget(self.sheetGroup)
+        self.addWidget(self.sheetGroup, 1)
 
         self.modelsGroup = QGroupBox("Select Model(s)")
         self.modelsGroup.setLayout(self.setupModelsGroup())
-        self.addWidget(self.modelsGroup)
+        self.addWidget(self.modelsGroup, 2)
 
         self.metricsGroup = QGroupBox("Select Metric(s)")
         self.metricsGroup.setLayout(self.setupMetricsGroup())
-        self.addWidget(self.metricsGroup)
+        self.addWidget(self.metricsGroup, 2)
 
         self.runButton = QPushButton("Run Estimation")
         self.runButton.clicked.connect(self.emitRunModelsSignal)
-        self.addWidget(self.runButton)
+        self.addWidget(self.runButton, 1)
 
         self.addStretch(1)
 

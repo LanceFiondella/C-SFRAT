@@ -19,9 +19,9 @@ class Tab2(QWidget):
     def setupTab2(self):
         self.horizontalLayout = QHBoxLayout()       # main layout
         self.sideMenu = SideMenu2()
-        self.horizontalLayout.addLayout(self.sideMenu, 25)
+        self.horizontalLayout.addLayout(self.sideMenu, 15)
         self.plot = PlotWidget()
-        self.horizontalLayout.addWidget(self.plot, 75)
+        self.horizontalLayout.addWidget(self.plot, 85)
         self.setLayout(self.horizontalLayout)
 
 class SideMenu2(QVBoxLayout):

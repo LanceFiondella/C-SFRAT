@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QGridLayout, \
                             QTableWidget, QTableWidgetItem, QAbstractScrollArea, \
-                            QSpinBox, QSpacerItem, QSizePolicy
+                            QSpinBox, QSpacerItem, QSizePolicy, QHeaderView
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QFont
 
@@ -32,6 +32,12 @@ class Tab3(QWidget):
         self.table.setHorizontalHeaderLabels(columnLabels)
         self.table.move(0,0)
 
+        # self.table.setVisible(False)
+        # self.table.resizeColumnsToContents()
+        # self.table.setVisible(True)
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeToContents)
+
         self.font = QFont() # allows table cells to be bold
         self.font.setBold(True)
 
@@ -50,7 +56,7 @@ class Tab3(QWidget):
 
         for key, model in results.items():
             if model.converged:
-                self.table.setItem(i, 0, QTableWidgetItem(model.name))
+                self.table.setItem(i, 0, QTableWidgetItem(model.shortName))
                 self.table.setItem(i, 1, QTableWidgetItem(model.metricString))
                 self.table.setItem(i, 2, QTableWidgetItem("{0:.3f}".format(model.llfVal)))
                 self.table.setItem(i, 3, QTableWidgetItem("{0:.3f}".format(model.aicVal)))

@@ -129,7 +129,10 @@ class TaskThread(QThread):
                 if (metricCombination == ["No covariates"]):
                     metricCombination = []
                 m = model(data=self.data.getData(), metricNames=metricCombination)
-                runName = m.name + " - (" + metricNames + ")"  # "Model (Metric1, Metric2, ...)"
+
+                # this is the name used in tab 2 and tab 4 side menus
+                # use shortened name
+                runName = m.shortName + " (" + metricNames + ")"  # "Model (Metric1, Metric2, ...)"
                 self.nextCalculation.emit(runName)
                 m.runEstimation()
                 result[runName] = m

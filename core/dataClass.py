@@ -175,7 +175,7 @@ class Data:
         data.rename(columns={data.columns[0]:"Time"}, inplace=True)
         data.rename(columns={data.columns[1]:"Failures"}, inplace=True)
         for i in range(numCov):
-            data.rename(columns={data.columns[i+2]:"Metric{0}".format(i+1)}, inplace=True)
+            data.rename(columns={data.columns[i+2]:"C{0}".format(i+1)}, inplace=True)   # changed from MetricX to CX
 
     def getData(self):
         """

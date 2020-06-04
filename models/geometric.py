@@ -5,6 +5,7 @@ from core.model import Model
 
 class Geometric(Model):
     name = "Geometric"
+    shortName = "GM"
     coxParameterEstimateRange = [0.0, 0.01]
     shapeParameterEstimateRange = [0.09, 0.1]
     symbolicDifferentiation = True

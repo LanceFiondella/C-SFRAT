@@ -66,10 +66,10 @@ class MainWindow(QMainWindow):
         self.title = "Covariate Tool"
         self.left = 100
         self.top = 100
-        self.width = 1080
-        self.height = 720
-        self.minWidth = 800
-        self.minHeight = 600
+        self.width = 1280
+        self.height = 960
+        self.minWidth = 1000
+        self.minHeight = 800
         self._main = MainWidget()
         self.setCentralWidget(self._main)
 
@@ -111,6 +111,28 @@ class MainWindow(QMainWindow):
         self.initUI()
         log.info("UI loaded.")
 
+    def initUI(self):
+        """
+        description to be created at a later time
+        """
+        self.setupMenu()
+        self.setWindowTitle(self.title)
+        self.setGeometry(self.left, self.top, self.width, self.height)
+        self.setMinimumSize(self.minWidth, self.minHeight)
+        self.statusBar().showMessage("")
+        self.viewType = "view"
+        self.dataViewIndex = 0
+
+        # setup font
+        # self.setStyleSheet("QLabel {font: 12pt Segoe}")
+        # self.setStyleSheet("QGroupBox {font: 12pt Segoe}")
+        # self.setStyleSheet("QTabWidget {font: 12pt Segoe}")
+        # self.setStyleSheet("QListItem {font: 12pt Segoe}")
+        # self.setStyleSheet("QPushButton {font: 12pt Segoe}")
+        self.setStyleSheet("QWidget {font: 12pt Segoe}")
+
+        self.show()
+
     def closeEvent(self, event):
         """
         Called when application is closed by user. Quits all threads,
@@ -139,19 +161,6 @@ class MainWindow(QMainWindow):
             pass
         
         qApp.quit()
-
-    def initUI(self):
-        """
-        description to be created at a later time
-        """
-        self.setupMenu()
-        self.setWindowTitle(self.title)
-        self.setGeometry(self.left, self.top, self.width, self.height)
-        self.setMinimumSize(self.minWidth, self.minHeight)
-        self.statusBar().showMessage("")
-        self.viewType = "view"
-        self.dataViewIndex = 0
-        self.show()
 
     def setupMenu(self):
         """
@@ -202,6 +211,25 @@ class MainWindow(QMainWindow):
         viewStyle.addAction(viewBoth)
         # add actions to view menu
         viewMenu.addActions(viewStyle.actions())
+
+        # -- line style (step vs smooth)
+        lineStyle = QActionGroup(viewMenu)
+        # step
+        step = QAction("Step Plot", self, checkable=True)
+        step.setShortcut("Ctrl+D")
+        step.setStatusTip("Step curve for MVF lines")
+        step.setChecked(True)
+        step.triggered.connect(self.setStepLine)
+        lineStyle.addAction(step)
+        # smooth
+        smooth = QAction("Smooth Plot", self, checkable=True)
+        smooth.setShortcut("Ctrl+F")
+        smooth.setStatusTip("Step curve for MVF lines")
+        smooth.triggered.connect(self.setSmoothLine)
+        lineStyle.addAction(smooth)
+        # add actions to view menu
+        viewMenu.addSeparator()
+        viewMenu.addActions(lineStyle.actions())
 
         # -- graph display
         graphStyle = QActionGroup(viewMenu)
@@ -307,7 +335,7 @@ class MainWindow(QMainWindow):
     def setMetricList(self):
         self._main.tabs.tab1.sideMenu.metricListWidget.clear()
         if self.dataLoaded:
-            self._main.tabs.tab1.sideMenu.metricListWidget.addItems(self.data.metricNameCombinations)
+            self._main.tabs.tab1.sideMenu.metricListWidget.addItems(self.data.metricNameCombinations)   # data class stores all combinations of metric names
             log.info("%d covariate metrics on this sheet: %s", self.data.numCovariates,
                                                                self.data.metricNames)
 
@@ -322,7 +350,7 @@ class MainWindow(QMainWindow):
         """
 
         # enable/disable confidence level spin box
-        print(index)
+        # print(index)
         if self.data.getData() is not None:
             if viewType == "view":
                 self.setRawDataView(index)
@@ -341,7 +369,7 @@ class MainWindow(QMainWindow):
         """
         self._main.tabs.tab1.plotAndTable.tableWidget.setModel(self.data.getDataModel())
         dataframe = self.data.getData()
-        self.plotSettings.plotType = "step"
+        # self.plotSettings.plotType = "step"
 
         if self.dataViewIndex == 0:     # changed from index to self.dataViewIndex
             # MVF
@@ -396,21 +424,29 @@ class MainWindow(QMainWindow):
         called by setDataView
         """
         # self.plotSettings.plotType = "plot" # if continous
-        self.plotSettings.plotType = "step" # if step
+        # self.plotSettings.plotType = "step" # if step
+
+        previousPlotType = self.plotSettings.plotType   # save previous plot type, always want observed data to be step plot
 
         self._main.tabs.tab1.sideMenu.testSelect.setDisabled(True)  # disable trend tests when displaying imported data
         self._main.tabs.tab1.sideMenu.confidenceSpinBox.setDisabled(True)
 
+        # tab 1 plot
+        self.plotSettings.plotType = "step"
         self.ax = self.plotSettings.generatePlot(self.ax, dataframe['T'], dataframe["CFC"],
                                                  title="", xLabel="Cumulative time", yLabel="Cumulative failures")
+
+        # tab 2 plot
         if self.estimationComplete:
             self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe['T'], dataframe["CFC"],
                                                       title="", xLabel="Cumulative time", yLabel="Cumulative failures")
 
+            self.plotSettings.plotType = previousPlotType   # want model fits to be plot type specified by user
+
             # add vertical line at last element of original data
             self.ax2.axvline(x=dataframe['T'].iloc[-1], color='red', linestyle='dotted')
 
-            self.plotSettings.plotType = "plot"
+            # self.plotSettings.plotType = "step"
             # model name and metric combination!
             for modelName in self.selectedModelNames:
                 # add line for model if selected
@@ -421,6 +457,10 @@ class MainWindow(QMainWindow):
         """
         called by setDataView
         """
+        # need to change plot type to "bar" for intensity view, but want model result lines
+        # to use whatever plot type had been selected
+        # save the previous plot type, use it after bar plot created
+        previousPlotType = self.plotSettings.plotType
         self.plotSettings.plotType = "bar"
         # self.plotSettings.plotType = "step"
 
@@ -432,7 +472,7 @@ class MainWindow(QMainWindow):
         if self.estimationComplete:
             self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe['T'], dataframe['FC'],
                                                       title="", xLabel="Cumulative time", yLabel="Failures")
-            self.plotSettings.plotType = "plot"
+            self.plotSettings.plotType = previousPlotType
             # for model in self.estimationResults.values():
             #     # add line for model if selected
             #     if model.name in self.selectedModelNames:
@@ -444,12 +484,12 @@ class MainWindow(QMainWindow):
                 model = self.estimationResults[modelName]
                 self.plotSettings.addLine(self.ax2, model.t, model.intensityList, modelName)
 
-    def setPlotStyle(self, style='-o', plotType="step"):
+    #region plot styles
+    def setPlotStyle(self, style='-o'):
         """
         description to be created at a later time
         """
         self.plotSettings.style = style
-        self.plotSettings.plotType = plotType
         self.updateUI()
         # self.setDataView("view", self.dataViewIndex)
 
@@ -458,12 +498,31 @@ class MainWindow(QMainWindow):
         log.info("Plot style set to line view.")
 
     def setPointsView(self):
-        self.setPlotStyle(style='o', plotType='plot')
+        self.setPlotStyle(style='o')
         log.info("Plot style set to points view.")
 
     def setLineAndPointsView(self):
         self.setPlotStyle(style='-o')
         log.info("Plot style set to line and points view.")
+    #endregion
+    
+    #region plot types
+    def setPlotType(self, plotType="step"):
+        """
+        description to be created at a later time
+        """
+        self.plotSettings.plotType = plotType
+        self.updateUI()
+        # self.setDataView("view", self.dataViewIndex)
+
+    def setStepLine(self):
+        self.setPlotType(plotType="step")
+        log.info("Line style set to 'step'.")
+
+    def setSmoothLine(self):
+        self.setPlotType(plotType="plot")
+        log.info("Line style set to 'smooth'.")
+    #endregion
 
     def setMVFView(self):
         self.dataViewIndex = 0
@@ -566,7 +625,7 @@ class MainWindow(QMainWindow):
         self.allocationResults = {}    # create a dictionary for allocation results
         for i in range(len(combinations)):
             name = combinations[i]
-            if " - (No covariates)" not in name:
+            if " (No covariates)" not in name:
                 m = self.estimationResults[name]  # model indexed by the name
                 self.allocationResults[name] = [EffortAllocation(m, B, f), m]
 
@@ -583,15 +642,20 @@ class MainWindow(QMainWindow):
         if self.estimationComplete and itemsSelected > 0:
             name = self._main.tabs.tab2.sideMenu.modelListWidget.selectedItems()[0].text()  # gets first selected item
             m = self.estimationResults[name]  # model indexed by the name
-            total_points, mvfList = m.prediction(failures)
-            print(mvfList)
+            x, mvf_array, intensity_array = m.prediction(failures)
+            # print(mvf_array)
 
-            x = np.arange(1, total_points + 1)  # create x axis
             # self.plotSettings.addLine(self.ax2, x, mvfList, "Prediction")
-            self.ax2.lines[-1].set_xdata(x)
-            self.ax2.lines[-1].set_ydata(mvfList)
+            # MVF view
+            if self.dataViewIndex == 0:
+                self.ax2.lines[-1].set_xdata(x)
+                self.ax2.lines[-1].set_ydata(mvf_array)
+            # Intensity view
+            elif self.dataViewIndex == 1:
+                self.ax2.lines[-1].set_xdata(x)
+                self.ax2.lines[-1].set_ydata(intensity_array)
 
-            print(len(self.ax2.lines))
+            # print(len(self.ax2.lines))
 
             # redraw figure
             self.ax2.legend()

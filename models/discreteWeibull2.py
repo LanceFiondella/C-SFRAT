@@ -5,6 +5,7 @@ from core.model import Model
 
 class DiscreteWeibull2(Model):
     name = "Discrete Weibull (Order 2)"
+    shortName = "DW2"
     coxParameterEstimateRange = [0.0, 0.01]
     shapeParameterEstimateRange = [0.998, 0.9999]
 

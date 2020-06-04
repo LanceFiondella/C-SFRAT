@@ -61,6 +61,14 @@ class Model(ABC):
 
     @property
     @abstractmethod
+    def shortName(self):
+        """
+        Shortened name of model (string)
+        """
+        return "GM"
+
+    @property
+    @abstractmethod
     def coxParameterEstimateRange(self):
         """
         Define Cox parameter estimate range for root finding initial values
@@ -117,7 +125,6 @@ class Model(ABC):
         # print(self.shapeParameterEstimateRange)
         bEstimate = np.random.uniform(self.shapeParameterEstimateRange[0], self.shapeParameterEstimateRange[1], 1)
         return np.insert(betasEstimate, 0, bEstimate)   # insert b in the 0th location of betaEstimate array
-
 
     def LLF_sym(self, hazard):
         # x[0] = b
@@ -258,17 +265,17 @@ class Model(ABC):
     def optimizeSolution(self, fd, B):
         log.info("Solving for MLEs...")
 
-        solution = scipy.optimize.fsolve(fd, x0=B)
+        # solution = scipy.optimize.fsolve(fd, x0=B)
 
-        # try:
-        #     log.info("Using broyden1")
-        #     solution = scipy.optimize.broyden1(fd, xin=B, iter=100)
-        # except scipy.optimize.nonlin.NoConvergence:
-        #     log.info("Using fsolve")
-        #     solution = scipy.optimize.fsolve(fd, x0=B)
-        # except:
-        #     log.info("Could Not Converge")
-        #     solution = [0 for i in range(self.numCovariates + 1)]
+        try:
+            log.info("Using broyden1")
+            solution = scipy.optimize.broyden1(fd, xin=B, iter=100)
+        except scipy.optimize.nonlin.NoConvergence:
+            log.info("Using fsolve")
+            solution = scipy.optimize.fsolve(fd, x0=B)
+        except:
+            log.info("Could Not Converge")
+            solution = [0 for i in range(self.numCovariates + 1)]
 
 
         #solution = scipy.optimize.broyden2(fd, xin=B)          #Does not work (Seems to work well until the 3 covariates then crashes)
@@ -344,8 +351,8 @@ class Model(ABC):
         return omega * sum(prodlist)
 
     def MVF_all(self, h, omega, betas):
-        mvfList = np.array([self.MVF(h, self.omega, betas, dataPoints) for dataPoints in range(self.n)])
-        return mvfList
+        mvf_array = np.array([self.MVF(h, self.omega, betas, dataPoints) for dataPoints in range(self.n)])
+        return mvf_array
 
     def MVF_allocation(self, h, omega, betas, stop, x):
         """
@@ -379,9 +386,10 @@ class Model(ABC):
         i = self.n
         return -(self.MVF_allocation(self.hazardFunction, self.omega, self.betas, i, x))    # must be negative, SHGO uses minimization
 
-    def intensityFit(self, mvfList):
-        difference = [mvfList[i+1]-mvfList[i] for i in range(len(mvfList)-1)]
-        return [mvfList[0]] + difference
+    def intensityFit(self, mvf_array):
+        difference = [mvf_array[i+1]-mvf_array[i] for i in range(len(mvf_array)-1)]
+        return [mvf_array[0]] + difference
+        # return np.concatenate((mvf_array, difference))
 
     def runEstimation(self):
         initial = self.initialEstimates()
@@ -526,7 +534,18 @@ class Model(ABC):
 
         for j in range(self.numCovariates):
             new_covData[j] = np.append(self.covariateData[j], zero_array)
-        print(new_covData)
-        mvfList = np.array([self.MVF_prediction(new_covData, hazard, dataPoints) for dataPoints in range(total_points)])
 
-        return (total_points, mvfList)
+        mvf_array = np.array([self.MVF_prediction(new_covData, hazard, dataPoints) for dataPoints in range(total_points)])
+        intensity_array = self.intensityFit(mvf_array)
+        x = np.arange(0, total_points + 1)
+
+        # add initial point at zero if not present
+        if self.t[0] != 0:
+            mvf_array = np.concatenate((np.zeros(1), mvf_array))
+            intensity_array = np.concatenate((np.zeros(1), intensity_array))
+            
+        # else:
+        #     x = np.arange(self.failures[0], )
+        
+
+        return (x, mvf_array, intensity_array)

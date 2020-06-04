@@ -5,6 +5,7 @@ from core.model import Model
 
 class NegativeBinomial2(Model):
     name = "Negative Binomial (Order 2)"
+    shortName = "NB2"
     coxParameterEstimateRange = [0.0, 0.01]
     shapeParameterEstimateRange = [0.09, 0.1]
 

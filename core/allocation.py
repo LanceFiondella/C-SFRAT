@@ -31,6 +31,10 @@ class EffortAllocation:
         self.res = shgo(self.model.allocationFunction, args=(self.f,), bounds=bnds, constraints=cons)#, n=10000, iters=4)
         self.mvfVal = -self.res.fun
         self.H = self.mvfVal - self.model.mvfList[-1]   # predicted MVF value - last actual MVF value
+
+        # hOmegaN plus one
+        print(self.res)
+
         # self.H = self.model.MVF(self.model.calcHazard(self.model.b), self.model.omega, self.model.betas, self.model.n + 1) - self.model.mvfList[-1]
             # may need to change from calcHazard function
 
