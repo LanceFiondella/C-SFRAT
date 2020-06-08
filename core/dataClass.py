@@ -9,6 +9,7 @@ from itertools import combinations, chain
 
 from PyQt5 import QtCore
 
+
 class Data:
     def __init__(self):
         """
@@ -21,7 +22,7 @@ class Data:
         """
         self.sheetNames = ["None"]
         self._currentSheet = 0
-        self.STATIC_COLUMNS = 6 # 6 for T, FC, CFC, FN, FT, IF columns
+        self.STATIC_COLUMNS = 6  # 6 for T, FC, CFC, FN, FT, IF columns
         self.dataSet = {"None": None}
         # self._numCovariates = 0
         self.numCovariates = 0

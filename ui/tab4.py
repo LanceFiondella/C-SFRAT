@@ -4,41 +4,110 @@ import logging as log
 # PyQt5 imports for UI elements
 from PyQt5.QtWidgets import QWidget, QMessageBox, QHBoxLayout, QVBoxLayout, QLabel, \
                             QGroupBox, QListWidget, QPushButton, QAbstractItemView, \
-                            QFileDialog, QCheckBox, QScrollArea, QGridLayout, \
                             QTableWidget, QTableWidgetItem, QAbstractScrollArea, \
                             QSpinBox, QDoubleSpinBox, QHeaderView
 from PyQt5.QtCore import pyqtSignal
 
+
 class Tab4(QWidget):
+    """Contains all widgets displayed on tab 4.
+
+    Attributes:
+        sideMenu: SideMenu object holding tab 3 widgets and their signals.
+        table: QTableWidget that contains the goodness-of-fit measures for each
+            calculated model/metric combination.
+        font: QFont object that is formatted bold. Used to set text bold for
+            cells containing the highest ranked combinations, according to the
+            weighting of each measure.
+    """
 
     def __init__(self):
+        """Initializes tab 4 UI elements."""
         super().__init__()
-        self.setupTab4()
+        self._setupTab4()
 
-    def setupTab4(self):
-        self.mainLayout = QHBoxLayout() # main tab layout
+    def addResultsToTable(self, results, data):
+        """Adds effort allocation results to the tab 4 table.
+
+        Args:
+            results: A dict containing a list of the effort allocation results
+                and model objects as values. Indexed by the name of the
+                model/metric combination.
+                results[name] = [EffortAllocation, Model]
+            data: Data object contiaining imported data as a Pandas dataframe.
+        """
+        self.table.setSortingEnabled(False)  # disable sorting while editing contents
+        self.table.clear()
+        self.table.setColumnCount(3 + len(data.metricNames))
+        self.table.setHorizontalHeaderLabels(self._createHeaderLabels(data.metricNames))
+        self.table.setRowCount(len(results))    # set row count to include all model results, 
+                                                # even if not converged
+        row = 0   # rows
+
+        for key, value in results.items():
+            res = value[0]
+            model = value[1]
+
+            self.table.setItem(row, 0, QTableWidgetItem(model.name))   # model name
+            self.table.setItem(row, 1, QTableWidgetItem(model.metricString))  # model metrics
+            self.table.setItem(row, 2, QTableWidgetItem("{0:.2f}".format(res.H)))
+            # number of columns = number of covariates
+            j = 0
+            for name in model.metricNames:
+                col = data.metricNameDictionary[name]
+                self.table.setItem(row, 3 + col, QTableWidgetItem("{0:.2f}".format(res.percentages[j])))
+                j += 1
+            row += 1
+
+        self.table.setRowCount(row)   # set row count to only include converged models
+        self.table.resizeColumnsToContents()    # resize column width after table is edited
+        self.table.setSortingEnabled(True)      # re-enable sorting after table is edited
+
+    def _setupTab4(self):
+        """Creates tab 4 widgets and adds them to layout."""
+        mainLayout = QHBoxLayout()  # main tab layout
 
         self.sideMenu = SideMenu4()
-        self.mainLayout.addLayout(self.sideMenu, 15)
-        self.table = self.setupTable()
-        self.mainLayout.addWidget(self.table, 85)
-        self.setLayout(self.mainLayout)
+        mainLayout.addLayout(self.sideMenu, 15)
+        self.table = self._setupTable()
+        mainLayout.addWidget(self.table, 85)
+        self.setLayout(mainLayout)
 
-    def setupTable(self):
+    def _setupTable(self):
+        """Creates table widget with proper headers.
+
+        Returns:
+            A QTableWidget with specified column headers.
+        """
         table = QTableWidget()
-        table.setEditTriggers(QTableWidget.NoEditTriggers)     # make cells unable to be edited
+        table.setEditTriggers(QTableWidget.NoEditTriggers)  # make cells unable to be edited
         table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
-                                                                    # column width fit to contents
+                                                            # column width fit to contents
         table.setRowCount(1)
         table.setColumnCount(3)
         table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Estimated failures"])
         header = table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        table.move(0,0)
+        table.move(0, 0)
 
         return table
 
-    def createHeaderLabels(self, metricNames):
+    def _createHeaderLabels(self, metricNames):
+        """Creates the header labels for the tab 4 table.
+
+        The header labels are based on the names of the covariate metrics
+        from the data. The effort allocation shows the percent of the budget
+        that should be allocated for each metric, so a percent sign (%) is
+        added before each metric name.
+
+        Args:
+            metricNames: A list of the names of the covariate metrics as
+                strings.
+
+        Returns:
+            A list of column headers as strings, including the specifed metric
+            names.
+        """
         percentNames = []
         i = 0
         for name in metricNames:
@@ -47,79 +116,80 @@ class Tab4(QWidget):
         headerLabels = ["Model Name", "Covariates", "H"] + percentNames
         return headerLabels
 
-    def addResultsToTable(self, results, data):
-        """
-        results = dict
-            results[name] = [EffortAllocation, Model]
-        """
-        self.table.setSortingEnabled(False) # disable sorting while editing contents
-        self.table.clear()
-        self.table.setColumnCount(3 + len(data.metricNames))
-        self.table.setHorizontalHeaderLabels(self.createHeaderLabels(data.metricNames))
-        self.table.setRowCount(len(results))    # set row count to include all model results, 
-                                                # even if not converged
-        i = 0   # rows
-
-        for key, value in results.items():
-            res = value[0]
-            model = value[1]
-
-            print(res.percentages)
-
-            self.table.setItem(i, 0, QTableWidgetItem(model.name))   # model name
-            self.table.setItem(i, 1, QTableWidgetItem(model.metricString))  # model metrics
-            self.table.setItem(i, 2, QTableWidgetItem("{0:.2f}".format(res.H)))
-            # number of columns = number of covariates
-            j = 0
-            for name in model.metricNames:
-                col = data.metricNameDictionary[name]
-                self.table.setItem(i, 3 + col, QTableWidgetItem("{0:.2f}".format(res.percentages[j])))
-                j += 1
-            i += 1
-
-                # try:
-                #     c = model.metricNameDictionary[model.metricNames[j]]    # get index from metric name
-                #     self.table.setItem(i, 2 + j, QTableWidgetItem(str(c)))  # 
-                # except KeyError:
-                #     self.table.setItem(i, )
-        self.table.setRowCount(i)   # set row count to only include converged models
-        self.table.resizeColumnsToContents()    # resize column width after table is edited
-        self.table.setSortingEnabled(True)      # re-enable sorting after table is edited
 
 class SideMenu4(QVBoxLayout):
-    """
-    Side menu for tab 4
+    """Side menu for tab 4.
+
+    Attributes:
+        allocationButton: QPushButton object, begins effort allocation when
+            clicked.
+        modelListWidget: QListWidget containing the names of converged
+            model/metric combinations.
+        budgetSpinBox: QDoubleSpinBox widget, specifies the budget used when
+            performing the effort allocation calculation.
+        failureSpinBox: QSpinBox widget, specifies the desired number of
+            failures to detect for effort allocation calculation.
+        runAllocationSignal: pyqtSignal, emits list of combination names to run
+            the effort allocation on.
     """
 
     # signals
     runAllocationSignal = pyqtSignal(list)  # starts allocation computation
 
     def __init__(self):
+        """Initializes tab 4 side menu UI elements."""
         super().__init__()
-        self.setupSideMenu()
+        self._setupSideMenu()
 
-    def setupSideMenu(self):
-        self.modelsGroup = QGroupBox("Select Models/Metrics for Allocation")
-        self.modelsGroup.setLayout(self.setupModelsGroup())
-        self.optionsGroup = QGroupBox("Allocation Parameters")
-        self.optionsGroup.setLayout(self.setupOptionsGroup())
-        self.setupAllocationButton()
+    def addSelectedModels(self, modelNames):
+        """Creates list of model/metric combination names that include covariates.
 
-        self.addWidget(self.modelsGroup, 7)
-        self.addWidget(self.optionsGroup, 1)
+        Results with no covariates are not added to the list, since allocation
+        can only be performed on combinations with covariate metrics. Called
+        when estimation is complete.
+
+        Args:
+            modelNames: A list of strings, contains the name of each
+                model/metric combination that converged.
+        """
+
+        for name in modelNames:
+            if " (No covariates)" not in name:
+                self.modelListWidget.addItem(name)
+
+    def _setupSideMenu(self):
+        """Creates group box widgets and adds them to layout."""
+        modelsGroup = QGroupBox("Select Models/Metrics for Allocation")
+        modelsGroup.setLayout(self._setupModelsGroup())
+        optionsGroup = QGroupBox("Allocation Parameters")
+        optionsGroup.setLayout(self._setupOptionsGroup())
+        self._setupAllocationButton()
+
+        self.addWidget(modelsGroup, 7)
+        self.addWidget(optionsGroup, 1)
         self.addWidget(self.allocationButton, 1)
 
         self.addStretch(1)
 
-    def setupModelsGroup(self):
+    def _setupModelsGroup(self):
+        """Creates widget containing list of converged model/metric combos.
+
+        Returns:
+            A created VBoxLayout containing the created models group.
+        """
         modelGroupLayout = QVBoxLayout()
         self.modelListWidget = QListWidget()
         modelGroupLayout.addWidget(self.modelListWidget)
-        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)       # able to select multiple models
+        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)  # able to select multiple models
 
         return modelGroupLayout
 
-    def setupOptionsGroup(self):
+    def _setupOptionsGroup(self):
+        """Creates widgets for specifying effort allocation parameters.
+
+        Returns:
+            A created VBoxLayout containing the created options group.
+        """
         optionsGroupLayout = QVBoxLayout()
         optionsGroupLayout.addWidget(QLabel("Budget"))
         self.budgetSpinBox = QDoubleSpinBox()
@@ -136,30 +206,30 @@ class SideMenu4(QVBoxLayout):
 
         return optionsGroupLayout
 
-    def setupAllocationButton(self):
+    def _setupAllocationButton(self):
+        """Creates the button that begins effort allocation."""
         self.allocationButton = QPushButton("Run Allocation")
         self.allocationButton.setEnabled(False) # begins disabled since no model has been run yet
         # self.allocationButton.setMaximumWidth(250)
-        self.allocationButton.clicked.connect(self.emitRunAllocationSignal)
+        self.allocationButton.clicked.connect(self._emitRunAllocationSignal)
 
-    def addSelectedModels(self, modelNames):
+    def _emitRunAllocationSignal(self):
+        """Emits signal that effort allocation with model/metric combiations.
+
+        Method called when Run Allocation button is pressed. The emitted signal
+        (runAllocationSignal) contains the list of combinations to run the
+        allocation on. The signal is only emitted if at least one combination
+        is selected.
         """
-        Results with no covariates not added to list
-
-        Args:
-            modelNames (list): list of strings, name of each model
-        """
-
-        for name in modelNames:
-            if " (No covariates)" not in name:
-                self.modelListWidget.addItem(name)
-
-    def emitRunAllocationSignal(self):
         selectedCombinationNames = [item.text() for item in self.modelListWidget.selectedItems()]
         if selectedCombinationNames:
             selectedCombinationNames = [item.text() for item in self.modelListWidget.selectedItems()]
             log.info("Selected for Allocation: %s", selectedCombinationNames)
             self.runAllocationSignal.emit(selectedCombinationNames)
+
+        # if no models/metric combinations selected, create message box to
+        # display this warning
+
         else:
             log.warning("Must select at least one model/metric combination for allocation.")
             msgBox = QMessageBox()
