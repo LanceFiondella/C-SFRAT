@@ -16,6 +16,7 @@ from core.trendTests import *
 class Tab1(QWidget):
     """Contains all widgets displayed on tab 1.
 
+
     Attributes:
         sideMenu: SideMenu object holding tab 1 widgets and their signals.
         plotAndTable: PlotAndTable object that contains the plot for imported

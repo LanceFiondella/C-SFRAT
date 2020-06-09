@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Comparison():
     """
     For comparison of model goodness-of-fit measures
@@ -57,10 +58,8 @@ class Comparison():
                                                     # for each model/metric combination
         self.bestCombinations()
 
-    def bestCombinations(self):
-        # store the index of model combinations that have the highest value, will bold these cells
-        self.bestMeanUniform = np.argmax(self.meanOutUniform)
-        self.bestMean = np.argmax(self.meanOut)
+    def calcWeightSum(self, sideMenu):
+        return sideMenu.llfSpinBox.value() + sideMenu.aicSpinBox.value() + sideMenu.bicSpinBox.value() + sideMenu.sseSpinBox.value()
 
     def ahpNegative(self, measureList, i, spinBox, uniform):
         if uniform:
@@ -70,7 +69,7 @@ class Comparison():
                 weight = spinBox.value()/self._weightSum
             except ZeroDivisionError:
                 weight = 1.0/4.0
-        
+
         ahp_val = (measureList[i] - min(measureList)) / (max(measureList) - min(measureList)) * weight
 
         return ahp_val
@@ -95,8 +94,10 @@ class Comparison():
                 weight = 1.0/4.0
 
         ahp_val = (measureList[i] - max(measureList)) / (min(measureList) - max(measureList)) * weight
-        
+
         return ahp_val
 
-    def calcWeightSum(self, sideMenu):
-        return sideMenu.llfSpinBox.value() + sideMenu.aicSpinBox.value() + sideMenu.bicSpinBox.value() + sideMenu.sseSpinBox.value()
+    def bestCombinations(self):
+        # store the index of model combinations that have the highest value, will bold these cells
+        self.bestMeanUniform = np.argmax(self.meanOutUniform)
+        self.bestMean = np.argmax(self.meanOut)

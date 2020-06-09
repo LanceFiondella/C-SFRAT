@@ -3,6 +3,7 @@ import numpy as np
 
 from core.model import Model
 
+
 class NegativeBinomial2(Model):
     name = "Negative Binomial (Order 2)"
     shortName = "NB2"

@@ -4,7 +4,6 @@ from PyQt5.QtCore import QSettings
 from scipy.stats import norm
 import numpy as np
 
-from core.dataClass import PandasModel
 
 class PlotSettings:
     def __init__(self):
