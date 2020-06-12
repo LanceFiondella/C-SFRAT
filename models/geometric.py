@@ -3,30 +3,52 @@
 
 from core.model import Model
 
+
 class Geometric(Model):
     name = "Geometric"
     shortName = "GM"
-    coxParameterEstimateRange = [0.0, 0.01]
-    shapeParameterEstimateRange = [0.09, 0.1]
-    symbolicDifferentiation = True
+    coxParameterEstimateRange = [0.0, 0.1]      # betas
+    shapeParameterEstimateRange = [0.8, 0.99]   # b0
+    # LLFspecified = False
+    # dLLFspecified = False
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        LLF_array = [self.LLF0, self.LLF1, self.LLF2, self.LLF3]
+        dLLF_array = [self.dLLF0, self.dLLF1, self.dLLF2, self.dLLF3]
 
-    def calcHazard(self, b, n):
-        # return [b for i in range(self.n)]
-        return [b for i in range(n)]
+    # def calcHazard(self, b, n):
+    #     # return [b for i in range(self.n)]
+    #     return [b for i in range(n)]
 
     def hazardFunction(self, i, b):
         # b = symbols("b")
         f = b
         return f
 
-    # def LLF(self):
-    #     pass
+    def LLF0(self):
+        pass
 
-    # def dLLF(self):
-    #     pass
+    def LLF1(self):
+        pass
+
+    def LLF2(self):
+        pass
+
+    def LLF3(self):
+        pass
+
+    def dLLF0(self):
+        pass
+
+    def dLLF1(self):
+        pass
+
+    def dLLF2(self):
+        pass
+
+    def dLLF3(self):
+        pass
 
     """
     def runEstimation(self):

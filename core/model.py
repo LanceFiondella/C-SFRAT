@@ -12,34 +12,84 @@ from scipy.special import factorial as npfactorial
 
 import models   # maybe??
 
+from core.bat import search
+
+
 class Model(ABC):
+    """Generic model class, contains functions used by all models.
+
+    Model is an abstract base class that is never instantiated. Instead, the
+    class is inherited by all implemented models, so they are able to use all
+    attributes and methods of Model. Child classes are instantiated for a
+    model with a specific combination of metrics.
+    Model includes abstract properties and methods that need to be implemented
+    by all classes that inherit from it.
+
+    Attributes:
+        data: Pandas dataframe containing the imported data for the current
+            sheet.
+        metricNames: List of covariate metric names as strings.
+        t: Numpy array containing all failure times (T).
+        failures: Numpy array containing failure counts (FC) as integers at
+            each time (T).
+        n: Total number of discrete time segments (int).
+        cumulativeFailures: Numpy array containing cumulative failure counts
+            (CFC) as integers at each time (T).
+        totalFailures: Total number of failures contained in the data (int).
+        covariateData: List of numpy arrays containing the data for each
+            covariate metric to be used in calculations.
+        numCovariates: The number of covariates to be used in calculations
+            (int).
+        converged: Boolean indicating if the model converged or not.
+        metricString: A string containing all metric names separated by commas.
+        b:
+        betas:
+        hazard: List of the results of the hazard function as floats at each
+            time.
+        omega: 
+        llfVal: Log-likelihood value (float), used as goodness-of-fit measure.
+        aicVal: Akaike information criterion value (float), used as
+            goodness-of-fit measure.
+        bicVal: Bayesian information criterion value (float, used as
+            goodness-of-fit measure.
+        sseVal: Sum of sqaures error (float), used as goodness-of-fit measure.
+        mvfList: List of results from the mean value function (float). Values
+            that the model fit to the cumulative data.
+        intensityList: List of values (float) that the model fit to the
+            intensity data.
+    """
 
     # lambdaFunctionAll = None
     maxCovariates = None
 
     def __init__(self, *args, **kwargs):
-        """
-        Initialize Model
+        """Initializes Model class
 
         Keyword Args:
             data: Pandas dataframe with all required columns
-            metrics: list of selected metric names
+            metricNames: list of selected metric names
         """
         self.data = kwargs["data"]                  # dataframe
         self.metricNames = kwargs["metricNames"]    # selected metric names (strings)
-        self.t = self.data.iloc[:, 0].values            # failure times, from first column of dataframe
-        self.failures = self.data.iloc[:, 1].values     # number of failures, from second column of dataframe
+        # self.t = self.data.iloc[:, 0].values            # failure times, from first column of dataframe
+        # self.failures = self.data.iloc[:, 1].values     # number of failures, from second column of dataframe
+        self.t = self.data["T"].values     # failure times
+        self.failures = self.data["FC"].values     # number of failures
         self.n = len(self.failures)                     # number of discrete time segments
         self.cumulativeFailures = self.data["CFC"].values
         self.totalFailures = self.cumulativeFailures[-1]
         # list of arrays or array of arrays?
         self.covariateData = [self.data[name].values for name in self.metricNames]
         self.numCovariates = len(self.covariateData)
+        # self.maxCovariates = self.data.numCovariates    # total number of covariates from imported data
+                                                        # data object not passed, just dataframe (which
+                                                        # doesn't have numCovariates as an attribute
         self.converged = False
         self.setupMetricString()
 
         # logging
         log.info("Failure times: %s", self.t)
+        print(type(self.t))
         log.info("Number of time segments: %d", self.n)
         log.info("Failures: %s", self.failures)
         log.info("Cumulative failures: %s", self.cumulativeFailures)
@@ -83,6 +133,22 @@ class Model(ABC):
 
     # @property
     # @abstractmethod
+    # def LFFspecified(self):
+    #     """
+        
+    #     """
+    #     return False
+
+    # @property
+    # @abstractmethod
+    # def dLFFspecified(self):
+    #     """
+        
+    #     """
+    #     return False
+
+    # @property
+    # @abstractmethod
     # def symbolicDifferentiation(self):
     #     """
     #     Set False if manually implementing log-likelihood function and its derivative
@@ -94,26 +160,27 @@ class Model(ABC):
     ##################################################
 
     @abstractmethod
-    def calcHazard(self):
-        pass
-
-    @abstractmethod
     def hazardFunction(self):
         pass
 
     def setupMetricString(self):
+        """Creates string of metric names separated by commas"""
         if (self.metricNames == []):
             self.metricString = "None"
         else:
             self.metricString = ", ".join(self.metricNames)
 
     def symAll(self):
-        """
-        Called in mainWindow
-        Creates symbolic LLF for model with all metrics, and differentiates
+        """Creates symbolic LLF for model with all metrics, and differentiates
+
+        Called from MainWindow, when new file is imported.
+
+        Returns:
+            Lambda function implementation of the differentiated log-likelihood
+            function.
         """
 
-        Model.maxCovariates = self.numCovariates    # UNNECESSARY, use self.data.numCovariates
+        Model.maxCovariates = self.numCovariates
         f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
         bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
         # Model.lambdaFunctionAll = self.convertSym(x, bh, "numpy")
@@ -126,6 +193,19 @@ class Model(ABC):
         return f
 
     def LLF_sym(self, hazard):
+        """Log-likelihood function used for symbolic calculations.
+
+        Symbolic variables used to allow for symbolic differentiation with
+        respect to b/betas.
+
+        Args:
+            hazard: The hazard function of the implemented model.
+
+        Returns:
+            A tuple containing the symbolic log-likelihood function as the
+            first element, and a vector of symbolic variables as the second
+            element.
+        """
         # x[0] = b
         # x[1:] = beta1, beta2, ..
 
@@ -198,6 +278,13 @@ class Model(ABC):
         return f, x
 
     def convertSym(self, x, bh, target):
+        """Converts the symbolic function to a lambda function
+
+        Args:
+            
+        Returns:
+
+        """
         return lambdify(x, bh, target)
 
     def runEstimation(self):
@@ -219,21 +306,48 @@ class Model(ABC):
         initial = np.concatenate((initial, zero_array), axis=0)
         log.info("Initial estimates: %s", initial)
 
-        # fd = lambda a: m.lambdaFunctionAll(np.concatenate((a, zero_array), axis=0))
+
+
+        # use dLLF if specified by user
+        # if self.dLLFspecified:
+        #     if 
+        #     fd = self.dLLF_array[self.numCovariates]
+
+
         fd = m.lambdaFunctionAll
 
-        log.info("INITIAL ESTIMATES = %s", initial)
+        import inspect
+        print(inspect.signature(fd).parameters)
+
         # log.info(f"PASSING INITIAL ESTIMATES = {fd(initial)}")
 
         optimize_start = time.process_time()
+
         sol = self.optimizeSolution(fd, initial)
+
+
+        # search_space = [[-5.0, 5.0] for i in range(4)]
+        # population = [self.initialEstimates() for i in range(6)]
+        # sol_bat = search(fd, search_space, max_generations=6, population=population,
+        #    freq_min=0.021768, freq_max=0.917212, alpha=0.825154, gamma=0.82362)
+
+
+        # print(sol_bat)
+        # print(sol_bat[0])
+        # print("plug bat into fd", fd(sol_bat[0]))
+        # sol = scipy.optimize.minimize(fd, sol_bat[0], method='L-BFGS-B')
+        # print(sol)
+
+
         optimize_stop = time.process_time()
         log.info("optimization time: %s", optimize_stop - optimize_start)
         log.info("Optimized solution: %s", sol)
 
         self.b = sol[0]
         self.betas = sol[1:]
-        hazard = self.calcHazard(self.b, self.n)
+        # hazard = self.calcHazard(self.b, self.n)
+
+        hazard = [self.hazardFunction(i, self.b) for i in range(self.n)]
         self.hazard = hazard    # for MVF prediction, don't want to calculate again
         self.modelFitting(hazard, self.betas)
 
@@ -250,17 +364,17 @@ class Model(ABC):
     def optimizeSolution(self, fd, B):
         log.info("Solving for MLEs...")
 
-        # solution = scipy.optimize.fsolve(fd, x0=B)
+        solution = scipy.optimize.fsolve(fd, x0=B)
 
-        try:
-            log.info("Using broyden1")
-            solution = scipy.optimize.broyden1(fd, xin=B, iter=100)
-        except scipy.optimize.nonlin.NoConvergence:
-            log.info("Using fsolve")
-            solution = scipy.optimize.fsolve(fd, x0=B)
-        except:
-            log.info("Could Not Converge")
-            solution = [0 for i in range(self.numCovariates + 1)]
+        # try:
+        #     log.info("Using broyden1")
+        #     solution = scipy.optimize.broyden1(fd, xin=B, iter=100)
+        # except scipy.optimize.nonlin.NoConvergence:
+        #     log.info("Using fsolve")
+        #     solution = scipy.optimize.fsolve(fd, x0=B)
+        # except:
+        #     log.info("Could Not Converge")
+        #     solution = [0 for i in range(self.numCovariates + 1)]
 
 
         #solution = scipy.optimize.broyden2(fd, xin=B)          #Does not work (Seems to work well until the 3 covariates then crashes)
@@ -404,7 +518,8 @@ class Model(ABC):
         zero_array = np.zeros(failures) # to append to existing covariate data
         new_covData = [0 for i in range(self.numCovariates)]
 
-        hazard = self.calcHazard(self.b, total_points)  # calculate new values for hazard function
+        newHazard = [self.hazardFunction(i, self.b) for i in range(self.n, total_points)]  # calculate new values for hazard function
+        hazard = self.hazard + newHazard
 
         for j in range(self.numCovariates):
             new_covData[j] = np.append(self.covariateData[j], zero_array)

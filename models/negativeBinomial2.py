@@ -7,15 +7,17 @@ from core.model import Model
 class NegativeBinomial2(Model):
     name = "Negative Binomial (Order 2)"
     shortName = "NB2"
-    coxParameterEstimateRange = [0.0, 0.01]
-    shapeParameterEstimateRange = [0.09, 0.1]
+    coxParameterEstimateRange = [0.0, 0.1]      # betas
+    shapeParameterEstimateRange = [0.8, 0.99]   # b0
+    # LLFspecified = False
+    # dLLFspecified = False
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def calcHazard(self, b, n):
-        # return [(i * np.square(b))/(1 + b * (i - 1)) for i in range(1, self.n + 1)]
-        return [(i * np.square(b))/(1 + b * (i - 1)) for i in range(1, n + 1)]
+    # def calcHazard(self, b, n):
+    #     # return [(i * np.square(b))/(1 + b * (i - 1)) for i in range(1, self.n + 1)]
+    #     return [(i * np.square(b))/(1 + b * (i - 1)) for i in range(1, n + 1)]
 
     def hazardFunction(self, i, b):
         # b = symbols("b")   

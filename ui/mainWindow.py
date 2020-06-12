@@ -357,7 +357,6 @@ class MainWindow(QMainWindow):
         models. Creates lambda function for LLF for combination of all
         covariates.
         """
-        log.info("ENTERING runSymbolic FUNCTION")
         self.symbolicThread = SymbolicThread(models.modelList, self.data)
         self.symbolicThread.symbolicSignal.connect(self.onSymbolicComplete)
         self.symbolicThread.start()

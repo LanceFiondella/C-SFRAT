@@ -274,6 +274,16 @@ class SymbolicThread(QThread):
                 return  # get out of run method
             # need to initialize models so they have the imported data
             instantiatedModel = model(data=self._data.getData(), metricNames=self._data.metricNames)
+
+
+            # # only run symbolic calculation if no LLF implemented by user
+            # if not instantiatedModel.LLFspecified:
+            #     pass
+            # # or if LLF not created for all covariates
+            # elif instantiatedModel.LLFspecified:
+            #     if len(instantiatedModel.LLF_array) <= instantiatedModel.maxCovariates or None in instantiatedModel.LLF_array:
+
+
             model.lambdaFunctionAll = instantiatedModel.symAll()    # saved as class variable for each model
             log.info("Lambda function created for %s model", model.name)
         SymbolicThread.complete = True  # calculations complete, set flag to True
