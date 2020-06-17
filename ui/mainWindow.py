@@ -30,6 +30,9 @@ the UI elements. Able to reference all elements and the signals they emit.
 # For handling debug output
 import logging as log
 
+# For reading configuration (.ini) file
+import configparser
+
 # PyQt5 imports for UI elements
 from PyQt5.QtWidgets import QMainWindow, qApp, QWidget, QTabWidget, \
                             QVBoxLayout, QAction, QActionGroup, QFileDialog
@@ -99,6 +102,8 @@ class MainWindow(QMainWindow):
         allocationResults: A dict containing the results of the effort
             allocation, indexed by the name of the model/metric combination
             as a string.
+        config: ConfigParser object containing information about which model
+            functions are implemented.
     """
 
     # signals
@@ -113,6 +118,10 @@ class MainWindow(QMainWindow):
 
         # set debug mode
         self.debug = debug
+
+        # read configuration file
+        self.config = configparser.ConfigParser()
+        self.config.read('config.ini')
 
         # set data
         self.data = Data()
@@ -357,7 +366,7 @@ class MainWindow(QMainWindow):
         models. Creates lambda function for LLF for combination of all
         covariates.
         """
-        self.symbolicThread = SymbolicThread(models.modelList, self.data)
+        self.symbolicThread = SymbolicThread(models.modelList, self.data, self.config)
         self.symbolicThread.symbolicSignal.connect(self.onSymbolicComplete)
         self.symbolicThread.start()
 
@@ -674,7 +683,7 @@ class MainWindow(QMainWindow):
                                                                 # previously computed models,
                                                                 # only added when calculations complete
             self._main.tab4.sideMenu.modelListWidget.clear()
-            self.computeWidget = ComputeWidget(modelsToRun, metricNames, self.data)
+            self.computeWidget = ComputeWidget(modelsToRun, metricNames, self.data, self.config)
             # DON'T WANT TO DISPLAY RESULTS IN ANOTHER WINDOW
             # WANT TO DISPLAY ON TAB 2/3
             self.computeWidget.results.connect(self.onEstimationComplete)   # signal emitted when estimation complete

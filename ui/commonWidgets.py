@@ -100,7 +100,7 @@ class ComputeWidget(QWidget):
     """
     results = pyqtSignal(dict)
 
-    def __init__(self, modelsToRun, metricNames, data, parent=None):
+    def __init__(self, modelsToRun, metricNames, data, config, parent=None):
         """Initializes ComputeWidget class.
 
         Args:
@@ -108,6 +108,8 @@ class ComputeWidget(QWidget):
             metricNames: List of metric names as strings used for estimation
                 calculation.
             data: Pandas dataframe containing imported data.
+            config: ConfigParser object containing information about which model
+                functions are implemented. Passed to Model.
             parent:
         """
         super(ComputeWidget, self).__init__(parent)
@@ -128,7 +130,7 @@ class ComputeWidget(QWidget):
         layout.setAlignment(Qt.AlignVCenter)
         self.setWindowTitle("Processing...")
 
-        self.computeTask = TaskThread(modelsToRun, metricNames, data)
+        self.computeTask = TaskThread(modelsToRun, metricNames, data, config)
         self.computeTask.nextCalculation.connect(self._showCurrentCalculation)
         self.computeTask.modelFinished.connect(self._modelFinished)
         self.computeTask.taskFinished.connect(self._onFinished)
@@ -170,12 +172,14 @@ class TaskThread(QThread):
         _metricNames: List of metric names as strings used for estimation
             calculation.
         _data: Pandas dataframe containing imported data.
+        _config: ConfigParser object containing information about which model
+                functions are implemented. Passed to Model.
     """
     taskFinished = pyqtSignal(dict)
     modelFinished = pyqtSignal()
     nextCalculation = pyqtSignal(str)
 
-    def __init__(self, modelsToRun, metricNames, data):
+    def __init__(self, modelsToRun, metricNames, data, config):
         """Initializes TaskThread class.
 
         Args:
@@ -183,12 +187,15 @@ class TaskThread(QThread):
             metricNames: List of metric names as strings used for estimation
                 calculation.
             data: Pandas dataframe containing imported data.
+            config: ConfigParser object containing information about which model
+                functions are implemented. Passed to Model.
         """
         super().__init__()
         self.abort = False  # True when app closed, so thread stops running
         self._modelsToRun = modelsToRun
         self._metricNames = metricNames
         self._data = data
+        self._config = config
 
     def run(self):
         """Performs estimation for models/metrics.
@@ -212,7 +219,7 @@ class TaskThread(QThread):
                 metricNames = ", ".join(metricCombination)
                 if (metricCombination == ["No covariates"]):
                     metricCombination = []
-                m = model(data=self._data.getData(), metricNames=metricCombination)
+                m = model(data=self._data.getData(), metricNames=metricCombination, config=self._config)
 
                 # this is the name used in tab 2 and tab 4 side menus
                 # use shortened name
@@ -243,22 +250,27 @@ class SymbolicThread(QThread):
         _nextCalculation: pyqtSignal, emits string containing the model/metric
             combination name currently being calculated. Displayed on progress
             window.
+        _config: ConfigParser object containing information about which model
+                functions are implemented. Passed to Model.
     """
 
     symbolicSignal = pyqtSignal()
     complete = False    # if symbolic calculations are complete = True
 
-    def __init__(self, modelList, data):
+    def __init__(self, modelList, data, config):
         """Initializes TaskThread class.
 
         Args:
             modelList: List of Model objects used for symbolic calculations.
             data: Pandas dataframe containing imported data.
+            config: ConfigParser object containing information about which model
+                functions are implemented. Passed to Model.
         """
         super().__init__()
         self.abort = False  # True when app closed, so thread stops running
         self._modelList = modelList
         self._data = data
+        self._config = config
 
     def run(self):
         """Performs symbolic calculations for models.
@@ -272,19 +284,23 @@ class SymbolicThread(QThread):
             # check if application has been closed
             if self.abort:
                 return  # get out of run method
-            # need to initialize models so they have the imported data
-            instantiatedModel = model(data=self._data.getData(), metricNames=self._data.metricNames)
+
+            # if not model.dLLF:
+            if self._config[model.__name__]['dLLF'] != 'yes':
+                # need to initialize models so they have the imported data
+                instantiatedModel = model(data=self._data.getData(),
+                metricNames=self._data.metricNames, config=self._config)
+            
+
+                # # only run symbolic calculation if no LLF implemented by user
+                # if not instantiatedModel.LLFspecified:
+                #     pass
+                # # or if LLF not created for all covariates
+                # elif instantiatedModel.LLFspecified:
+                #     if len(instantiatedModel.LLF_array) <= instantiatedModel.maxCovariates or None in instantiatedModel.LLF_array:
 
 
-            # # only run symbolic calculation if no LLF implemented by user
-            # if not instantiatedModel.LLFspecified:
-            #     pass
-            # # or if LLF not created for all covariates
-            # elif instantiatedModel.LLFspecified:
-            #     if len(instantiatedModel.LLF_array) <= instantiatedModel.maxCovariates or None in instantiatedModel.LLF_array:
-
-
-            model.lambdaFunctionAll = instantiatedModel.symAll()    # saved as class variable for each model
-            log.info("Lambda function created for %s model", model.name)
+                model.lambdaFunctionAll = instantiatedModel.symAll()    # saved as class variable for each model
+                log.info("Lambda function created for %s model", model.name)
         SymbolicThread.complete = True  # calculations complete, set flag to True
         self.symbolicSignal.emit()

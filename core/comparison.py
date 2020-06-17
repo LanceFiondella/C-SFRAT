@@ -70,7 +70,10 @@ class Comparison():
             except ZeroDivisionError:
                 weight = 1.0/4.0
 
-        ahp_val = (measureList[i] - min(measureList)) / (max(measureList) - min(measureList)) * weight
+        if len(measureList) > 1:
+            ahp_val = (measureList[i] - max(measureList)) / (min(measureList) - max(measureList)) * weight
+        else:
+            ahp_val = 1.0
 
         return ahp_val
 
@@ -91,13 +94,28 @@ class Comparison():
             try:
                 weight = spinBox.value()/self._weightSum
             except ZeroDivisionError:
+                # all spin boxes set to zero, give equal weighting
                 weight = 1.0/4.0
 
-        ahp_val = (measureList[i] - max(measureList)) / (min(measureList) - max(measureList)) * weight
+        # try:
+        #     ahp_val = (measureList[i] - max(measureList)) / (min(measureList) - max(measureList)) * weight
+        # except ZeroDivisionError:
+        #     # no difference between min and max of measure list
+        #     # could mean that estimation was only run on one model
+        #     ahp_val = .250
+
+        if len(measureList) > 1:
+            ahp_val = (measureList[i] - max(measureList)) / (min(measureList) - max(measureList)) * weight
+        else:
+            ahp_val = 1.0
 
         return ahp_val
 
     def bestCombinations(self):
         # store the index of model combinations that have the highest value, will bold these cells
-        self.bestMeanUniform = np.argmax(self.meanOutUniform)
-        self.bestMean = np.argmax(self.meanOut)
+        try:
+            self.bestMeanUniform = np.argmax(self.meanOutUniform)
+            self.bestMean = np.argmax(self.meanOut)
+        except ValueError:
+            self.bestMeanUniform = None
+            self.bestMean = None

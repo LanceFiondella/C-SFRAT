@@ -10,12 +10,12 @@ class Geometric(Model):
     coxParameterEstimateRange = [0.0, 0.1]      # betas
     shapeParameterEstimateRange = [0.8, 0.99]   # b0
     # LLFspecified = False
-    # dLLFspecified = False
+    dLLF = False
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        LLF_array = [self.LLF0, self.LLF1, self.LLF2, self.LLF3]
-        dLLF_array = [self.dLLF0, self.dLLF1, self.dLLF2, self.dLLF3]
+        self.LLF_array = [self.LLF0, self.LLF1, self.LLF2, self.LLF3]
+        self.dLLF_array = [self.dLLF0, self.dLLF1, self.dLLF2, self.dLLF3]
 
     # def calcHazard(self, b, n):
     #     # return [b for i in range(self.n)]

@@ -10,7 +10,9 @@ from sympy import symbols, diff, exp, lambdify, DeferredVector, factorial, Symbo
 import scipy.optimize
 from scipy.special import factorial as npfactorial
 
-import models   # maybe??
+import symengine
+
+# import models   # maybe??
 
 from core.bat import search
 
@@ -57,6 +59,8 @@ class Model(ABC):
             that the model fit to the cumulative data.
         intensityList: List of values (float) that the model fit to the
             intensity data.
+        config: ConfigParser object containing information about which model
+            functions are implemented.
     """
 
     # lambdaFunctionAll = None
@@ -71,6 +75,7 @@ class Model(ABC):
         """
         self.data = kwargs["data"]                  # dataframe
         self.metricNames = kwargs["metricNames"]    # selected metric names (strings)
+        self.config = kwargs['config']
         # self.t = self.data.iloc[:, 0].values            # failure times, from first column of dataframe
         # self.failures = self.data.iloc[:, 1].values     # number of failures, from second column of dataframe
         self.t = self.data["T"].values     # failure times
@@ -88,12 +93,12 @@ class Model(ABC):
         self.setupMetricString()
 
         # logging
-        log.info("Failure times: %s", self.t)
-        print(type(self.t))
-        log.info("Number of time segments: %d", self.n)
-        log.info("Failures: %s", self.failures)
-        log.info("Cumulative failures: %s", self.cumulativeFailures)
-        log.info("Total failures: %d", self.totalFailures)
+        log.info("---------- %s (%s) ----------", self.name, self.metricNames)
+        log.debug("Failure times: %s", self.t)
+        log.debug("Number of time segments: %d", self.n)
+        log.debug("Failures: %s", self.failures)
+        log.debug("Cumulative failures: %s", self.cumulativeFailures)
+        log.debug("Total failures: %d", self.totalFailures)
         log.info("Number of covariates: %d", self.numCovariates)
 
     ################################################
@@ -179,20 +184,20 @@ class Model(ABC):
             Lambda function implementation of the differentiated log-likelihood
             function.
         """
-
+        t1_start = time.process_time()
         Model.maxCovariates = self.numCovariates
         f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
-        bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
-        # Model.lambdaFunctionAll = self.convertSym(x, bh, "numpy")
+        # bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
 
-        t1_start = time.process_time()
+        bh = np.array([symengine.diff(f, x[i]) for i in range(self.numCovariates + 1)])
+
         f = self.convertSym(x, bh, "numpy")
         t1_stop = time.process_time()
         log.info("time to convert symbolic function: %s", t1_stop - t1_start)
 
         return f
 
-    def LLF_sym(self, hazard):
+    def LLF_sym_old(self, hazard):
         """Log-likelihood function used for symbolic calculations.
 
         Symbolic variables used to allow for symbolic differentiation with
@@ -210,6 +215,7 @@ class Model(ABC):
         # x[1:] = beta1, beta2, ..
 
         x = DeferredVector('x')
+
         second = []
         prodlist = []
         for i in range(self.n):
@@ -236,6 +242,40 @@ class Model(ABC):
         factTerm = [] #Verified
         for i in range(self.n):
             factTerm.append(sym.log(factorial(self.failures[i])))
+        fourthTerm = sum(factTerm)
+
+        f = firstTerm + secondTerm + thirdTerm - fourthTerm
+        return f, x
+
+    def LLF_sym(self, hazard):
+        # x = b, b1, b2, b2 = symengine.symbols('b b1 b2 b3')
+        x = symengine.symbols(f'x:{self.numCovariates + 1}')
+        second = []
+        prodlist = []
+        for i in range(self.n):
+            sum1 = 1
+            sum2 = 1
+            TempTerm1 = 1
+            for j in range(1, self.numCovariates + 1):
+                TempTerm1 = TempTerm1 * exp(self.covariateData[j - 1][i] * x[j])
+            sum1 = 1 - ((1 - (hazard(i, x[0]))) ** (TempTerm1))
+            for k in range(i):
+                TempTerm2 = 1
+                for j in range(1, self.numCovariates + 1):
+                    TempTerm2 = TempTerm2 * exp(self.covariateData[j - 1][k] * x[j])
+                sum2 = sum2 * ((1 - (hazard(i, x[0])))**(TempTerm2))
+            second.append(sum2)
+            prodlist.append(sum1*sum2)
+
+        firstTerm = -sum(self.failures) #Verified
+        secondTerm = sum(self.failures)*symengine.log(sum(self.failures)/sum(prodlist))
+        logTerm = [] #Verified
+        for i in range(self.n):
+            logTerm.append(self.failures[i]*symengine.log(prodlist[i]))
+        thirdTerm = sum(logTerm)
+        factTerm = [] #Verified
+        for i in range(self.n):
+            factTerm.append(symengine.log(factorial(self.failures[i])))
         fourthTerm = sum(factTerm)
 
         f = firstTerm + secondTerm + thirdTerm - fourthTerm
@@ -285,49 +325,45 @@ class Model(ABC):
         Returns:
 
         """
-        return lambdify(x, bh, target)
+        # return lambdify(x, bh, target)
+        return symengine.lambdify(x, bh, backend='lambda')
 
     def runEstimation(self):
         initial = self.initialEstimates()
 
         # need class of specific model being used, lambda function stored as class variable
-        # log.info("name = %s", self.__class__.__name__)
-        m = models.modelList[self.__class__.__name__]
 
-        # ex. (max covariates = 3) for 3 covariates, zero_array should be length 0
-        # for no covariates, zero_array should be length 3
-        numZeros = Model.maxCovariates - self.numCovariates
-        zero_array = np.zeros(numZeros)   # create empty array, size of num covariates
-
-
-        # create new lambda function that calls lambda function for all covariates
-        # for no covariates, concatenating array a with zero element array produces a
-
-        initial = np.concatenate((initial, zero_array), axis=0)
-        log.info("Initial estimates: %s", initial)
+        # only use lambda function if dLLF not defined
+        if self.config[self.__class__.__name__]['dLLF'] != 'yes':
+            # ex. (max covariates = 3) for 3 covariates, zero_array should be length 0
+            # for no covariates, zero_array should be length 3
+            numZeros = Model.maxCovariates - self.numCovariates
+            zero_array = np.zeros(numZeros)   # create empty array, size of num covariates
 
 
+            # create new lambda function that calls lambda function for all covariates
+            # for no covariates, concatenating array a with zero element array produces a
 
-        # use dLLF if specified by user
-        # if self.dLLFspecified:
-        #     if 
-        #     fd = self.dLLF_array[self.numCovariates]
+            initial = np.concatenate((initial, zero_array), axis=0)
+            log.info("Initial estimates: %s", initial)
 
+            fd = self.__class__.lambdaFunctionAll
 
-        fd = m.lambdaFunctionAll
+        else:
+            # use dLLF function defined by user
+            fd = self.dLLF_array[self.numCovariates]
 
-        import inspect
-        print(inspect.signature(fd).parameters)
-
-        # log.info(f"PASSING INITIAL ESTIMATES = {fd(initial)}")
-
-        optimize_start = time.process_time()
+        optimize_start = time.process_time()    # record time
 
         sol = self.optimizeSolution(fd, initial)
 
 
-        # search_space = [[-5.0, 5.0] for i in range(4)]
+        # search_space = [[0.0, 1.0] for i in range(4)]
         # population = [self.initialEstimates() for i in range(6)]
+
+
+        # print(fd(initial))
+
         # sol_bat = search(fd, search_space, max_generations=6, population=population,
         #    freq_min=0.021768, freq_max=0.917212, alpha=0.825154, gamma=0.82362)
 
@@ -335,12 +371,36 @@ class Model(ABC):
         # print(sol_bat)
         # print(sol_bat[0])
         # print("plug bat into fd", fd(sol_bat[0]))
-        # sol = scipy.optimize.minimize(fd, sol_bat[0], method='L-BFGS-B')
+        # sol = self.optimizeSolution(fd, np.array(sol_bat[0]))
         # print(sol)
 
 
         optimize_stop = time.process_time()
-        log.info("optimization time: %s", optimize_stop - optimize_start)
+        log.info("Optimization time: %s", optimize_stop - optimize_start)
+        log.info("Optimized solution: %s", sol)
+
+        self.b = sol[0]
+        self.betas = sol[1:]
+        # hazard = self.calcHazard(self.b, self.n)
+
+        hazard = [self.hazardFunction(i, self.b) for i in range(self.n)]
+        self.hazard = hazard    # for MVF prediction, don't want to calculate again
+        self.modelFitting(hazard, self.betas)
+
+    def runEstimation_new(self):
+        f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
+        bh = np.array([symengine.diff(f, x[i]) for i in range(self.numCovariates + 1)])
+        fd = self.convertSym(x, bh, "numpy")
+        log.info("Symbolic equation converted.")
+
+        initial = self.initialEstimates()
+
+        optimize_start = time.process_time()    # record time
+
+        sol = self.optimizeSolution(fd, initial)
+
+        optimize_stop = time.process_time()
+        log.info("Optimization time: %s", optimize_stop - optimize_start)
         log.info("Optimized solution: %s", sol)
 
         self.b = sol[0]
@@ -389,13 +449,21 @@ class Model(ABC):
         #solution = scipy.optimize.root(fd, x0=B, method='hybr')
         #solution = scipy.optimize.fsolve(fd, x0=B)
         log.info("MLEs solved.")
-        log.info("Solution: %s", solution)
         return solution
 
     def modelFitting(self, hazard, betas):
         self.omega = self.calcOmega(hazard, betas)
         log.info("Calculated omega: %s", self.omega)
-        self.llfVal = self.LLF(hazard, betas)      # log likelihood value
+
+        # check if user implemented their own LLF
+        if self.config[self.__class__.__name__]['LLF'] != 'yes':
+            # additional LLF function not implemented,
+            # calculate LLF value using dynamic function
+            self.llfVal = self.LLF(hazard, betas)      # log likelihood value
+        else:
+            # user implemented LLF
+            # need to choose LLF for specified number of covariates
+            self.llfVal = self.LLF_array[self.numCovariates](hazard, betas)
         log.info("Calculated log-likelihood value: %s", self.llfVal)
         self.aicVal = self.AIC(hazard, betas)
         log.info("Calculated AIC: %s", self.aicVal)
@@ -404,10 +472,12 @@ class Model(ABC):
         self.mvfList = self.MVF_all(hazard, self.omega, betas)
 
         # temporary
-        if (np.isnan(self.llfVal) or np.isinf(self.llfVal)):
-            self.converged = False
-        else:
-            self.converged = True
+        # if (np.isnan(self.llfVal) or np.isinf(self.llfVal)):
+        #     self.converged = False
+        # else:
+        #     self.converged = True
+
+        self.converged = True
 
         self.sseVal = self.SSE(self.mvfList, self.cumulativeFailures)
         log.info("Calculated SSE: %s", self.sseVal)
@@ -438,6 +508,9 @@ class Model(ABC):
         return numerator / denominator
 
     def LLF(self, h, betas):
+
+        # pass betas? or use class attribute (self.betas)?
+
         # can clean this up to use less loops, probably
         second = []
         prodlist = []
@@ -471,16 +544,21 @@ class Model(ABC):
 
     def AIC(self, h, betas):
         # +2 variables for any other algorithm
-        p = len(betas) + 1 #+ 1   # number of covariates + number of hazard rate parameters + 1 (omega)
-        return 2 * p - np.multiply(2, self.LLF(h, betas))
+        p = self.calcP(betas)
+        return 2 * p - 2 * self.llfVal
+        # return 2 * p - np.multiply(2, self.LLF(h, betas))
+        # return 2 * 5 - 2 * -28.4042
 
     def BIC(self, h, betas):
         # +2 variables for any other algorithm
-        p = len(betas) + 1 #+ 1   # number of covariates + number of hazard rate parameters + 1 (omega)
-        return p * np.log(self.n) - 2 * self.LLF(h, betas)
+        p = self.calcP(betas)
+        return p * np.log(self.n) - 2 * self.llfVal
+        # return p * np.log(self.n) - 2 * self.LLF(h, betas)
+        # return 5 * np.log(self.n) - 2 * -28.4042
 
-    def calcP(self):
-        pass
+    def calcP(self, betas):
+        # number of covariates + number of hazard rate parameters + 1 (omega)
+        return len(betas) + 1
 
     def MVF_all(self, h, omega, betas):
         mvf_array = np.array([self.MVF(h, self.omega, betas, dataPoints) for dataPoints in range(self.n)])
@@ -567,7 +645,7 @@ class Model(ABC):
         covData = [list(self.covariateData[j]) for j in range(self.numCovariates)]
 
         for j in range(self.numCovariates):
-            covData[j].append(x[j]) # append a single variable (x[j]) to the end of each vector of covariate data
+            covData[j].append(x[j])  # append a single variable (x[j]) to the end of each vector of covariate data
 
         prodlist = []
         for i in range(stop + 1):     # CHANGED THIS FROM self.n + 1 !!!

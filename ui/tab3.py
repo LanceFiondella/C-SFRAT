@@ -52,15 +52,25 @@ class Tab3(QWidget):
                 self.table.setItem(i, 3, QTableWidgetItem("{0:.3f}".format(model.aicVal)))
                 self.table.setItem(i, 4, QTableWidgetItem("{0:.3f}".format(model.bicVal)))
                 self.table.setItem(i, 5, QTableWidgetItem("{0:.3f}".format(model.sseVal)))
-                self.table.setItem(i, 6, QTableWidgetItem("{0:.3f}".format(self.sideMenu.comparison.meanOutUniform[i])))
-                self.table.setItem(i, 7, QTableWidgetItem("{0:.3f}".format(self.sideMenu.comparison.meanOut[i])))
+                try:
+                    self.table.setItem(i, 6, QTableWidgetItem("{0:.3f}".format(self.sideMenu.comparison.meanOutUniform[i])))
+                    self.table.setItem(i, 7, QTableWidgetItem("{0:.3f}".format(self.sideMenu.comparison.meanOut[i])))
+                except TypeError:
+                    # if no models converge, meanOut and meanOutUniform are set to None
+                    # don't add item to table if type is None
+                    pass
                 i += 1
         self.table.setRowCount(i)   # set row count to only include converged models
         self.table.resizeColumnsToContents()    # resize column width after table is edited
         self.table.setSortingEnabled(True)      # re-enable sorting after table is edited
 
-        self.table.item(self.sideMenu.comparison.bestMeanUniform, 6).setFont(self.font)
-        self.table.item(self.sideMenu.comparison.bestMean, 7).setFont(self.font)
+        try:
+            self.table.item(self.sideMenu.comparison.bestMeanUniform, 6).setFont(self.font)
+            self.table.item(self.sideMenu.comparison.bestMean, 7).setFont(self.font)
+        except TypeError:
+            # if no models converge, bestMean and bestMeanUniform will be None type
+            # do not set cells to bold if they are None
+            pass
 
     def _setupTab3(self):
         """Creates tab 3 widgets and adds them to layout."""
