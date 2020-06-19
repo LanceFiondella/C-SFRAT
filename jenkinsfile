@@ -1,8 +1,8 @@
 pipeline {
     agent any
-	node {
-		checkout scm 
-	}	
+	options {
+        skipStagesAfterUnstable()
+    }
     stages {
         stage('Build') {
             steps {
@@ -28,6 +28,7 @@ pipeline {
 				echo 'Deploying....'
                 sh 'make publish'
             }
+			
         }
     }
 }
