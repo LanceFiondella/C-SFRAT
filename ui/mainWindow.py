@@ -152,6 +152,7 @@ class MainWindow(QMainWindow):
 
         # connect tab2 list changed to refreshing tab 2 plot
         self._main.tab2.sideMenu.failureChangedSignal.connect(self.runPrediction)
+        self._main.tab3.sideMenu.modelChangedSignal.connect(self.updateComparisonTable)
         self._main.tab3.sideMenu.spinBoxChangedSignal.connect(self.runGoodnessOfFit)
         self._main.tab4.sideMenu.runAllocationSignal.connect(self.runAllocation)
 
@@ -721,7 +722,9 @@ class MainWindow(QMainWindow):
                                                                     # so they can be selected
         # show which models didn't converge
         # self._main.tab2.sideMenu.addNonConvergedModels(nonConvergedNames)
-        self._main.tab3.addResultsToTable(results)
+        self._main.tab3.sideMenu.addSelectedModels(convergedNames)  # add models to tab 3 list
+                                                                    # so they can be selected for comparison
+        # self._main.tab3.addResultsToTable(results)
         self._main.tab4.sideMenu.addSelectedModels(convergedNames)  # add models to tab 4 list so they
                                                                     # can be selected for allocation
         log.debug("Estimation results: %s", results)
@@ -730,7 +733,20 @@ class MainWindow(QMainWindow):
     def runGoodnessOfFit(self):
         """Adds goodness of fit measures from estimation to tab 3 table."""
         if self.estimationComplete:
-            self._main.tab3.addResultsToTable(self.estimationResults)
+            combinations = [item.text() for item in self._main.tab3.sideMenu.modelListWidget.selectedItems()]
+            self.updateComparisonTable(combinations)
+
+    def updateComparisonTable(self, combinations):
+        # if listItem.isSelected():
+        #     self._main.tab3.addRow(self.estimationResults[listItem.text()])
+        # else:
+        #     self._main.tab3.removeRow(self.estimationResults[listItem.text()])
+
+        selectedDict = {}
+        for key, model in self.estimationResults.items():
+            if key in combinations:
+                selectedDict[key] = model
+        self._main.tab3.addResultsToTable(selectedDict)
 
     def runAllocation(self, combinations):
         """Runs effort allocation on selected model/metric combinations.

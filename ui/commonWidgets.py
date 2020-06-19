@@ -286,7 +286,7 @@ class SymbolicThread(QThread):
                 return  # get out of run method
 
             # if not model.dLLF:
-            if self._config[model.__name__]['dLLF'] != 'yes':
+            if self._config[model.__name__]['dLLF'].lower() != 'yes':
                 # need to initialize models so they have the imported data
                 instantiatedModel = model(data=self._data.getData(),
                 metricNames=self._data.metricNames, config=self._config)

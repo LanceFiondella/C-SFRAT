@@ -226,8 +226,9 @@ class SideMenu1(QVBoxLayout):
             # self.runButton.setEnabled(False)    # disable button until estimation complete
             self.runModelSignal.emit({"modelsToRun": modelsToRun,
                                       "metricNames": selectedMetricNames})
-                                      
+
             log.info("Run models signal emitted. Models = %s, metrics = %s", selectedModelNames, selectedMetricNames)
+
 
         # if no models selected and/or no metrics selected, create message box
         # to display this warning

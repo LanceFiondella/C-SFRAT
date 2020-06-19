@@ -50,20 +50,20 @@ class LaplaceTest(TrendTest):
         return pd.DataFrame({'X': data['FN'], 'Y': laplace})
 
 
-class AverageTest(TrendTest):
-    """
-    Running Arithmetic Average
-    """
-    name = 'Running Arithmetic Average'
-    xAxisLabel = 'Failure Number'
-    yAxisLabel = 'Running Average of Interfailure Times'
+# class AverageTest(TrendTest):
+#     """
+#     Running Arithmetic Average
+#     """
+#     name = 'Running Arithmetic Average'
+#     xAxisLabel = 'Failure Number'
+#     yAxisLabel = 'Running Average of Interfailure Times'
 
-    def __init__(self):
-        super().__init__()
+#     def __init__(self):
+#         super().__init__()
 
-    def run(self, data):
-        avg = pd.Series(0)
-        for i in range(len(data)):
-            avg[i] = sum(data['IF'][0:i+1])/(i+1)
+#     def run(self, data):
+#         avg = pd.Series(0)
+#         for i in range(len(data)):
+#             avg[i] = sum(data['IF'][0:i+1])/(i+1)
 
-        return pd.DataFrame({'X': data['FN'], 'Y': avg})
+#         return pd.DataFrame({'X': data['FN'], 'Y': avg})

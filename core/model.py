@@ -44,6 +44,7 @@ class Model(ABC):
             (int).
         converged: Boolean indicating if the model converged or not.
         metricString: A string containing all metric names separated by commas.
+        combinationName:
         b:
         betas:
         hazard: List of the results of the hazard function as floats at each
@@ -171,9 +172,12 @@ class Model(ABC):
     def setupMetricString(self):
         """Creates string of metric names separated by commas"""
         if (self.metricNames == []):
-            self.metricString = "None"
+            # self.metricString = "None"
+            self.metricString = "No covariates"
         else:
             self.metricString = ", ".join(self.metricNames)
+        self.combinationName = f"{self.shortName} ({self.metricString})"
+
 
     def symAll(self):
         """Creates symbolic LLF for model with all metrics, and differentiates
@@ -334,7 +338,7 @@ class Model(ABC):
         # need class of specific model being used, lambda function stored as class variable
 
         # only use lambda function if dLLF not defined
-        if self.config[self.__class__.__name__]['dLLF'] != 'yes':
+        if self.config[self.__class__.__name__]['dLLF'].lower() != 'yes':
             # ex. (max covariates = 3) for 3 covariates, zero_array should be length 0
             # for no covariates, zero_array should be length 3
             numZeros = Model.maxCovariates - self.numCovariates
@@ -351,7 +355,7 @@ class Model(ABC):
 
         else:
             # use dLLF function defined by user
-            fd = self.dLLF_array[self.numCovariates]
+            fd = self.dLLF_dict[self.numCovariates]
 
         optimize_start = time.process_time()    # record time
 
@@ -428,7 +432,7 @@ class Model(ABC):
 
         # try:
         #     log.info("Using broyden1")
-        #     solution = scipy.optimize.broyden1(fd, xin=B, iter=100)
+        #     solution = scipy.optimize.broyden1(fd, xin=B, iter=1000)
         # except scipy.optimize.nonlin.NoConvergence:
         #     log.info("Using fsolve")
         #     solution = scipy.optimize.fsolve(fd, x0=B)
@@ -456,14 +460,14 @@ class Model(ABC):
         log.info("Calculated omega: %s", self.omega)
 
         # check if user implemented their own LLF
-        if self.config[self.__class__.__name__]['LLF'] != 'yes':
+        if self.config[self.__class__.__name__]['LLF'].lower() != 'yes':
             # additional LLF function not implemented,
             # calculate LLF value using dynamic function
             self.llfVal = self.LLF(hazard, betas)      # log likelihood value
         else:
             # user implemented LLF
             # need to choose LLF for specified number of covariates
-            self.llfVal = self.LLF_array[self.numCovariates](hazard, betas)
+            self.llfVal = self.LLF_dict[self.numCovariates](hazard, betas)
         log.info("Calculated log-likelihood value: %s", self.llfVal)
         self.aicVal = self.AIC(hazard, betas)
         log.info("Calculated AIC: %s", self.aicVal)

@@ -1,11 +1,13 @@
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QGridLayout, \
                             QTableWidget, QTableWidgetItem, QAbstractScrollArea, \
-                            QSpinBox, QSpacerItem, QSizePolicy, QHeaderView
+                            QSpinBox, QSpacerItem, QSizePolicy, QHeaderView, QVBoxLayout, \
+                            QListWidget, QAbstractItemView, QGroupBox, QListWidgetItem
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QFont
 
 # Local imports
 from core.comparison import Comparison
+
 
 class Tab3(QWidget):
     """Contains all widgets displayed on tab 3.
@@ -72,6 +74,38 @@ class Tab3(QWidget):
             # do not set cells to bold if they are None
             pass
 
+    def addRow(self, model, results):
+        # new row inserted at end of table, after last row
+        rowCount = self.table.rowCount()
+
+        self.table.setItem(rowCount, 0, QTableWidgetItem(model.shortName))
+        self.table.setItem(rowCount, 1, QTableWidgetItem(model.metricString))
+        self.table.setItem(rowCount, 2, QTableWidgetItem("{0:.3f}".format(model.llfVal)))
+        self.table.setItem(rowCount, 3, QTableWidgetItem("{0:.3f}".format(model.aicVal)))
+        self.table.setItem(rowCount, 4, QTableWidgetItem("{0:.3f}".format(model.bicVal)))
+        self.table.setItem(rowCount, 5, QTableWidgetItem("{0:.3f}".format(model.sseVal)))
+        try:
+            self.table.setItem(rowCount, 6,QTableWidgetItem("{0:.3f}".format(self.sideMenu.comparison.meanOutUniformDict[model.combinationName])))
+            self.table.setItem(rowCount, 7, QTableWidgetItem("{0:.3f}".format(self.sideMenu.comparison.meanOutDict[model.combinationName])))
+        except TypeError:
+            # if no models converge, meanOut and meanOutUniform are set to None
+            # don't add item to table if type is None
+            pass
+
+    def removeRow(self, model):
+        # iterate over all rows, linear search
+        rowCount = self.table.rowCount()
+
+        for row in range(rowCount):
+            modelName = self.table.item(row, 0)
+            # first check if model name is the same as in table
+            if modelName == model.shortName:
+                covariates = self.table.item(row, 1)
+                # finally, check if metric names are the same
+                if covariates == model.metricNames:
+                    # if both are the same, then this is the row to be deleted
+                    self.table.removeRow(row)
+
     def _setupTab3(self):
         """Creates tab 3 widgets and adds them to layout."""
         mainLayout = QHBoxLayout()       # main layout
@@ -98,7 +132,7 @@ class Tab3(QWidget):
                         "SSE", "Model ranking (no weights)", "Model ranking (user-specified weights)"]
         table.setColumnCount(len(columnLabels))
         table.setHorizontalHeaderLabels(columnLabels)
-        table.move(0,0)
+        table.move(0, 0)
 
         header = table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -106,7 +140,7 @@ class Tab3(QWidget):
         return table
 
 
-class SideMenu3(QGridLayout):
+class SideMenu3(QVBoxLayout):
     """ Side menu for tab 3.
     
     Attributes:
@@ -122,10 +156,12 @@ class SideMenu3(QGridLayout):
             of squares error in the comparison.
         spinBoxChangedSignal: pyqtSignal, emits when any of the spin boxes for
             goodness-of-fit comparison weighting are changed.
+        modelChangedSignal:
     """
 
     # signals
     spinBoxChangedSignal = pyqtSignal()
+    modelChangedSignal = pyqtSignal(list)
 
     def __init__(self):
         """Initializes tab 3 side menu UI elements."""
@@ -133,37 +169,85 @@ class SideMenu3(QGridLayout):
         self._setupSideMenu()
         self.comparison = Comparison()
 
+    def addSelectedModels(self, modelNames):
+        """Adds model names to the model list widget.
+
+        Args:
+            modelNames: list of strings, name of each model to add to list
+                widget.
+        """
+        self.modelListWidget.addItems(modelNames)
+
     def _setupSideMenu(self):
-        """Creates side menu widgets and adds them to the layout."""
-        self._createLabel("Metric", 0, 0)
-        self._createLabel("weights (0-10)", 0, 1)
-        self._createLabel("LLF", 1, 0)
-        self._createLabel("AIC", 2, 0)
-        self._createLabel("BIC", 3, 0)
-        self._createLabel("SSE", 4, 0)
-        self.llfSpinBox = self._createSpinBox(0, 10, 1, 1)
-        self.aicSpinBox = self._createSpinBox(0, 10, 2, 1)
-        self.bicSpinBox = self._createSpinBox(0, 10, 3, 1)
-        self.sseSpinBox = self._createSpinBox(0, 10, 4, 1)
+        """Creates side menu group boxes and adds them to the layout."""
+        self.modelsGroup = QGroupBox("Select Model Results")
+        # sets minumum size for side menu
+        self.modelsGroup.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
 
-        # vertical spacer at bottom of layout, keeps labels/spinboxes together at top of window
-        vspacer = QSpacerItem(20, 40, QSizePolicy.Maximum, QSizePolicy.Expanding)
-        self.addItem(vspacer, 5, 0, 1, -1)
-        self.setColumnStretch(1, 1)
+        self.comparisonGroup = QGroupBox("Metric Weights (0-10)")
 
-    def _createLabel(self, text, row, col):
+        self.modelsGroup.setLayout(self._setupModelsGroup())
+        self.comparisonGroup.setLayout(self._setupComparisonGroup())
+
+        self.addWidget(self.modelsGroup, 7)
+        self.addWidget(self.comparisonGroup, 2)
+
+        self.addStretch(1)
+
+    def _setupComparisonGroup(self):
+        """Creates widget containing comparison weight spin boxes.
+
+        Returns:
+            A QGridLayout containing the created comparison spin boxes and
+            corresponding labels.
+        """
+        comparisonLayout = QGridLayout()
+        # self._createLabel("Metric", 0, 0, comparisonLayout)
+        # self._createLabel("weights (0-10)", 0, 1, comparisonLayout)
+        self._createLabel("LLF", 0, 0, comparisonLayout)
+        self._createLabel("AIC", 1, 0, comparisonLayout)
+        self._createLabel("BIC", 2, 0, comparisonLayout)
+        self._createLabel("SSE", 3, 0, comparisonLayout)
+        self.llfSpinBox = self._createSpinBox(0, 10, 0, 1, comparisonLayout)
+        self.aicSpinBox = self._createSpinBox(0, 10, 1, 1, comparisonLayout)
+        self.bicSpinBox = self._createSpinBox(0, 10, 2, 1, comparisonLayout)
+        self.sseSpinBox = self._createSpinBox(0, 10, 3, 1, comparisonLayout)
+
+        # vertical spacer at bottom of layout, keeps labels/spinboxes together at top
+        # vspacer = QSpacerItem(20, 40, QSizePolicy.Maximum, QSizePolicy.Expanding)
+        # comparisonLayout.addItem(vspacer, 5, 0, 1, -1)
+        comparisonLayout.setColumnStretch(1, 1)
+
+        return comparisonLayout
+
+    def _setupModelsGroup(self):
+        """Creates widget containing list of converged models.
+
+        Returns:
+            A QVBoxLayout containing the created model group.
+        """
+        modelGroupLayout = QVBoxLayout()
+        self.modelListWidget = QListWidget()
+        modelGroupLayout.addWidget(self.modelListWidget)
+        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)  # able to select multiple models
+        self.modelListWidget.itemSelectionChanged.connect(self._emitModelChangedSignal)
+
+        return modelGroupLayout
+
+    def _createLabel(self, text, row, col, layout):
         """Creates a text label and adds it to the side menu layout.
 
         Args:
             text: The string of text the label displays.
-            row: The row of the QGroupBox widget to add the label to.
-            col: The column of the QGroupBox widget to add the label to.
+            row: The row (int) of the QGroupBox widget to add the label to.
+            col: The column (int) of the QGroupBox widget to add the label to.
+            layout: The layout object that the label is added to.
         """
         label = QLabel(text)
         label.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum))
-        self.addWidget(label, row, col)
+        layout.addWidget(label, row, col)
 
-    def _createSpinBox(self, minVal, maxVal, row, col):
+    def _createSpinBox(self, minVal, maxVal, row, col, layout):
         """Creates a QSpinBox and adds it to the side menu layout.
 
         Current weighting values are allowed to be between 0 and 10.
@@ -171,8 +255,9 @@ class SideMenu3(QGridLayout):
         Args:
             minVal: The minimum value allowed by the spinbox (int).
             maxVal: The maximum value allowed by the spinbox (int).
-            row: The row of the QGroupBox widget to add the spinbox to.
-            col: The column of the QGroupBox widget to add the spinbox to.
+            row: The row (int) of the QGroupBox widget to add the spinbox to.
+            col: The column (int) of the QGroupBox widget to add the spinbox to.
+            layout: The layout object that the spin box is added to.
         Returns:
             A created QSpinBox object with specified parameters.
         """
@@ -180,8 +265,14 @@ class SideMenu3(QGridLayout):
         spinBox.setRange(minVal, maxVal)
         spinBox.setValue(1)  # give equal weighting of 1 by default
         spinBox.valueChanged.connect(self._emitSpinBoxChangedSignal)
-        self.addWidget(spinBox, row, col)
+        layout.addWidget(spinBox, row, col)
         return spinBox
+
+    def _emitModelChangedSignal(self):
+        """
+        """
+        selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
+        self.modelChangedSignal.emit(selectedModelNames)
 
     def _emitSpinBoxChangedSignal(self):
         """Emits signal if any goodness-of-fit spin box is changed."""

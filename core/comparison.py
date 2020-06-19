@@ -12,6 +12,9 @@ class Comparison():
         self.bestMeanUniform = None
         self.bestMean = None
 
+        # self.meanOutUniformDict = {}
+        # self.meanOutDict = {}
+
     def goodnessOfFit(self, results, sideMenu):
         # numResults = len(results)
         llf = []
@@ -56,12 +59,25 @@ class Comparison():
         self.meanOutUniform = np.mean(ahpArrayUniform, axis=0)
         self.meanOut = np.mean(ahpArray, axis=0)  # mean of each goodness of fit measure,
                                                     # for each model/metric combination
+
+        # store results in dictionary indexed by combination name
+        # for key, model in results.items():
+        #     count = 0
+        #     self.meanOutUniformDict[key] = self.meanOutUniform[count]
+        #     self.meanOutDict[key] = self.meanOut[count]
+        #     count += 1
+
+        # print(self.meanOutUniformDict)
+
         self.bestCombinations()
 
     def calcWeightSum(self, sideMenu):
         return sideMenu.llfSpinBox.value() + sideMenu.aicSpinBox.value() + sideMenu.bicSpinBox.value() + sideMenu.sseSpinBox.value()
 
     def ahpNegative(self, measureList, i, spinBox, uniform):
+        """
+        Calculating weight for LLF is different because its values are negative.
+        """
         if uniform:
             weight = 1.0/4.0
         else:
@@ -78,16 +94,6 @@ class Comparison():
         return ahp_val
 
     def ahp(self, measureList, i, spinBox, uniform):
-        """
-        negative is bool. Calculating weight for LLF is different because its values are negative. Specified
-        by True, otherwise False.
-
-        uniform is bool. If calculating with uniform (no) weighting, uniform = True.
-        """
-        # print("num =", measureList[i] - min(measureList))
-        # print("den =", max(measureList) - min(measureList))
-        # print("weight =", spinBox.value()/self.weightSum)
-
         if uniform:
             weight = 1.0/4.0
         else:
