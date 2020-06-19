@@ -5,7 +5,8 @@ import logging as log
 from PyQt5.QtWidgets import QWidget, QMessageBox, QHBoxLayout, QVBoxLayout, QLabel, \
                             QGroupBox, QListWidget, QPushButton, QAbstractItemView, \
                             QTableWidget, QTableWidgetItem, QAbstractScrollArea, \
-                            QSpinBox, QDoubleSpinBox, QHeaderView
+                            QSpinBox, QDoubleSpinBox, QHeaderView, QRadioButton, \
+                            QSpacerItem, QSizePolicy
 from PyQt5.QtCore import pyqtSignal
 
 
@@ -165,8 +166,8 @@ class SideMenu4(QVBoxLayout):
         optionsGroup.setLayout(self._setupOptionsGroup())
         self._setupAllocationButton()
 
-        self.addWidget(modelsGroup, 7)
-        self.addWidget(optionsGroup, 1)
+        self.addWidget(modelsGroup, 10)
+        self.addWidget(optionsGroup)
         self.addWidget(self.allocationButton, 1)
 
         self.addStretch(1)
@@ -184,7 +185,7 @@ class SideMenu4(QVBoxLayout):
 
         return modelGroupLayout
 
-    def _setupOptionsGroup(self):
+    def _setupOptionsGroup_old(self):
         """Creates widgets for specifying effort allocation parameters.
 
         Returns:
@@ -203,6 +204,45 @@ class SideMenu4(QVBoxLayout):
         # self.failureSpinBox.setMaximumWidth(200)
         self.failureSpinBox.setRange(1, 999999)
         optionsGroupLayout.addWidget(self.failureSpinBox)
+
+        return optionsGroupLayout
+
+    def _setupOptionsGroup(self):
+        """Creates widgets for specifying effort allocation parameters.
+
+        Returns:
+            A created VBoxLayout containing the created options group.
+        """
+
+        optionsGroupLayout = QVBoxLayout()
+        tempBudget = QHBoxLayout()
+        tempFailures = QHBoxLayout()
+        budgetVertical = QVBoxLayout()
+        failuresVertical = QVBoxLayout()
+
+        budgetVertical.addWidget(QLabel("Budget"))
+        self.budgetSpinBox = QDoubleSpinBox()
+        # self.budgetSpinBox.setMaximumWidth(200)
+        self.budgetSpinBox.setRange(0.0, 999999.0)
+        self.budgetSpinBox.setValue(20)
+        budgetVertical.addWidget(self.budgetSpinBox)
+
+        tempBudget.addWidget(QRadioButton())
+        tempBudget.addLayout(budgetVertical, 1)
+
+        failuresVertical.addWidget(QLabel("Failures"))
+        self.failureSpinBox = QSpinBox()
+        # self.failureSpinBox.setMaximumWidth(200)
+        self.failureSpinBox.setRange(1, 999999)
+        failuresVertical.addWidget(self.failureSpinBox)
+
+        tempFailures.addWidget(QRadioButton())
+        tempFailures.addLayout(failuresVertical,1)
+
+        optionsGroupLayout.addLayout(tempBudget)
+        vspacer = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        optionsGroupLayout.addItem(vspacer)
+        optionsGroupLayout.addLayout(tempFailures)
 
         return optionsGroupLayout
 

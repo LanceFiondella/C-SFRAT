@@ -289,7 +289,7 @@ class SymbolicThread(QThread):
             if self._config[model.__name__]['dLLF'].lower() != 'yes':
                 # need to initialize models so they have the imported data
                 instantiatedModel = model(data=self._data.getData(),
-                metricNames=self._data.metricNames, config=self._config)
+                    metricNames=self._data.metricNames, config=self._config)
             
 
                 # # only run symbolic calculation if no LLF implemented by user

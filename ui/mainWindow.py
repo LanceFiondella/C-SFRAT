@@ -25,6 +25,7 @@ the UI elements. Able to reference all elements and the signals they emit.
 # sometimes metric list doesn't load until interacted with
 # bar chart isn't ideal for large datasets
 # clean up prediction plot
+# tool tips?
 ###############################################################################
 
 # For handling debug output
