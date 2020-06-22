@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker  # to force integers for bar chart x axis values
 from PyQt5.QtCore import QSettings
 from scipy.stats import norm
+import numpy as np
 
-from core.dataClass import PandasModel
 
 class PlotSettings:
     def __init__(self):
@@ -31,6 +31,13 @@ class PlotSettings:
         ax = self.setupPlot(ax, title=title, xLabel=xLabel, yLabel=yLabel)
         plotMethod = getattr(ax, self.plotType)     # equivalent to ax.plotType, depends on what plot type is
         if self.plotType == "step":
+            # add point at (0, 0) if not there
+            x = x.to_numpy()
+            y = y.to_numpy()
+            # print(x[0])
+            if x[0] != 0:
+                x, y = self.addZeroPoint(x, y)
+
             # can only have "post" parameter if using a step function
             plotMethod(x, y, self.style, markerSize=self.markerSize, where="post")  # ax.step()
             # plotMethod(x, y, self.style, markerSize=self.markerSize)  # ax.step()
@@ -39,6 +46,13 @@ class PlotSettings:
             ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
             plotMethod(x, y, color='skyblue')    # ax.bar()
         else:
+            # add point at (0, 0) if not there
+            x = x.to_numpy()
+            y = y.to_numpy()
+            # print(x[0])
+            if x[0] != 0:
+                x, y = self.addZeroPoint(x, y)
+
             plotMethod(x, y, self.style, markerSize=self.markerSize)    # ax.plot()
         return ax
 
@@ -72,8 +86,23 @@ class PlotSettings:
 
     def addLine(self, ax, x, y, label="None"):
         plotMethod = getattr(ax, self.plotType)
-        plotMethod(x, y, self.style, markerSize=self.markerSize, label=label)
+
+        # add point at (0, 0) if not there
+        if int(x[0]) != 0:
+            x, y = self.addZeroPoint(x, y)
+        if self.plotType == "step":
+            plotMethod(x, y, self.style, markerSize=self.markerSize, where="post", label=label)
+        else:
+            plotMethod(x, y, self.style, markerSize=self.markerSize, label=label)
         return ax
+
+    def addZeroPoint(self, x, y):
+        # print(type(x))
+        # print(np.zeros(1))
+        # print(x)
+        x = np.concatenate((np.zeros(1), x))
+        y = np.concatenate((np.zeros(1), y))
+        return x, y
 
     @staticmethod
     def predictionPlot(ax):

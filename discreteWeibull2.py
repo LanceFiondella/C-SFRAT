@@ -7,7 +7,7 @@ from core.model import Model
 class DiscreteWeibull2(Model):
     name = "Discrete Weibull (Order 2)"
     shortName = "DW2"
-    coxParameterEstimateRange = [0.0001, 0.01]      # betas
+    coxParameterEstimateRange = [0.0, 0.01]      # betas
     shapeParameterEstimateRange = [0.9, 0.9999]   # b0
     # LLFspecified = False
     dLLF = False

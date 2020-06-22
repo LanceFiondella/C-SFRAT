@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Comparison():
     """
     For comparison of model goodness-of-fit measures
@@ -10,6 +11,9 @@ class Comparison():
         self.meanOut = None
         self.bestMeanUniform = None
         self.bestMean = None
+
+        # self.meanOutUniformDict = {}
+        # self.meanOutDict = {}
 
     def goodnessOfFit(self, results, sideMenu):
         # numResults = len(results)
@@ -55,14 +59,25 @@ class Comparison():
         self.meanOutUniform = np.mean(ahpArrayUniform, axis=0)
         self.meanOut = np.mean(ahpArray, axis=0)  # mean of each goodness of fit measure,
                                                     # for each model/metric combination
+
+        # store results in dictionary indexed by combination name
+        # for key, model in results.items():
+        #     count = 0
+        #     self.meanOutUniformDict[key] = self.meanOutUniform[count]
+        #     self.meanOutDict[key] = self.meanOut[count]
+        #     count += 1
+
+        # print(self.meanOutUniformDict)
+
         self.bestCombinations()
 
-    def bestCombinations(self):
-        # store the index of model combinations that have the highest value, will bold these cells
-        self.bestMeanUniform = np.argmax(self.meanOutUniform)
-        self.bestMean = np.argmax(self.meanOut)
+    def calcWeightSum(self, sideMenu):
+        return sideMenu.llfSpinBox.value() + sideMenu.aicSpinBox.value() + sideMenu.bicSpinBox.value() + sideMenu.sseSpinBox.value()
 
     def ahpNegative(self, measureList, i, spinBox, uniform):
+        """
+        Calculating weight for LLF is different because its values are negative.
+        """
         if uniform:
             weight = 1.0/4.0
         else:
@@ -70,33 +85,43 @@ class Comparison():
                 weight = spinBox.value()/self._weightSum
             except ZeroDivisionError:
                 weight = 1.0/4.0
-        
-        ahp_val = (measureList[i] - min(measureList)) / (max(measureList) - min(measureList)) * weight
+
+        if len(measureList) > 1:
+            ahp_val = (measureList[i] - max(measureList)) / (min(measureList) - max(measureList)) * weight
+        else:
+            ahp_val = 1.0
 
         return ahp_val
 
     def ahp(self, measureList, i, spinBox, uniform):
-        """
-        negative is bool. Calculating weight for LLF is different because its values are negative. Specified
-        by True, otherwise False.
-
-        uniform is bool. If calculating with uniform (no) weighting, uniform = True.
-        """
-        # print("num =", measureList[i] - min(measureList))
-        # print("den =", max(measureList) - min(measureList))
-        # print("weight =", spinBox.value()/self.weightSum)
-
         if uniform:
             weight = 1.0/4.0
         else:
             try:
                 weight = spinBox.value()/self._weightSum
             except ZeroDivisionError:
+                # all spin boxes set to zero, give equal weighting
                 weight = 1.0/4.0
 
-        ahp_val = (measureList[i] - max(measureList)) / (min(measureList) - max(measureList)) * weight
-        
+        # try:
+        #     ahp_val = (measureList[i] - max(measureList)) / (min(measureList) - max(measureList)) * weight
+        # except ZeroDivisionError:
+        #     # no difference between min and max of measure list
+        #     # could mean that estimation was only run on one model
+        #     ahp_val = .250
+
+        if len(measureList) > 1:
+            ahp_val = (measureList[i] - max(measureList)) / (min(measureList) - max(measureList)) * weight
+        else:
+            ahp_val = 1.0
+
         return ahp_val
 
-    def calcWeightSum(self, sideMenu):
-        return sideMenu.llfSpinBox.value() + sideMenu.aicSpinBox.value() + sideMenu.bicSpinBox.value() + sideMenu.sseSpinBox.value()
+    def bestCombinations(self):
+        # store the index of model combinations that have the highest value, will bold these cells
+        try:
+            self.bestMeanUniform = np.argmax(self.meanOutUniform)
+            self.bestMean = np.argmax(self.meanOut)
+        except ValueError:
+            self.bestMeanUniform = None
+            self.bestMean = None

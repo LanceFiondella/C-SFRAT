@@ -9,6 +9,7 @@ from itertools import combinations, chain
 
 from PyQt5 import QtCore
 
+
 class Data:
     def __init__(self):
         """
@@ -21,7 +22,7 @@ class Data:
         """
         self.sheetNames = ["None"]
         self._currentSheet = 0
-        self.STATIC_COLUMNS = 6 # 6 for T, FC, CFC, FN, FT, IF columns
+        self.STATIC_COLUMNS = 6  # 6 for T, FC, CFC, FN, FT, IF columns
         self.dataSet = {"None": None}
         # self._numCovariates = 0
         self.numCovariates = 0
@@ -175,7 +176,7 @@ class Data:
         data.rename(columns={data.columns[0]:"Time"}, inplace=True)
         data.rename(columns={data.columns[1]:"Failures"}, inplace=True)
         for i in range(numCov):
-            data.rename(columns={data.columns[i+2]:"Metric{0}".format(i+1)}, inplace=True)
+            data.rename(columns={data.columns[i+2]:"C{0}".format(i+1)}, inplace=True)   # changed from MetricX to CX
 
     def getData(self):
         """
