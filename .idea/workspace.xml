@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="a6bbf19f-7006-428c-b888-fe7ef84a9c94" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/Covariate_Tool.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Covariate_Tool.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/unnamed.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/shelf/unnamed.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="a6bbf19f-7006-428c-b888-fe7ef84a9c94" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -127,11 +122,11 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Python tests.Unittests for testUI.TestUI" />
-      <item itemvalue="Python tests.Unittests in testUI.py" />
-      <item itemvalue="Python tests.Unittests for testUI.TestUI.test_something" />
-      <item itemvalue="Python tests.Unittests for testUI.TestUI.test_demensions" />
       <item itemvalue="Python.main" />
+      <item itemvalue="Python tests.Unittests for testUI.TestUI" />
+      <item itemvalue="Python tests.Unittests for testUI.TestUI.test_demensions" />
+      <item itemvalue="Python tests.Unittests for testUI.TestUI.test_something" />
+      <item itemvalue="Python tests.Unittests in testUI.py" />
     </list>
     <recent_temporary>
       <list>
@@ -232,10 +227,10 @@
       <screen x="-1920" y="-335" width="1920" height="1040" />
     </state>
     <state width="1899" height="178" key="GridCell.Tab.0.right/0.0.1536.824/1920.0.1024.728/-1920.-335.1920.1040@-1920.-335.1920.1040" timestamp="1592835849232" />
-    <state x="-1459" y="-170" key="SettingsEditor" timestamp="1592835624811">
+    <state x="-1642" y="-68" key="SettingsEditor" timestamp="1592852445591">
       <screen x="-1920" y="-335" width="1920" height="1040" />
     </state>
-    <state x="-1459" y="-170" key="SettingsEditor/0.0.1536.824/1920.0.1024.728/-1920.-335.1920.1040@-1920.-335.1920.1040" timestamp="1592835624811" />
+    <state x="-1642" y="-68" key="SettingsEditor/0.0.1536.824/1920.0.1024.728/-1920.-335.1920.1040@-1920.-335.1920.1040" timestamp="1592852445591" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
