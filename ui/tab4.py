@@ -49,7 +49,7 @@ class Tab4(QWidget):
             res = value[0]
             model = value[1]
 
-            self.table.setItem(row, 0, QTableWidgetItem(model.name))   # model name
+            self.table.setItem(row, 0, QTableWidgetItem(model.shortName))   # model name
             self.table.setItem(row, 1, QTableWidgetItem(model.metricString))  # model metrics
             self.table.setItem(row, 2, QTableWidgetItem("{0:.2f}".format(res.H)))
             # number of columns = number of covariates
@@ -87,8 +87,12 @@ class Tab4(QWidget):
         table.setRowCount(1)
         table.setColumnCount(3)
         table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Estimated failures"])
+
         header = table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        # provides bottom border for header
+        stylesheet = "::section{Background-color:rgb(250,250,250);}"
+        header.setStyleSheet(stylesheet)
         table.move(0, 0)
 
         return table
@@ -155,7 +159,7 @@ class SideMenu4(QVBoxLayout):
         """
 
         for name in modelNames:
-            if " (No covariates)" not in name:
+            if " (None)" not in name:
                 self.modelListWidget.addItem(name)
 
     def _setupSideMenu(self):

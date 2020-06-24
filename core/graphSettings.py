@@ -23,7 +23,7 @@ class PlotSettings:
     def plotType(self):
         return self._plotType
 
-    @ plotType.setter
+    @plotType.setter
     def plotType(self, plotType):
         self._plotType = plotType
 

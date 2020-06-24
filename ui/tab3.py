@@ -1,7 +1,8 @@
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QGridLayout, \
                             QTableWidget, QTableWidgetItem, QAbstractScrollArea, \
                             QSpinBox, QSpacerItem, QSizePolicy, QHeaderView, QVBoxLayout, \
-                            QListWidget, QAbstractItemView, QGroupBox, QListWidgetItem
+                            QListWidget, QAbstractItemView, QGroupBox, QListWidgetItem, \
+                            QFrame
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QFont
 
@@ -38,7 +39,7 @@ class Tab3(QWidget):
         self.table.setSortingEnabled(False) # disable sorting while editing contents
         self.table.clear()
         self.table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
-                                              "SSE", "Model ranking (no weights)", "Model ranking (user-specified weights)"])
+                                              "SSE", "Model ranking", "Weighted model ranking"])
                                               #"Weighted selection (mean)", "Weighted selection (median)"])
         self.table.setRowCount(len(results))    # set row count to include all model results, 
                                                 # even if not converged
@@ -111,7 +112,7 @@ class Tab3(QWidget):
         mainLayout = QHBoxLayout()       # main layout
         self.sideMenu = SideMenu3()
         self.table = self._setupTable()
-        self.font = QFont() # allows table cells to be bold
+        self.font = QFont()     # allows table cells to be bold
         self.font.setBold(True)
         mainLayout.addLayout(self.sideMenu, 15)
         mainLayout.addWidget(self.table, 85)
@@ -129,13 +130,16 @@ class Tab3(QWidget):
                                                                     # column width fit to contents
         table.setRowCount(1)
         columnLabels = ["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
-                        "SSE", "Model ranking (no weights)", "Model ranking (user-specified weights)"]
+                        "SSE", "Model ranking", "Weighted model ranking"]
         table.setColumnCount(len(columnLabels))
         table.setHorizontalHeaderLabels(columnLabels)
         table.move(0, 0)
 
         header = table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        # provides bottom border for header
+        stylesheet = "::section{Background-color:rgb(250,250,250);}"
+        header.setStyleSheet(stylesheet)
 
         return table
 
@@ -180,17 +184,17 @@ class SideMenu3(QVBoxLayout):
 
     def _setupSideMenu(self):
         """Creates side menu group boxes and adds them to the layout."""
+
+        self.comparisonGroup = QGroupBox("Metric Weights (0-10)")
+        self.comparisonGroup.setLayout(self._setupComparisonGroup())
+
         self.modelsGroup = QGroupBox("Select Model Results")
         # sets minumum size for side menu
         self.modelsGroup.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-
-        self.comparisonGroup = QGroupBox("Metric Weights (0-10)")
-
         self.modelsGroup.setLayout(self._setupModelsGroup())
-        self.comparisonGroup.setLayout(self._setupComparisonGroup())
-
-        self.addWidget(self.modelsGroup, 7)
+        
         self.addWidget(self.comparisonGroup, 2)
+        self.addWidget(self.modelsGroup, 7)
 
         self.addStretch(1)
 

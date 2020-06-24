@@ -257,7 +257,7 @@ class Data:
         for c in comb:
             self.metricNameCombinations.append(", ".join(c))
         # self.metricNameCombinations.remove("")  # remove option for zero metrics, user can select zero by having none selected
-        self.metricNameCombinations[0] = "No covariates"
+        self.metricNameCombinations[0] = "None"
         print(self.metricNameCombinations)
 
     def powerset(self, iterable):

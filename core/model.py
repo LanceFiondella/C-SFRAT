@@ -173,11 +173,10 @@ class Model(ABC):
         """Creates string of metric names separated by commas"""
         if (self.metricNames == []):
             # self.metricString = "None"
-            self.metricString = "No covariates"
+            self.metricString = "None"
         else:
             self.metricString = ", ".join(self.metricNames)
         self.combinationName = f"{self.shortName} ({self.metricString})"
-
 
     def symAll(self):
         """Creates symbolic LLF for model with all metrics, and differentiates

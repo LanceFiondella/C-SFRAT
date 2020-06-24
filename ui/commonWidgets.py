@@ -217,7 +217,7 @@ class TaskThread(QThread):
                 if self.abort:
                     return  # get out of run method
                 metricNames = ", ".join(metricCombination)
-                if (metricCombination == ["No covariates"]):
+                if (metricCombination == ["None"]):
                     metricCombination = []
                 m = model(data=self._data.getData(), metricNames=metricCombination, config=self._config)
 

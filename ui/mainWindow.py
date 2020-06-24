@@ -684,6 +684,7 @@ class MainWindow(QMainWindow):
             self._main.tab2.sideMenu.modelListWidget.clear()    # clear tab 2 list containing
                                                                 # previously computed models,
                                                                 # only added when calculations complete
+            self._main.tab3.sideMenu.modelListWidget.clear()
             self._main.tab4.sideMenu.modelListWidget.clear()
             self.computeWidget = ComputeWidget(modelsToRun, metricNames, self.data, self.config)
             # DON'T WANT TO DISPLAY RESULTS IN ANOTHER WINDOW
