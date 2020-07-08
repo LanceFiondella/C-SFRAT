@@ -258,7 +258,6 @@ class Data:
             self.metricNameCombinations.append(", ".join(c))
         # self.metricNameCombinations.remove("")  # remove option for zero metrics, user can select zero by having none selected
         self.metricNameCombinations[0] = "None"
-        print(self.metricNameCombinations)
 
     def powerset(self, iterable):
         """ powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3) """

@@ -201,6 +201,88 @@ class Model(ABC):
 
         return f
 
+    def LLF_sym_old(self, hazard):
+        """Log-likelihood function used for symbolic calculations.
+
+        Symbolic variables used to allow for symbolic differentiation with
+        respect to b/betas.
+
+        Args:
+            hazard: The hazard function of the implemented model.
+
+        Returns:
+            A tuple containing the symbolic log-likelihood function as the
+            first element, and a vector of symbolic variables as the second
+            element.
+        """
+        # x[0] = b
+        # x[1:] = beta1, beta2, ..
+
+        x = DeferredVector('x')
+
+        second = []
+        prodlist = []
+        for i in range(self.n):
+            sum1 = 1
+            sum2 = 1
+            TempTerm1 = 1
+            for j in range(1, self.numCovariates + 1):
+                TempTerm1 = TempTerm1 * exp(self.covariateData[j - 1][i] * x[j])
+            sum1 = 1 - ((1 - (hazard(i, x[0]))) ** (TempTerm1))
+            for k in range(i):
+                TempTerm2 = 1
+                for j in range(1, self.numCovariates + 1):
+                    TempTerm2 = TempTerm2 * exp(self.covariateData[j - 1][k] * x[j])
+                sum2 = sum2 * ((1 - (hazard(i, x[0])))**(TempTerm2))
+            second.append(sum2)
+            prodlist.append(sum1*sum2)
+
+        firstTerm = -sum(self.failures) #Verified
+        secondTerm = sum(self.failures)*sym.log(sum(self.failures)/sum(prodlist))
+        logTerm = [] #Verified
+        for i in range(self.n):
+            logTerm.append(self.failures[i]*sym.log(prodlist[i]))
+        thirdTerm = sum(logTerm)
+        factTerm = [] #Verified
+        for i in range(self.n):
+            factTerm.append(sym.log(factorial(self.failures[i])))
+        fourthTerm = sum(factTerm)
+
+        f = firstTerm + secondTerm + thirdTerm - fourthTerm
+        return f, x
+
+    def RLL_PSO(self, x):
+        second = []
+        prodlist = []
+        for i in range(self.n):
+            sum1 = 1
+            sum2 = 1
+            TempTerm1 = 1
+            for j in range(1, self.numCovariates + 1):
+                TempTerm1 = TempTerm1 * exp(self.covariateData[j - 1][i] * x[j])
+            sum1 = 1 - ((1 - (self.hazardFunction(i, x[0]))) ** (TempTerm1))
+            for k in range(i):
+                TempTerm2 = 1
+                for j in range(1, self.numCovariates + 1):
+                    TempTerm2 = TempTerm2 * exp(self.covariateData[j - 1][k] * x[j])
+                sum2 = sum2 * ((1 - (self.hazardFunction(i, x[0])))**(TempTerm2))
+            second.append(sum2)
+            prodlist.append(sum1*sum2)
+
+        firstTerm = -sum(self.failures) #Verified
+        secondTerm = sum(self.failures)*np.log(sum(self.failures)/sum(prodlist))
+        logTerm = [] #Verified
+        for i in range(self.n):
+            logTerm.append(self.failures[i]*np.log(prodlist[i]))
+        thirdTerm = sum(logTerm)
+        factTerm = [] #Verified
+        for i in range(self.n):
+            factTerm.append(np.log(npfactorial(self.failures[i])))
+        fourthTerm = sum(factTerm)
+
+        f = firstTerm + secondTerm + thirdTerm - fourthTerm
+        return f, x
+
     def LLF_sym(self, hazard):
         # x = b, b1, b2, b2 = symengine.symbols('b b1 b2 b3')
         x = symengine.symbols(f'x:{self.numCovariates + 1}')
@@ -235,64 +317,41 @@ class Model(ABC):
         f = firstTerm + secondTerm + thirdTerm - fourthTerm
         return f, x
 
-    def RLL_PSO(self, x):
-        second = []
-        prodlist = []
-        for i in range(self.n):
-            sum1 = 1
-            sum2 = 1
-            TempTerm1 = 1
-            for j in range(1, self.numCovariates + 1):
-                TempTerm1 = TempTerm1 * np.exp(self.covariateData[j - 1][i] * x[j])
-            sum1 = 1 - ((1 - (self.hazardFunction(i, x[0]))) ** (TempTerm1))
-            for k in range(i):
-                TempTerm2 = 1
-                for j in range(1, self.numCovariates + 1):
-                    TempTerm2 = TempTerm2 * np.exp(self.covariateData[j - 1][k] * x[j])
-                sum2 = sum2 * ((1 - (self.hazardFunction(i, x[0])))**(TempTerm2))
-            second.append(sum2)
-            prodlist.append(sum1*sum2)
+    def LLF_sym_new(self, hazard):
+        # fast, but incorrect
+        x = DeferredVector('x')
 
-            # print("sum1 =", sum1)
-            # print("sum2 =", sum2)
-            # print("sum1 * sum2 =", sum1*sum2)
+        failures = np.array(self.failures)
+        covariateData = np.array(self.covariateData)
+        h = np.array([hazard(i, x[0]) for i in range(self.n)])
 
-        firstTerm = -np.sum(self.failures) #Verified
 
-        # print(self.failures)
+        failure_sum = np.sum(failures)
 
-        # print("prodlist =", prodlist)
-        # print("log of prodlist =", np.log(prodlist))
-        # print(sum(self.failures)/sum(prodlist))
+        term1 = np.sum(np.log(npfactorial(failures[i])) for i in range(self.n))
+        term2 = failure_sum
 
-        secondTerm = np.sum(self.failures)*np.log(np.sum(self.failures)/np.sum(prodlist))
-        logTerm = [] #Verified
-        for i in range(self.n):
-            # check if one of the elements is negative, log is NAN
-            # if element is exactly 0, log is -inf
-            # instead, just append zero
+        oneMinusB = np.array([sym.Pow((1.0 - hazard(i, x[0])), sym.prod([sym.exp(x[j] * covariateData[j - 1][i]) for j in range(1, self.numCovariates + 1)])) for i in range(self.n)])
 
-            # print("prodlist =", prodlist[i])
+        term3_num = np.sum(failures)
+        term3_den1 = np.sum(np.subtract(1.0, oneMinusB))
 
-            # if prodlist[i] <= 0.0:
-            #     logTerm.append(0.0)
-            # else:
-            #     logTerm.append(self.failures[i]*np.log(prodlist[i]))
+        exponent = np.array([np.prod([[x[j] * covariateData[j - 1][k] for j in range(1, self.numCovariates + 1)] for k in range(i)]) for i in range(self.n)])
 
-            logTerm.append(self.failures[i]*np.log(prodlist[i]))
-        thirdTerm = np.sum(logTerm)
-        factTerm = [] #Verified
-        for i in range(self.n):
-            factTerm.append(np.log(npfactorial(self.failures[i])))
-        fourthTerm = np.sum(factTerm)
+        product_array = np.array(np.power(np.subtract(1.0, h), exponent))
 
-        # print("first term =", firstTerm)
-        # print("second term =", secondTerm)
-        # print("third term =", thirdTerm)
-        # print("fourth term =", fourthTerm)
+        term3_den2 = np.prod(product_array)
+        term3 = sym.log(term3_num/(term3_den1 * term3_den2)) * failure_sum
 
-        f = -(firstTerm + secondTerm + thirdTerm - fourthTerm)  # negative for PSO minimization!
-        return f
+        a = np.subtract(1.0, oneMinusB)
+        b = a * term3_den2
+        c = np.array([sym.log(b[i]) for i in range(b.shape[0])])
+        d = np.multiply(c, failures)
+        term4 = np.sum(d)
+
+        f = -term1 - term2 + term3 + term4
+
+        return f, x
 
     def convertSym(self, x, bh, target):
         """Converts the symbolic function to a lambda function
@@ -334,15 +393,31 @@ class Model(ABC):
 
         optimize_start = time.process_time()    # record time
 
-        bounds = [(0.0001, 0.9999) for i in range(self.numCovariates + 1)]  # temporary
-
-        itertmp, lnLtmp, outParamtmp, timeiterTemp = PSO(costFunc=self.RLL_PSO, x0=initial,
-                bounds=bounds, num_particles=2**5, maxiter=64, verbose=False)
+        
 
 
         # search_space = [[0.0001, 0.9999] for i in range(self.numCovariates + 1)]
         search_space = [[0.0001, 0.9999] for i in range(Model.maxCovariates + 1)]
-        sol = self.optimizeSolution(fd, outParamtmp[-1])
+
+        # population = [self.initialEstimates() for i in range(6)]
+
+
+        # print(fd(initial))
+
+        # sol_bat = search(fd, search_space, max_generations=6, population=population,
+        #    freq_min=0.021768, freq_max=0.917212, alpha=0.825154, gamma=0.82362)
+
+
+        # print(sol_bat)
+
+        # temp = []
+        # for i in range(len(sol_bat)):
+        #     temp.append(fd(sol_bat[i]))
+        # best_index = temp.index(max(temp))
+
+        # print("plug bat into fd", fd(sol_bat[best_index]))
+        # sol = self.optimizeSolution(fd, np.array(sol_bat[best_index]))
+        sol = self.optimizeSolution(fd, initial)
         # print(sol)
 
 
@@ -359,8 +434,175 @@ class Model(ABC):
         self.hazard = hazard    # for MVF prediction, don't want to calculate again
         self.modelFitting(hazard, self.betas)
 
+    def runEstimation_pso_bad(self):
+        initial = self.initialEstimates()
+
+        # fd = self.__class__.lambdaFunctionAll
+
+        f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
+        # bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
+
+        bh = np.array([symengine.diff(f, x[i]) for i in range(self.numCovariates + 1)])
+
+        # fd = self.convertSym(x, bh, "numpy")
+
+        fd = []
+        for i in bh:
+            fd.append(self.convertSym(x, [i], "numpy"))
+
+        # print(fd(initial))
+
+        optimize_start = time.process_time()    # record time
+
+        bounds = [(0.0001, 0.9999) for i in range(self.numCovariates + 1)]  # temporary
+
+        # solution = scipy.optimize.minimize(fd, method='L-BFGS-B', x0=initial, bounds=bounds, options={'gtol': 1e-10, 'disp': True})
+
+        sol_pso = []
+
+        for i in range(self.numCovariates + 1):
+            itertmp, lnLtmp, outParamtmp, timeiterTemp = PSO(costFunc=fd[i], x0=initial,
+                bounds=bounds, num_particles=2**5, maxiter=256, verbose=False)
+            sol_pso.append(outParamtmp[-1])
+
+        # itertmp, lnLtmp, outParamtmp, timeiterTemp = PSO(costFunc=fd, x0=initial,
+        #         bounds=bounds, num_particles=2**5, maxiter=256, verbose=False)
+
+        sol_pso = sol_pso[-1]
+        print(sol_pso)
+
+        # temp = []
+        # for i in range(len(sol_pso)):
+        #     temp.append(fd(sol_pso[i]))
+        # best_index = temp.index(max(temp))
+
+        # print("plug back into fd:", fd(sol_pso))
+        # print(fd(sol_pso)[0])
+
+        sol = []
+        print("fd[i] =", fd[i])
+        print("sol_pso =", sol_pso)
+        for i in range(self.numCovariates + 1):
+            sol_optimize = self.optimizeSolution(fd[i], sol_pso)
+            sol.append(sol_optimize[0])
+        print("sol =", sol)
+
+        optimize_stop = time.process_time()
+        log.info("Optimization time: %s", optimize_stop - optimize_start)
+        log.info("Optimized solution: %s", sol)
+
+        self.b = sol[0]
+        self.betas = sol[1:]
+        # hazard = self.calcHazard(self.b, self.n)
+
+        hazard = [self.hazardFunction(i, self.b) for i in range(self.n)]
+        self.hazard = hazard    # for MVF prediction, don't want to calculate again
+        self.modelFitting(hazard, self.betas)
+
+    def runEstimation_newest(self):
+        initial = self.initialEstimates()
+
+        # fd = self.__class__.lambdaFunctionAll
+
+        f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
+        # bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
+
+        bh = np.array([symengine.diff(f, x[i]) for i in range(self.numCovariates + 1)])
+
+        fd = self.convertSym(x, bh, "numpy")
+
+        # print(fd(initial))
+
+        optimize_start = time.process_time()    # record time
+
+        bounds = [(0.0001, 0.9999) for i in range(self.numCovariates + 1)]  # temporary
+        
+        # bEstimate = [(self.shapeParameterEstimateRange[0], self.shapeParameterEstimateRange[1])]
+        # betasEstimate = [(self.coxParameterEstimateRange[0], self.coxParameterEstimateRange[1]) for i in range(self.numCovariates)]
+        # bounds = bEstimate + betasEstimate
+
+        print(bounds)
+
+        sol_pso = []
+
+        # for i in range(self.numCovariates + 1):
+        #     itertmp, lnLtmp, outParamtmp, timeiterTemp = PSO(costFunc=fd[i], x0=initial,
+        #         bounds=bounds, num_particles=2**5, maxiter=256, verbose=False)
+        #     sol_pso.append(outParamtmp[-1])
+
+        # itertmp, lnLtmp, outParamtmp, timeiterTemp = PSO(costFunc=fd, x0=initial,
+        #         bounds=bounds, num_particles=2**5, maxiter=256, verbose=False)
+
+        # solution = []
+        # for i in range(self.numCovariates + 1):
+        #     solution.append(sol_pso[i][i])
+        # sol_pso = sol_pso[-1]
+
+        solution = PSO_main(costFunc=fd, x0=initial, bounds=bounds, num_particles=2**5, maxiter=128)
+
+        print(solution)
+
+        # temp = []
+        # for i in range(len(sol_pso)):
+        #     temp.append(fd(sol_pso[i]))
+        # best_index = temp.index(max(temp))
+
+        # print("plug back into fd:", fd(sol_pso))
+        # print(fd(sol_pso)[0])
+
+        sol = []
+        # print("fd[i] =", fd[i](solution))
+        # print("sol_pso =", solution)
+        # for i in range(self.numCovariates + 1):
+        #     sol_optimize = self.optimizeSolution(fd[i], solution)
+        #     sol.append(sol_optimize[0])
+        sol = self.optimizeSolution(fd, solution)
+        print("sol =", sol)
+
+        optimize_stop = time.process_time()
+        log.info("Optimization time: %s", optimize_stop - optimize_start)
+        log.info("Optimized solution: %s", sol)
+
+        self.b = sol[0]
+        self.betas = sol[1:]
+        # hazard = self.calcHazard(self.b, self.n)
+
+        hazard = [self.hazardFunction(i, self.b) for i in range(self.n)]
+        self.hazard = hazard    # for MVF prediction, don't want to calculate again
+        self.modelFitting(hazard, self.betas)
+
+    def runEstimation_new(self):
+        f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
+        bh = np.array([symengine.diff(f, x[i]) for i in range(self.numCovariates + 1)])
+        fd = self.convertSym(x, bh, "numpy")
+        log.info("Symbolic equation converted.")
+
+        initial = self.initialEstimates()
+
+        optimize_start = time.process_time()    # record time
+
+        sol = self.optimizeSolution(fd, initial)
+
+        optimize_stop = time.process_time()
+        log.info("Optimization time: %s", optimize_stop - optimize_start)
+        log.info("Optimized solution: %s", sol)
+
+        self.b = sol[0]
+        self.betas = sol[1:]
+        # hazard = self.calcHazard(self.b, self.n)
+
+        hazard = [self.hazardFunction(i, self.b) for i in range(self.n)]
+        self.hazard = hazard    # for MVF prediction, don't want to calculate again
+        self.modelFitting(hazard, self.betas)
+
     def initialEstimates(self):
+        #return np.insert(np.random.uniform(min, max, self.numCovariates), 0, np.random.uniform(0.0, 0.1, 1)) #Works for GM and NB2
+        # return np.insert(np.random.uniform(0.0, 0.01, self.numCovariates), 0, np.random.uniform(0.998, 0.99999,1))
+                                                                    # (low, high, size)
+                                                                    # size is numCovariates + 1 to have initial estimate for b
         betasEstimate = np.random.uniform(self.coxParameterEstimateRange[0], self.coxParameterEstimateRange[1], self.numCovariates)
+        # betasEstimate = np.random.uniform(self.coxParameterEstimateRange[0], self.coxParameterEstimateRange[1], Model.maxCovariates)
+        # print(self.shapeParameterEstimateRange)
         bEstimate = np.random.uniform(self.shapeParameterEstimateRange[0], self.shapeParameterEstimateRange[1], 1)
         return np.insert(betasEstimate, 0, bEstimate)   # insert b in the 0th location of betaEstimate array
 
@@ -368,7 +610,33 @@ class Model(ABC):
         log.info("Solving for MLEs...")
 
         solution = scipy.optimize.fsolve(fd, x0=B)
-        
+        # bounds = [(0.0001, 0.9999) for i in range(self.numCovariates + 1)]  # temporary
+        # solution = scipy.optimize.minimize(fd, method='L-BFGS-B', x0=B, bounds=bounds, options={'gtol': 1e-10, 'disp':True})
+        # print(solution)
+        # solution = scipy.optimize.brentq(fd, a=[0.0, 0.0, 0.0, 0.0], b=[1.0, 1.0, 1.0, 1.0])
+
+        # try:
+        #     log.info("Using broyden1")
+        #     solution = scipy.optimize.broyden1(fd, xin=B, iter=100)
+        # except scipy.optimize.nonlin.NoConvergence:
+        #     log.info("Using fsolve")
+        #     solution = scipy.optimize.fsolve(fd, x0=B)
+        # except:
+        #     log.info("Could Not Converge")
+        #     solution = [0 for i in range(self.numCovariates + 1)]
+
+
+        #solution = scipy.optimize.broyden2(fd, xin=B)          #Does not work (Seems to work well until the 3 covariates then crashes)
+        #solution = scipy.optimize.anderson(fd, xin=B)          #Works for DW2 - DS1  - EstB{0.998, 0.999} Does not work for DS2
+        #solution = scipy.optimize.excitingmixing(fd, xin=B)    #Does not work
+
+        #solution = scipy.optimize.newton_krylov(fd, xin=B)     #Does not work
+
+        #solution = scipy.optimize.linearmixing(fd, xin=B)      #Does not work
+        #solution = scipy.optimize.diagbroyden(fd, xin=B)       #Does not Work
+
+        #solution = scipy.optimize.root(fd, x0=B, method='hybr')
+        #solution = scipy.optimize.fsolve(fd, x0=B)
         log.info("MLEs solved.")
         return solution
 
