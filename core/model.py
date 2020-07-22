@@ -212,12 +212,12 @@ class Model(ABC):
             TempTerm1 = 1
             for j in range(1, self.numCovariates + 1):
                 TempTerm1 = TempTerm1 * exp(self.covariateData[j - 1][i] * x[j])
-            sum1 = 1 - ((1 - (hazard(i, x[0]))) ** (TempTerm1))
+            sum1 = 1 - ((1 - (hazard(i + 1, x[0]))) ** (TempTerm1))
             for k in range(i):
                 TempTerm2 = 1
                 for j in range(1, self.numCovariates + 1):
                     TempTerm2 = TempTerm2 * exp(self.covariateData[j - 1][k] * x[j])
-                sum2 = sum2 * ((1 - (hazard(i, x[0])))**(TempTerm2))
+                sum2 = sum2 * ((1 - (hazard(i + 1, x[0])))**(TempTerm2))
             second.append(sum2)
             prodlist.append(sum1*sum2)
 
@@ -244,12 +244,12 @@ class Model(ABC):
             TempTerm1 = 1
             for j in range(1, self.numCovariates + 1):
                 TempTerm1 = TempTerm1 * np.exp(self.covariateData[j - 1][i] * x[j])
-            sum1 = 1 - ((1 - (self.hazardFunction(i, x[0]))) ** (TempTerm1))
+            sum1 = 1 - ((1 - (self.hazardFunction(i + 1, x[0]))) ** (TempTerm1))
             for k in range(i):
                 TempTerm2 = 1
                 for j in range(1, self.numCovariates + 1):
                     TempTerm2 = TempTerm2 * np.exp(self.covariateData[j - 1][k] * x[j])
-                sum2 = sum2 * ((1 - (self.hazardFunction(i, x[0])))**(TempTerm2))
+                sum2 = sum2 * ((1 - (self.hazardFunction(i + 1, x[0])))**(TempTerm2))
             second.append(sum2)
             prodlist.append(sum1*sum2)
 
@@ -355,7 +355,7 @@ class Model(ABC):
         print("betas =", self.betas)
         # hazard = self.calcHazard(self.b, self.n)
 
-        hazard = [self.hazardFunction(i, self.b) for i in range(self.n)]
+        hazard = [self.hazardFunction(i, self.b) for i in range(1, self.n + 1)]
         self.hazard = hazard    # for MVF prediction, don't want to calculate again
         self.modelFitting(hazard, self.betas)
 
