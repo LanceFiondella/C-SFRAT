@@ -154,12 +154,18 @@ class SideMenu1(QVBoxLayout):
         self.confidenceSpinBox.setDisabled(True)    # disabled on start up
         self.confidenceSpinBox.valueChanged.connect(self._emitConfidenceSignal)
 
+
+        ###############################################
+        # *** TREND TESTS REMOVED FROM UI FOR NOW *** #
+        ###############################################
+
+
         sheetGroupLayout.addWidget(QLabel("Select Sheet"))
         sheetGroupLayout.addWidget(self.sheetSelect)
-        sheetGroupLayout.addWidget(QLabel("Select Trend Test"))
-        sheetGroupLayout.addWidget(self.testSelect)
-        sheetGroupLayout.addWidget(QLabel("Specify Laplace Confidence Level"))
-        sheetGroupLayout.addWidget(self.confidenceSpinBox)
+        # sheetGroupLayout.addWidget(QLabel("Select Trend Test"))
+        # sheetGroupLayout.addWidget(self.testSelect)
+        # sheetGroupLayout.addWidget(QLabel("Specify Laplace Confidence Level"))
+        # sheetGroupLayout.addWidget(self.confidenceSpinBox)
 
         return sheetGroupLayout
 
@@ -173,6 +179,10 @@ class SideMenu1(QVBoxLayout):
         self.modelListWidget = QListWidget()
         loadedModels = [model.name for model in models.modelList.values()]
         self.modelListWidget.addItems(loadedModels)
+
+        # set minimum size for list widget depending on contents
+        self.modelListWidget.setMinimumWidth(300)
+
         log.info("%d model(s) loaded: %s", len(loadedModels), loadedModels)
         self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)  # able to select multiple models
         modelGroupLayout.addWidget(self.modelListWidget)

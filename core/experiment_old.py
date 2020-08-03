@@ -13,33 +13,33 @@ from core.optimization import PSO
 ### SPECIFY DATA SETS ###
 
 # DS1 data set
-# kVec = [1, 1, 2, 1, 8, 9, 6, 7, 4, 3, 0, 4, 1, 0, 2, 2, 3]
-# fVec = [4, 20, 1, 1, 32, 32, 24, 24, 24, 30, 0, 8, 8, 12, 20, 32, 24]
-# eVec = [0.0531, 0.0619, 0.158, 0.081, 1.046, 1.75, 2.96, 4.97, 0.42, 4.7, 0.9, 1.5, 2, 1.2, 1.2, 2.2, 7.6]
-# cVec = [1, 0, 0.5, 0.5, 2, 5, 4.5, 2.5, 4, 2, 0, 4, 6, 4, 6, 10, 8]
+kVec1 = [1, 1, 2, 1, 8, 9, 6, 7, 4, 3, 0, 4, 1, 0, 2, 2, 3]
+fVec1 = [4, 20, 1, 1, 32, 32, 24, 24, 24, 30, 0, 8, 8, 12, 20, 32, 24]
+eVec1 = [0.0531, 0.0619, 0.158, 0.081, 1.046, 1.75, 2.96, 4.97, 0.42, 4.7, 0.9, 1.5, 2, 1.2, 1.2, 2.2, 7.6]
+cVec1 = [1, 0, 0.5, 0.5, 2, 5, 4.5, 2.5, 4, 2, 0, 4, 6, 4, 6, 10, 8]
 
 # DS2 data set
-kVec = [2, 11, 2, 4, 3, 1, 1, 2, 4, 0, 4, 1, 3, 0]
-fVec = [1.3, 17.8, 5.0, 1.5, 1.5, 3.0, 3.0, 8, 30, 9, 25, 15, 15, 2]
-eVec = [0.05, 1, 0.19, 0.41, 0.32, 0.61, 0.32, 1.83, 3.01, 1.79, 3.17, 3.4, 4.2, 1.2]
-cVec = [0.5, 2.8, 1, 0.5, 0.5, 1, 0.5, 2.5, 3.0, 3.0, 6, 4, 4, 1]
+kVec2 = [2, 11, 2, 4, 3, 1, 1, 2, 4, 0, 4, 1, 3, 0]
+fVec2 = [1.3, 17.8, 5.0, 1.5, 1.5, 3.0, 3.0, 8, 30, 9, 25, 15, 15, 2]
+eVec2 = [0.05, 1, 0.19, 0.41, 0.32, 0.61, 0.32, 1.83, 3.01, 1.79, 3.17, 3.4, 4.2, 1.2]
+cVec2 = [0.5, 2.8, 1, 0.5, 0.5, 1, 0.5, 2.5, 3.0, 3.0, 6, 4, 4, 1]
 
 ##################################################
 #           CHANGE FOR EACH EXPERIMENT           #
 ##################################################
 
 # edit this list to choose which covariates to perform estimation on
-covariateData = [eVec, fVec, cVec]
-covariates = "F"
+# covariateData = [fVec, eVec, cVec]
+# covariates = "F"
 
 # expected_llf = -23.2909
 
 # initial estimates
-bEstimate = 0.994
-betaEstimate = 0.01
+# bEstimate = 0.01
+# betaEstimate = 0.01
 
-dataset = "DS1"
-model = "DW"
+# dataset = "DS1"
+# model = "GM"
 
 filename = 'experiment_raw/experiment4.csv'
 
@@ -48,27 +48,27 @@ filename = 'experiment_raw/experiment4.csv'
 ### HAZARD FUNCTIONS ###
 
 # Discrete Weibull (Order 2)
-# def hazardFunction(i, b):
-#     f = 1 - b**(i**2 - (i - 1)**2)
-#     return f
+def discreteWeibull(i, b):
+    f = 1 - b**(i**2 - (i - 1)**2)
+    return f
 
 # Geometric
-# def hazardFunction(i, b):
-#     f = b
-#     return f
+def geometric(i, b):
+    f = b
+    return f
 
 # Negative Binomial (Order 2)
-def hazardFunction(i, b):
+def negativeBinomial(i, b):
     f = (i * b**2)/(1 + b * (i - 1))
     return f
 
 
 # data info
-numCovariates = len(covariateData)
-n = len(kVec)
-totalFailures = sum(kVec)
-cumulativeFailures = np.cumsum(kVec)
-t = [i for i in range(len(kVec))]  # for plotting
+# numCovariates = len(covariateData)
+# n = len(kVec)
+# totalFailures = sum(kVec)
+# cumulativeFailures = np.cumsum(kVec)
+# t = [i for i in range(len(kVec))]  # for plotting
 
 
 ### ALL REQUIRED FUNCTIONS DEFINED BELOW ###
@@ -367,108 +367,103 @@ def intensityFit(mvf_array):
 ### RUN ESTIMATION AND CALCULATE GOODNESS OF FIT MEASURES ###
 
 
-iterations = 100
+def experiment(iterations, dataset_string, model_string, cov_string):
+    # iterations = 1
 
-rows = [None for r in range(iterations)]
-for loop in range(iterations):
+    rows = [None for r in range(iterations)]
 
-    start = time.process_time()
+    for loop in range(iterations):
 
-    # run symbolic calculations
-    f, x = LLF_sym(hazardFunction)
-    bh = np.array([symengine.diff(f, x[i]) for i in range(numCovariates + 1)])
-    f = symengine.lambdify(x, bh, backend='lambda')
+        start = time.process_time()
 
-    # model fitting
-    initial = initialEstimates()
+        # run symbolic calculations
+        f, x = LLF_sym(hazardFunction)
+        bh = np.array([symengine.diff(f, x[i]) for i in range(numCovariates + 1)])
+        f = symengine.lambdify(x, bh, backend='lambda')
 
+        # model fitting
+        initial = initialEstimates()
 
-    ## PSO
+        bounds = [(0.5 * bEstimate, 2 * bEstimate)]
+        betaBounds = [(0.5 * betaEstimate, 2 * betaEstimate) for i in range(numCovariates)]
+        bounds = bounds + betaBounds
 
-    bounds = [(0.5 * bEstimate, 2 * bEstimate)]
-    betaBounds = [(0.5 * betaEstimate, 2 * betaEstimate) for i in range(numCovariates)]
-    bounds = bounds + betaBounds
-    # bounds = [(0.0001, 0.9999) for i in range(numCovariates + 1)]  # temporary
+        beta0 = scipy.optimize.fsolve(initial_beta_function, x0=betaEstimate)
+        # beta0 = scipy.optimize.brentq(initial_beta_function, a=0.0, b=1.0)
+        # initial = scipy.optimize.fsolve(objective_function, x0=initial)
+        
+        b0 = initial_B_function(beta0)
 
-    itertmp, lnLtmp, outParamtmp, timeiterTemp = PSO(costFunc=RLL_PSO, x0=initial,
-        bounds=bounds, num_particles=8, maxiter=16, verbose=False)
-
-    # beta0 = scipy.optimize.fsolve(initial_beta_function, x0=betaEstimate)
-    # beta0 = scipy.optimize.brentq(initial_beta_function, a=0.0, b=1.0)
-    # initial = scipy.optimize.fsolve(objective_function, x0=initial)
-    
-    # b0 = initial_B_function(beta0)
-
-    # print("b0 =", b0)
-    # print("beta0 =", beta0)
-    
-    # initial = np.array([b0, beta0], dtype='float64')
+        print("b0 =", b0)
+        print("beta0 =", beta0)
+        
+        initial = np.array([b0, beta0], dtype='float64')
 
 
-    # x = np.linspace(-1.0, 1.0, num=100)
+        # x = np.linspace(-1.0, 1.0, num=100)
 
-    # fig, ax = plt.subplots()
-    # ax.plot(x, [initial_beta_function(x[i]) for i in range(100)])
-
-
-    # fig3d = plt.figure()
-    # ax3d = fig3d.gca(projection='3d')
-    # X, Y = np.meshgrid(x, x)
-    # Z = initial
+        # fig, ax = plt.subplots()
+        # ax.plot(x, [initial_beta_function(x[i]) for i in range(100)])
 
 
-    # fig, ax = plt.subplots()
-    # ax.plot(x, [initial_B_function(x[i]) for i in range(1000)])
+        # fig3d = plt.figure()
+        # ax3d = fig3d.gca(projection='3d')
+        # X, Y = np.meshgrid(x, x)
+        # Z = initial
 
-    # plt.show()
 
-    sol, convergence = optimizeSolution(f, outParamtmp[-1])
-    # sol, convergence = optimizeSolution(f, initial)
+        # fig, ax = plt.subplots()
+        # ax.plot(x, [initial_B_function(x[i]) for i in range(1000)])
 
-    stop = time.process_time()
+        # plt.show()
 
-    b = sol[0]
-    betas = sol[1:]
-    hazard = [hazardFunction(i, b) for i in range(1, n + 1)]
-    # print("hazard =", hazard)
-    # print("b =", b)
-    # print("betas =", betas)
+        sol, convergence = optimizeSolution(f, outParamtmp[-1])
+        # sol, convergence = optimizeSolution(f, initial)
 
-    # model fitting
-    omega = calcOmega(hazard, betas)
+        stop = time.process_time()
 
-    llfVal = LLF(hazard, betas)      # log likelihood value
-    aicVal = AIC(hazard, betas)
-    bicVal = BIC(hazard, betas)
-    mvfList = MVF_all(hazard, omega, betas)
+        b = sol[0]
+        betas = sol[1:]
+        hazard = [hazardFunction(i, b) for i in range(1, n + 1)]
+        # print("hazard =", hazard)
+        # print("b =", b)
+        # print("betas =", betas)
 
-    sseVal = SSE(mvfList, cumulativeFailures)
-    intensityList = intensityFit(mvfList)
+        # model fitting
+        omega = calcOmega(hazard, betas)
 
-    elapsed_time = stop - start
-    print("elapsed time =", elapsed_time)
+        llfVal = LLF(hazard, betas)      # log likelihood value
+        aicVal = AIC(hazard, betas)
+        bicVal = BIC(hazard, betas)
+        mvfList = MVF_all(hazard, omega, betas)
 
-    # check for convergence, converged if within 0.001 of actual llf
-    if convergence == 1:
-        converged = "YES"
-    else:
-        converged = "NO"
+        sseVal = SSE(mvfList, cumulativeFailures)
+        intensityList = intensityFit(mvfList)
 
-    # check for convergence
-    # if expected_llf * 1.001 <= llfVal <= expected_llf * 0.999:
-    #     converged = "YES"
-    # else:
-    #     converged = "NO"
+        elapsed_time = stop - start
+        print("elapsed time =", elapsed_time)
 
-    
-    # print("expected LLF =", expected_llf)
-    print("calculated LLF =", llfVal)
-    print("converged:", converged)
+        # check for convergence, converged if within 0.001 of actual llf
+        if convergence == 1:
+            converged = "YES"
+        else:
+            converged = "NO"
 
-    # llf_difference = expected_llf - llfVal
+        # check for convergence
+        # if expected_llf * 1.001 <= llfVal <= expected_llf * 0.999:
+        #     converged = "YES"
+        # else:
+        #     converged = "NO"
 
-    # rows[loop] = [dataset, model, covariates, b, betas, elapsed_time, expected_llf, llfVal, llf_difference, converged]
-    rows[loop] = [dataset, model, covariates, b, betas, elapsed_time, llfVal, converged]
+        
+        # print("expected LLF =", expected_llf)
+        print("calculated LLF =", llfVal)
+        print("converged:", converged)
+
+        # llf_difference = expected_llf - llfVal
+
+        # rows[loop] = [dataset, model, covariates, b, betas, elapsed_time, expected_llf, llfVal, llf_difference, converged]
+        rows[loop] = [dataset_string, model_string, cov_string, b, betas, elapsed_time, llfVal, converged]
 
 # write to csv
 # fields = ["b", "betas", "time", "LLF", "converged"]
@@ -478,36 +473,48 @@ for loop in range(iterations):
 #     # csvwriter.writerow(fields)
 #     csvwriter.writerow(rows[0])
 
-print("b =", b)
-print("betas =", betas)
+# print("b =", b)
+# print("betas =", betas)
 
-# MVF results
-print(mvfList)
+# # MVF results
+# print(mvfList)
 
-# goodness-of-fit measures
-print("LLF =", llfVal)
-print("AIC =", aicVal)
-print("BIC =", bicVal)
-print("SSE =", sseVal)
+# # goodness-of-fit measures
+# print("LLF =", llfVal)
+# print("AIC =", aicVal)
+# print("BIC =", bicVal)
+# print("SSE =", sseVal)
 
-# cumulative (MVF)
-fig1, ax1 = plt.subplots()
-ax1.step(t, cumulativeFailures, where='post')
-ax1.set_xlabel("time")
-ax1.set_ylabel("failures")
-ax1.set_title("Cumulative view")
-ax1.grid(True)
+# # cumulative (MVF)
+# fig1, ax1 = plt.subplots()
+# ax1.step(t, cumulativeFailures, where='post')
+# ax1.set_xlabel("time")
+# ax1.set_ylabel("failures")
+# ax1.set_title("Cumulative view")
+# ax1.grid(True)
 
-ax1.plot(t, mvfList, 'o')
+# ax1.plot(t, mvfList, 'o')
+# # plt.show()
+
+# # intensity
+# fig2, ax2 = plt.subplots()
+# ax2.bar(t, kVec)
+# ax2.set_xlabel("time")
+# ax2.set_ylabel("failures")
+# ax2.set_title("Intensity view")
+# ax2.grid(True)
+
+# ax2.plot(t, intensityList, 'o', color='orange')
 # plt.show()
 
-# intensity
-fig2, ax2 = plt.subplots()
-ax2.bar(t, kVec)
-ax2.set_xlabel("time")
-ax2.set_ylabel("failures")
-ax2.set_title("Intensity view")
-ax2.grid(True)
-
-ax2.plot(t, intensityList, 'o', color='orange')
-# plt.show()
+if __name__ == "__main__":
+    kVec = kVec1
+    covariateData = []
+    hazardFunction = geometric
+    bEstimate = 0.01
+    betaEstimate = 0.01
+    numCovariates = len(covariateData)
+    n = len(kVec)
+    totalFailures = sum(kVec)
+    cumulativeFailures = np.cumsum(kVec)
+    experiment(100, "DS1", "DW", "-")

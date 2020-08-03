@@ -337,11 +337,8 @@ class Model(ABC):
         bounds = [(0.0001, 0.9999) for i in range(self.numCovariates + 1)]  # temporary
 
         itertmp, lnLtmp, outParamtmp, timeiterTemp = PSO(costFunc=self.RLL_PSO, x0=initial,
-                bounds=bounds, num_particles=2**5, maxiter=64, verbose=False)
+            bounds=bounds, num_particles=16, maxiter=64, verbose=False)
 
-
-        # search_space = [[0.0001, 0.9999] for i in range(self.numCovariates + 1)]
-        search_space = [[0.0001, 0.9999] for i in range(Model.maxCovariates + 1)]
         sol = self.optimizeSolution(fd, outParamtmp[-1])
         # print(sol)
 
@@ -367,9 +364,17 @@ class Model(ABC):
     def optimizeSolution(self, fd, B):
         log.info("Solving for MLEs...")
 
-        solution = scipy.optimize.fsolve(fd, x0=B)
+        solution, infodict, convergence, mesg = scipy.optimize.fsolve(fd, x0=B, maxfev=1000, full_output=True)
+
+        # convergence is integer flag indicating if a solution was found
+        # solution found if flag == 1
+        if convergence == 1:
+            self.converged = True
+            log.info("MLEs solved.")
+        else:
+            self.converged = False
+            log.warning(mesg)
         
-        log.info("MLEs solved.")
         return solution
 
     def modelFitting(self, hazard, betas):
@@ -391,14 +396,6 @@ class Model(ABC):
         self.bicVal = self.BIC(hazard, betas)
         log.info("Calculated BIC: %s", self.bicVal)
         self.mvfList = self.MVF_all(hazard, self.omega, betas)
-
-        # temporary
-        # if (np.isnan(self.llfVal) or np.isinf(self.llfVal)):
-        #     self.converged = False
-        # else:
-        #     self.converged = True
-
-        self.converged = True
 
         self.sseVal = self.SSE(self.mvfList, self.cumulativeFailures)
         log.info("Calculated SSE: %s", self.sseVal)

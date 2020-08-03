@@ -8,8 +8,6 @@ import matplotlib.pyplot as plt
 import csv
 import time
 
-from core.optimization import PSO
-
 ### SPECIFY DATA SETS ###
 
 # DS1 data set
@@ -38,8 +36,8 @@ covariates = "F"
 bEstimate = 0.994
 betaEstimate = 0.01
 
-dataset = "DS1"
-model = "DW"
+dataset = "DS2"
+model = "GM"
 
 filename = 'experiment_raw/experiment4.csv'
 
@@ -48,9 +46,9 @@ filename = 'experiment_raw/experiment4.csv'
 ### HAZARD FUNCTIONS ###
 
 # Discrete Weibull (Order 2)
-# def hazardFunction(i, b):
-#     f = 1 - b**(i**2 - (i - 1)**2)
-#     return f
+def hazardFunction(i, b):
+    f = 1 - b**(i**2 - (i - 1)**2)
+    return f
 
 # Geometric
 # def hazardFunction(i, b):
@@ -58,9 +56,9 @@ filename = 'experiment_raw/experiment4.csv'
 #     return f
 
 # Negative Binomial (Order 2)
-def hazardFunction(i, b):
-    f = (i * b**2)/(1 + b * (i - 1))
-    return f
+# def hazardFunction(i, b):
+#     f = (i * b**2)/(1 + b * (i - 1))
+#     return f
 
 
 # data info
@@ -108,39 +106,6 @@ def LLF_sym(hazard):
 
     f = firstTerm + secondTerm + thirdTerm - fourthTerm
     return f, x
-
-def RLL_PSO(x):
-    second = []
-    prodlist = []
-    for i in range(n):
-        sum1 = 1
-        sum2 = 1
-        TempTerm1 = 1
-        for j in range(1, numCovariates + 1):
-            TempTerm1 = TempTerm1 * np.exp(covariateData[j - 1][i] * x[j])
-        sum1 = 1 - ((1 - (hazardFunction(i + 1, x[0]))) ** (TempTerm1))
-        for k in range(i):
-            TempTerm2 = 1
-            for j in range(1, numCovariates + 1):
-                TempTerm2 = TempTerm2 * np.exp(covariateData[j - 1][k] * x[j])
-            sum2 = sum2 * ((1 - (hazardFunction(i + 1, x[0])))**(TempTerm2))
-        second.append(sum2)
-        prodlist.append(sum1*sum2)
-
-    firstTerm = -np.sum(kVec) #Verified
-
-    secondTerm = np.sum(kVec)*np.log(np.sum(kVec)/np.sum(prodlist))
-    logTerm = [] #Verified
-    for i in range(n):
-        logTerm.append(kVec[i]*np.log(prodlist[i]))
-    thirdTerm = np.sum(logTerm)
-    factTerm = [] #Verified
-    for i in range(n):
-        factTerm.append(np.log(math.factorial(kVec[i])))
-    fourthTerm = np.sum(factTerm)
-
-    f = -(firstTerm + secondTerm + thirdTerm - fourthTerm)  # negative for PSO minimization!
-    return f
 
 # initial parameter estimates
 
@@ -217,16 +182,14 @@ def initial_beta_function(beta):
     # print(beta)
     log_multiplication_term = math.log(1 - initial_B_function(beta)) * (sum(temp1) + sum(temp2))
 
-    return -n / (sum(covariate_data) + log_multiplication_term)
+    return -n / (sum(covariate_data) + log_multiplication_term) - beta
 
-def objective_function(params):
-    # print(params)
-    return np.array([initial_B_function(params[0]), initial_beta_function(params[1])])
 
 # optimization function
 
 def optimizeSolution(fd, B):
-    solution, infodict, ier, mesg = scipy.optimize.fsolve(fd, x0=B, maxfev=1000, full_output=True)
+    # solution, infodict, ier, mesg = scipy.optimize.fsolve(fd, x0=B, maxfev=1000, full_output=True)
+    solution = scipy.optimize.minimize(fd, x0=B, method='Nelder-Mead')
     # solution = scipy.optimize.brentq(fd, -1.0, 1.0)
 
     # try:
@@ -243,7 +206,7 @@ def optimizeSolution(fd, B):
     print(infodict)
     print(mesg)
     
-    return solution, ier
+    return solution
 
 # calculate omega
 
@@ -316,6 +279,39 @@ def LLF(h, betas):
 
     return firstTerm + secondTerm + thirdTerm - fourthTerm
 
+def RLL(x):
+    second = []
+    prodlist = []
+    for i in range(n):
+        sum1 = 1
+        sum2 = 1
+        TempTerm1 = 1
+        for j in range(1, numCovariates + 1):
+            TempTerm1 = TempTerm1 * np.exp(covariateData[j - 1][i] * x[j])
+        sum1 = 1 - ((1 - (hazardFunction(i + 1, x[0]))) ** (TempTerm1))
+        for k in range(i):
+            TempTerm2 = 1
+            for j in range(1, numCovariates + 1):
+                TempTerm2 = TempTerm2 * np.exp(covariateData[j - 1][k] * x[j])
+            sum2 = sum2 * ((1 - (hazardFunction(i + 1, x[0])))**(TempTerm2))
+        second.append(sum2)
+        prodlist.append(sum1*sum2)
+
+    firstTerm = -np.sum(kVec) #Verified
+
+    secondTerm = np.sum(kVec)*np.log(np.sum(kVec)/np.sum(prodlist))
+    logTerm = [] #Verified
+    for i in range(n):
+        logTerm.append(kVec[i]*np.log(prodlist[i]))
+    thirdTerm = np.sum(logTerm)
+    factTerm = [] #Verified
+    for i in range(n):
+        factTerm.append(np.log(math.factorial(kVec[i])))
+    fourthTerm = np.sum(factTerm)
+
+    f = -(firstTerm + secondTerm + thirdTerm - fourthTerm)  # negative for PSO minimization!
+    return f
+
 def calcP(betas):
     # number of covariates + number of hazard rate parameters + 1 (omega)
     return len(betas) + 1
@@ -367,63 +363,25 @@ def intensityFit(mvf_array):
 ### RUN ESTIMATION AND CALCULATE GOODNESS OF FIT MEASURES ###
 
 
-iterations = 100
+# csv columns
+# b, betas, time, llf
+
+iterations = 1
 
 rows = [None for r in range(iterations)]
 for loop in range(iterations):
 
     start = time.process_time()
 
-    # run symbolic calculations
-    f, x = LLF_sym(hazardFunction)
-    bh = np.array([symengine.diff(f, x[i]) for i in range(numCovariates + 1)])
-    f = symengine.lambdify(x, bh, backend='lambda')
-
     # model fitting
     initial = initialEstimates()
 
+    # sol = scipy.optimize.minimize(lambda_b, x0=initial, method='Nelder-Mead')
+    solution_object = scipy.optimize.minimize(RLL, x0=initial, method='Nelder-Mead')
 
-    ## PSO
-
-    bounds = [(0.5 * bEstimate, 2 * bEstimate)]
-    betaBounds = [(0.5 * betaEstimate, 2 * betaEstimate) for i in range(numCovariates)]
-    bounds = bounds + betaBounds
-    # bounds = [(0.0001, 0.9999) for i in range(numCovariates + 1)]  # temporary
-
-    itertmp, lnLtmp, outParamtmp, timeiterTemp = PSO(costFunc=RLL_PSO, x0=initial,
-        bounds=bounds, num_particles=8, maxiter=16, verbose=False)
-
-    # beta0 = scipy.optimize.fsolve(initial_beta_function, x0=betaEstimate)
-    # beta0 = scipy.optimize.brentq(initial_beta_function, a=0.0, b=1.0)
-    # initial = scipy.optimize.fsolve(objective_function, x0=initial)
-    
-    # b0 = initial_B_function(beta0)
-
-    # print("b0 =", b0)
-    # print("beta0 =", beta0)
-    
-    # initial = np.array([b0, beta0], dtype='float64')
-
-
-    # x = np.linspace(-1.0, 1.0, num=100)
-
-    # fig, ax = plt.subplots()
-    # ax.plot(x, [initial_beta_function(x[i]) for i in range(100)])
-
-
-    # fig3d = plt.figure()
-    # ax3d = fig3d.gca(projection='3d')
-    # X, Y = np.meshgrid(x, x)
-    # Z = initial
-
-
-    # fig, ax = plt.subplots()
-    # ax.plot(x, [initial_B_function(x[i]) for i in range(1000)])
-
-    # plt.show()
-
-    sol, convergence = optimizeSolution(f, outParamtmp[-1])
-    # sol, convergence = optimizeSolution(f, initial)
+    print(solution_object)
+    sol = solution_object.x
+    # sol = optimizeSolution(f, initial)
 
     stop = time.process_time()
 
@@ -431,8 +389,8 @@ for loop in range(iterations):
     betas = sol[1:]
     hazard = [hazardFunction(i, b) for i in range(1, n + 1)]
     # print("hazard =", hazard)
-    # print("b =", b)
-    # print("betas =", betas)
+    print("b =", b)
+    print("betas =", betas)
 
     # model fitting
     omega = calcOmega(hazard, betas)
@@ -446,28 +404,13 @@ for loop in range(iterations):
     intensityList = intensityFit(mvfList)
 
     elapsed_time = stop - start
-    print("elapsed time =", elapsed_time)
 
     # check for convergence, converged if within 0.001 of actual llf
-    if convergence == 1:
-        converged = "YES"
-    else:
-        converged = "NO"
+    converged = solution_object.success
 
-    # check for convergence
-    # if expected_llf * 1.001 <= llfVal <= expected_llf * 0.999:
-    #     converged = "YES"
-    # else:
-    #     converged = "NO"
-
-    
-    # print("expected LLF =", expected_llf)
     print("calculated LLF =", llfVal)
     print("converged:", converged)
 
-    # llf_difference = expected_llf - llfVal
-
-    # rows[loop] = [dataset, model, covariates, b, betas, elapsed_time, expected_llf, llfVal, llf_difference, converged]
     rows[loop] = [dataset, model, covariates, b, betas, elapsed_time, llfVal, converged]
 
 # write to csv
@@ -510,4 +453,4 @@ ax2.set_title("Intensity view")
 ax2.grid(True)
 
 ax2.plot(t, intensityList, 'o', color='orange')
-# plt.show()
+plt.show()

@@ -154,6 +154,7 @@ class MainWindow(QMainWindow):
         # connect tab2 list changed to refreshing tab 2 plot
         self._main.tab2.sideMenu.failureChangedSignal.connect(self.runPrediction)
         self._main.tab3.sideMenu.modelChangedSignal.connect(self.updateComparisonTable)
+        # self._main.tab3.sideMenu.modelListWidget.itemActivated().connect(self._main.tab3.addRow)
         self._main.tab3.sideMenu.spinBoxChangedSignal.connect(self.runGoodnessOfFit)
         self._main.tab4.sideMenu.runAllocationSignal.connect(self.runAllocation)
 
