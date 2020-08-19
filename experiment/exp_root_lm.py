@@ -8,8 +8,6 @@ import matplotlib.pyplot as plt
 import csv
 import time
 
-from core.optimization import PSO
-
 ### SPECIFY DATA SETS ###
 
 # DS1 data set
@@ -23,27 +21,6 @@ kVec2 = [2, 11, 2, 4, 3, 1, 1, 2, 4, 0, 4, 1, 3, 0]
 fVec2 = [1.3, 17.8, 5.0, 1.5, 1.5, 3.0, 3.0, 8, 30, 9, 25, 15, 15, 2]
 eVec2 = [0.05, 1, 0.19, 0.41, 0.32, 0.61, 0.32, 1.83, 3.01, 1.79, 3.17, 3.4, 4.2, 1.2]
 cVec2 = [0.5, 2.8, 1, 0.5, 0.5, 1, 0.5, 2.5, 3.0, 3.0, 6, 4, 4, 1]
-
-##################################################
-#           CHANGE FOR EACH EXPERIMENT           #
-##################################################
-
-# edit this list to choose which covariates to perform estimation on
-# covariateData = [fVec, eVec, cVec]
-# covariates = "F"
-
-# expected_llf = -23.2909
-
-# initial estimates
-# bEstimate = 0.01
-# betaEstimate = 0.01
-
-# dataset = "DS1"
-# model = "GM"
-
-filename = 'experiment_raw/experiment4.csv'
-
-##################################################
 
 ### HAZARD FUNCTIONS ###
 
@@ -183,7 +160,6 @@ def initial_B_function(beta):
     # print("b result =", 1 - math.exp(-n / (sum(temp1) + sum(temp2))))
     return 1 - math.exp(-n / (sum(temp1) + sum(temp2)))
 
-
 def initial_beta_function(beta):
     # JSS eq. (40)
     covariate_data = np.array(covariateData[0])
@@ -217,7 +193,7 @@ def initial_beta_function(beta):
     # print(beta)
     log_multiplication_term = math.log(1 - initial_B_function(beta)) * (sum(temp1) + sum(temp2))
 
-    return -n / (sum(covariate_data) + log_multiplication_term)
+    return -n / (sum(covariate_data) + log_multiplication_term) - beta
 
 def objective_function(params):
     # print(params)
@@ -226,24 +202,10 @@ def objective_function(params):
 # optimization function
 
 def optimizeSolution(fd, B):
-    solution, infodict, ier, mesg = scipy.optimize.fsolve(fd, x0=B, maxfev=1000, full_output=True)
-    # solution = scipy.optimize.brentq(fd, -1.0, 1.0)
+    sol = scipy.optimize.root(fd, x0=B, method='broyden1')
 
-    # try:
-    #     log.info("Using broyden1")
-    #     solution = scipy.optimize.broyden1(fd, xin=B, iter=1000)
-    # except scipy.optimize.nonlin.NoConvergence:
-    #     log.info("Using fsolve")
-    #     solution = scipy.optimize.fsolve(fd, x0=B)
-    # except:
-    #     log.info("Could Not Converge")
-    #     solution = [0 for i in range(numCovariates + 1)]
-
-    print("solution found?  ", ier)
-    print(infodict)
-    print(mesg)
+    return sol.x, sol.success
     
-    return solution, ier
 
 # calculate omega
 
@@ -320,12 +282,12 @@ def calcP(betas):
     # number of covariates + number of hazard rate parameters + 1 (omega)
     return len(betas) + 1
 
-def AIC(h, betas):
+def AIC(h, betas, llfVal):
     # +2 variables for any other algorithm
     p = calcP(betas)
     return 2 * p - 2 * llfVal
 
-def BIC(h, betas):
+def BIC(h, betas, llfVal):
     # +2 variables for any other algorithm
     p = calcP(betas)
     return p * np.log(n) - 2 * llfVal
@@ -364,13 +326,13 @@ def intensityFit(mvf_array):
     difference = [mvf_array[i+1]-mvf_array[i] for i in range(len(mvf_array)-1)]
     return [mvf_array[0]] + difference
 
+
 ### RUN ESTIMATION AND CALCULATE GOODNESS OF FIT MEASURES ###
 
-
 def experiment(iterations, dataset_string, model_string, cov_string):
-    # iterations = 1
 
-    rows = [None for r in range(iterations)]
+    # rows = [None for r in range(iterations)]
+    time_list = []
 
     for loop in range(iterations):
 
@@ -381,140 +343,60 @@ def experiment(iterations, dataset_string, model_string, cov_string):
         bh = np.array([symengine.diff(f, x[i]) for i in range(numCovariates + 1)])
         f = symengine.lambdify(x, bh, backend='lambda')
 
-        # model fitting
+        # initial estimates; b, betas
         initial = initialEstimates()
 
-        bounds = [(0.5 * bEstimate, 2 * bEstimate)]
-        betaBounds = [(0.5 * betaEstimate, 2 * betaEstimate) for i in range(numCovariates)]
-        bounds = bounds + betaBounds
+        # calculate MLEs
+        sol, convergence = optimizeSolution(f, initial)
 
-        beta0 = scipy.optimize.fsolve(initial_beta_function, x0=betaEstimate)
-        # beta0 = scipy.optimize.brentq(initial_beta_function, a=0.0, b=1.0)
-        # initial = scipy.optimize.fsolve(objective_function, x0=initial)
-        
-        b0 = initial_B_function(beta0)
-
-        print("b0 =", b0)
-        print("beta0 =", beta0)
-        
-        initial = np.array([b0, beta0], dtype='float64')
-
-
-        # x = np.linspace(-1.0, 1.0, num=100)
-
-        # fig, ax = plt.subplots()
-        # ax.plot(x, [initial_beta_function(x[i]) for i in range(100)])
-
-
-        # fig3d = plt.figure()
-        # ax3d = fig3d.gca(projection='3d')
-        # X, Y = np.meshgrid(x, x)
-        # Z = initial
-
-
-        # fig, ax = plt.subplots()
-        # ax.plot(x, [initial_B_function(x[i]) for i in range(1000)])
-
-        # plt.show()
-
-        sol, convergence = optimizeSolution(f, outParamtmp[-1])
-        # sol, convergence = optimizeSolution(f, initial)
-
+        # record elapsed time
         stop = time.process_time()
+        elapsed_time = stop - start
+        time_list.append(elapsed_time)
 
         b = sol[0]
         betas = sol[1:]
         hazard = [hazardFunction(i, b) for i in range(1, n + 1)]
-        # print("hazard =", hazard)
-        # print("b =", b)
-        # print("betas =", betas)
 
         # model fitting
         omega = calcOmega(hazard, betas)
-
         llfVal = LLF(hazard, betas)      # log likelihood value
-        aicVal = AIC(hazard, betas)
-        bicVal = BIC(hazard, betas)
+        aicVal = AIC(hazard, betas, llfVal)
+        bicVal = BIC(hazard, betas, llfVal)
         mvfList = MVF_all(hazard, omega, betas)
-
         sseVal = SSE(mvfList, cumulativeFailures)
         intensityList = intensityFit(mvfList)
 
-        elapsed_time = stop - start
-        print("elapsed time =", elapsed_time)
+    row = [dataset_string, model_string, cov_string, b, betas, np.mean(np.array(time_list)), llfVal, convergence]
 
-        # check for convergence, converged if within 0.001 of actual llf
-        if convergence == 1:
-            converged = "YES"
-        else:
-            converged = "NO"
+    print("calculated LLF =", llfVal)
+    print("converged:", convergence)
+    print("mean elapsed time:", np.mean(np.array(time_list)))
 
-        # check for convergence
-        # if expected_llf * 1.001 <= llfVal <= expected_llf * 0.999:
-        #     converged = "YES"
-        # else:
-        #     converged = "NO"
-
-        
-        # print("expected LLF =", expected_llf)
-        print("calculated LLF =", llfVal)
-        print("converged:", converged)
-
-        # llf_difference = expected_llf - llfVal
-
-        # rows[loop] = [dataset, model, covariates, b, betas, elapsed_time, expected_llf, llfVal, llf_difference, converged]
-        rows[loop] = [dataset_string, model_string, cov_string, b, betas, elapsed_time, llfVal, converged]
-
-# write to csv
-# fields = ["b", "betas", "time", "LLF", "converged"]
-
-# with open(filename, 'a+', newline='') as csvfile:
-#     csvwriter = csv.writer(csvfile)
-#     # csvwriter.writerow(fields)
-#     csvwriter.writerow(rows[0])
-
-# print("b =", b)
-# print("betas =", betas)
-
-# # MVF results
-# print(mvfList)
-
-# # goodness-of-fit measures
-# print("LLF =", llfVal)
-# print("AIC =", aicVal)
-# print("BIC =", bicVal)
-# print("SSE =", sseVal)
-
-# # cumulative (MVF)
-# fig1, ax1 = plt.subplots()
-# ax1.step(t, cumulativeFailures, where='post')
-# ax1.set_xlabel("time")
-# ax1.set_ylabel("failures")
-# ax1.set_title("Cumulative view")
-# ax1.grid(True)
-
-# ax1.plot(t, mvfList, 'o')
-# # plt.show()
-
-# # intensity
-# fig2, ax2 = plt.subplots()
-# ax2.bar(t, kVec)
-# ax2.set_xlabel("time")
-# ax2.set_ylabel("failures")
-# ax2.set_title("Intensity view")
-# ax2.grid(True)
-
-# ax2.plot(t, intensityList, 'o', color='orange')
-# plt.show()
+    # write to csv
+    with open(filename, 'a+', newline='') as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow(row)
 
 if __name__ == "__main__":
-    kVec = kVec1
-    covariateData = []
-    hazardFunction = geometric
+    ##################################################
+    #           CHANGE FOR EACH EXPERIMENT           #
+    ##################################################
+
+    filename = 'results/exp_root_lm.csv'
+
+    kVec = kVec2
+    dataset = "DS2"
+    hazardFunction = negativeBinomial
+    model = "NB"
+    covariateData = [eVec2, fVec2, cVec2]
+    covariate_string = "EFC"
     bEstimate = 0.01
     betaEstimate = 0.01
+
     numCovariates = len(covariateData)
     n = len(kVec)
     totalFailures = sum(kVec)
     cumulativeFailures = np.cumsum(kVec)
-    experiment(100, "DS1", "DW", "-")
+
+    experiment(50, dataset, model, covariate_string)

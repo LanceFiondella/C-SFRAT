@@ -10,6 +10,9 @@ class DiscreteWeibull2(Model):
     coxParameterEstimateRange = [0.0001, 0.01]      # betas
     shapeParameterEstimateRange = [0.9, 0.9999]   # b0
 
+    b0 = 0.994
+    beta0 = 0.01
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

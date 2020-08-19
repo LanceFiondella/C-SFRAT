@@ -306,6 +306,7 @@ class Model(ABC):
         return symengine.lambdify(x, bh, backend='lambda')
 
     def runEstimation(self):
+        optimize_start = time.process_time()    # record time
         initial = self.initialEstimates()
 
         # need class of specific model being used, lambda function stored as class variable
@@ -332,15 +333,20 @@ class Model(ABC):
 
         fd = self.convertSym(x, bh, "numpy")
 
-        optimize_start = time.process_time()    # record time
+        
 
-        bounds = [(0.0001, 0.9999) for i in range(self.numCovariates + 1)]  # temporary
+        # bounds = [(0.0001, 0.9999) for i in range(self.numCovariates + 1)]  # temporary
 
-        itertmp, lnLtmp, outParamtmp, timeiterTemp = PSO(costFunc=self.RLL_PSO, x0=initial,
-            bounds=bounds, num_particles=16, maxiter=64, verbose=False)
+        # itertmp, lnLtmp, outParamtmp, timeiterTemp = PSO(costFunc=self.RLL_PSO, x0=initial,
+        #     bounds=bounds, num_particles=16, maxiter=64, verbose=False)
 
-        sol = self.optimizeSolution(fd, outParamtmp[-1])
+        solution_object = scipy.optimize.minimize(self.RLL_PSO, x0=initial, method='Nelder-Mead')
+        sol = self.optimizeSolution(fd, solution_object.x)
+
+        # sol = self.optimizeSolution(fd, outParamtmp[-1])
         # print(sol)
+
+        
 
 
         optimize_stop = time.process_time()
@@ -361,19 +367,30 @@ class Model(ABC):
         bEstimate = np.random.uniform(self.shapeParameterEstimateRange[0], self.shapeParameterEstimateRange[1], 1)
         return np.insert(betasEstimate, 0, bEstimate)   # insert b in the 0th location of betaEstimate array
 
+        bEstimate = [self.b0]
+        betaEstimate = [self.beta0 for i in range(self.numCovariates)]
+        return np.array(bEstimate + betaEstimate)
+
     def optimizeSolution(self, fd, B):
         log.info("Solving for MLEs...")
 
-        solution, infodict, convergence, mesg = scipy.optimize.fsolve(fd, x0=B, maxfev=1000, full_output=True)
+        # solution, infodict, convergence, mesg = scipy.optimize.fsolve(fd, x0=B, maxfev=1000, full_output=True)
 
         # convergence is integer flag indicating if a solution was found
         # solution found if flag == 1
-        if convergence == 1:
-            self.converged = True
-            log.info("MLEs solved.")
-        else:
-            self.converged = False
-            log.warning(mesg)
+
+        # if convergence == 1:
+        #     self.converged = True
+        #     log.info("MLEs solved.")
+        # else:
+        #     self.converged = False
+        #     log.warning(mesg)
+
+
+        sol_object = scipy.optimize.root(fd, x0=B)
+        solution = sol_object.x
+        self.converged = sol_object.success
+        print("root solving converged?", sol_object.success)
         
         return solution
 
