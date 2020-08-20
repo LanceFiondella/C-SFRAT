@@ -154,6 +154,7 @@ class MainWindow(QMainWindow):
         # connect tab2 list changed to refreshing tab 2 plot
         self._main.tab2.sideMenu.failureChangedSignal.connect(self.runPrediction)
         self._main.tab3.sideMenu.modelChangedSignal.connect(self.updateComparisonTable)
+        # self._main.tab3.sideMenu.modelListWidget.itemActivated().connect(self._main.tab3.addRow)
         self._main.tab3.sideMenu.spinBoxChangedSignal.connect(self.runGoodnessOfFit)
         self._main.tab4.sideMenu.runAllocationSignal.connect(self.runAllocation)
 
@@ -336,7 +337,8 @@ class MainWindow(QMainWindow):
                                             filter=("Data Files (*.csv *.xls *.xlsx)"))
         # if a file was loaded
         if files[0]:
-            self._main.tab1.sideMenu.runButton.setDisabled(True)
+            # self._main.tab1.sideMenu.runButton.setDisabled(True)
+
             self.symbolicComplete = False   # reset flag, need to run symbolic
                                             # functions before estimation
             self.data.importFile(files[0])  # imports loaded file
@@ -345,7 +347,12 @@ class MainWindow(QMainWindow):
             self.importFileSignal.emit()    # emits signal that file was
                                             # imported successfully
 
-            self.runSymbolic()
+            ## NO LONGER RUN SYMBOLIC AS SOON AS DATA IS IMPORTED
+            ## CAN ADD THIS FUNCTIONALITY BACK LATER IF NECESSARY
+
+            # self.runSymbolic()
+            self.symbolicComplete = True    # temporary, while initial symbolic functions
+                                            # are not run
 
     def importFile(self):
         """Sets UI elements with imported data.
@@ -675,8 +682,8 @@ class MainWindow(QMainWindow):
                 value, list of metric names as strings are other dict value.
         """
         # disable buttons until estimation complete
-        self._main.tab1.sideMenu.runButton.setEnabled(False)
-        self._main.tab4.sideMenu.allocationButton.setEnabled(False)
+        self._main.tab1.sideMenu.runButton.setDisabled(True)
+        self._main.tab4.sideMenu.allocationButton.setDisabled(True)
         modelsToRun = modelDetails["modelsToRun"]
         metricNames = modelDetails["metricNames"]
         if self.data:

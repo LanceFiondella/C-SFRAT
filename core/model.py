@@ -5,17 +5,19 @@ import logging as log
 import time   # for testing
 
 import numpy as np
-import sympy as sym
-from sympy import symbols, diff, exp, lambdify, DeferredVector, factorial, Symbol, Idx, IndexedBase
+# import sympy as sym
+# from sympy import symbols, diff, exp, lambdify, DeferredVector, factorial, Symbol, Idx, IndexedBase
 import scipy.optimize
 from scipy.special import factorial as npfactorial
 
 import symengine
 
+import math
+
 # import models   # maybe??
 
-from core.bat import search
-from core.optimization import PSO, PSO_main
+# from core.bat import search
+# from core.optimization import PSO, PSO_main
 
 
 class Model(ABC):
@@ -211,88 +213,70 @@ class Model(ABC):
             sum2 = 1
             TempTerm1 = 1
             for j in range(1, self.numCovariates + 1):
-                TempTerm1 = TempTerm1 * exp(self.covariateData[j - 1][i] * x[j])
+                TempTerm1 = TempTerm1 * symengine.exp(self.covariateData[j - 1][i] * x[j])
             sum1 = 1 - ((1 - (hazard(i + 1, x[0]))) ** (TempTerm1))
             for k in range(i):
                 TempTerm2 = 1
                 for j in range(1, self.numCovariates + 1):
-                    TempTerm2 = TempTerm2 * exp(self.covariateData[j - 1][k] * x[j])
+                    TempTerm2 = TempTerm2 * symengine.exp(self.covariateData[j - 1][k] * x[j])
                 sum2 = sum2 * ((1 - (hazard(i + 1, x[0])))**(TempTerm2))
             second.append(sum2)
-            prodlist.append(sum1*sum2)
+            prodlist.append(sum1 * sum2)
 
-        firstTerm = -sum(self.failures) #Verified
-        secondTerm = sum(self.failures)*symengine.log(sum(self.failures)/sum(prodlist))
-        logTerm = [] #Verified
+        firstTerm = -sum(self.failures)  #Verified
+        secondTerm = sum(self.failures) * symengine.log(sum(self.failures) / sum(prodlist))
+        logTerm = []  #Verified
         for i in range(self.n):
-            logTerm.append(self.failures[i]*symengine.log(prodlist[i]))
+            logTerm.append(self.failures[i] * symengine.log(prodlist[i]))
         thirdTerm = sum(logTerm)
-        factTerm = [] #Verified
+        factTerm = []  #Verified
         for i in range(self.n):
-            factTerm.append(symengine.log(factorial(self.failures[i])))
+            factTerm.append(symengine.log(math.factorial(self.failures[i])))
         fourthTerm = sum(factTerm)
 
         f = firstTerm + secondTerm + thirdTerm - fourthTerm
         return f, x
 
-    def RLL_PSO(self, x):
-        second = []
-        prodlist = []
+    def RLL(self, x):
+        # want everything to be array of length n
+
+        cov_data = np.array(self.covariateData)
+
+        # gives array with dimensions numCovariates x n, just want n
+        exponent_all = np.array([cov_data[i] * x[i + 1] for i in range(self.numCovariates)])
+
+        # sum over numCovariates axis to get 1 x n array
+        exponent_array = np.exp(np.sum(exponent_all, axis=0))
+
+        h = np.array([self.hazardFunction(i + 1, x[0]) for i in range(self.n)])
+
+        one_minus_hazard = (1 - h)
+        one_minus_h_i = np.power(one_minus_hazard, exponent_array)
+
+        one_minus_h_k = np.zeros(self.n)
         for i in range(self.n):
-            sum1 = 1
-            sum2 = 1
-            TempTerm1 = 1
-            for j in range(1, self.numCovariates + 1):
-                TempTerm1 = TempTerm1 * np.exp(self.covariateData[j - 1][i] * x[j])
-            sum1 = 1 - ((1 - (self.hazardFunction(i + 1, x[0]))) ** (TempTerm1))
-            for k in range(i):
-                TempTerm2 = 1
-                for j in range(1, self.numCovariates + 1):
-                    TempTerm2 = TempTerm2 * np.exp(self.covariateData[j - 1][k] * x[j])
-                sum2 = sum2 * ((1 - (self.hazardFunction(i + 1, x[0])))**(TempTerm2))
-            second.append(sum2)
-            prodlist.append(sum1*sum2)
+            k_term = np.array([one_minus_hazard[i] for k in range(i)])
+            exp_term = np.power((one_minus_hazard[i]), exponent_array[:][:len(k_term)])
+            one_minus_h_k[i] = np.prod(exp_term)
 
-            # print("sum1 =", sum1)
-            # print("sum2 =", sum2)
-            # print("sum1 * sum2 =", sum1*sum2)
+        failure_sum = np.sum(self.failures)
+        product_array = (1.0 - (one_minus_h_i)) * one_minus_h_k
 
-        firstTerm = -np.sum(self.failures) #Verified
+        first_term = -failure_sum
 
-        # print(self.failures)
+        second_num = failure_sum
+        second_denom = np.sum(product_array)
+        second_term = failure_sum * np.log(second_num / second_denom)
 
-        # print("prodlist =", prodlist)
-        # print("log of prodlist =", np.log(prodlist))
-        # print(sum(self.failures)/sum(prodlist))
+        third_term = np.sum(np.log(product_array) * np.array(self.failures))
 
-        secondTerm = np.sum(self.failures)*np.log(np.sum(self.failures)/np.sum(prodlist))
-        logTerm = [] #Verified
-        for i in range(self.n):
-            # check if one of the elements is negative, log is NAN
-            # if element is exactly 0, log is -inf
-            # instead, just append zero
+        fourth_term = np.sum(np.log(npfactorial(self.failures)))
 
-            # print("prodlist =", prodlist[i])
-
-            # if prodlist[i] <= 0.0:
-            #     logTerm.append(0.0)
-            # else:
-            #     logTerm.append(self.failures[i]*np.log(prodlist[i]))
-
-            logTerm.append(self.failures[i]*np.log(prodlist[i]))
-        thirdTerm = np.sum(logTerm)
-        factTerm = [] #Verified
-        for i in range(self.n):
-            factTerm.append(np.log(npfactorial(self.failures[i])))
-        fourthTerm = np.sum(factTerm)
-
-        # print("first term =", firstTerm)
-        # print("second term =", secondTerm)
-        # print("third term =", thirdTerm)
-        # print("fourth term =", fourthTerm)
-
-        f = -(firstTerm + secondTerm + thirdTerm - fourthTerm)  # negative for PSO minimization!
+        f = first_term + second_term + third_term - fourth_term
         return f
+
+    def RLL_minimize(self, x):
+        return -self.RLL(x)
 
     def convertSym(self, x, bh, target):
         """Converts the symbolic function to a lambda function
@@ -306,8 +290,6 @@ class Model(ABC):
         return symengine.lambdify(x, bh, backend='lambda')
 
     def runEstimation(self):
-        initial = self.initialEstimates()
-
         # need class of specific model being used, lambda function stored as class variable
 
         # ex. (max covariates = 3) for 3 covariates, zero_array should be length 0
@@ -318,34 +300,17 @@ class Model(ABC):
 
         # create new lambda function that calls lambda function for all covariates
         # for no covariates, concatenating array a with zero element array
+        optimize_start = time.process_time()    # record time
+        initial = self.initialEstimates()
 
-        # initial = np.concatenate((initial, zero_array), axis=0)
         log.info("Initial estimates: %s", initial)
-
-        # fd = self.__class__.lambdaFunctionAll
-
-
         f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
-        # bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
 
         bh = np.array([symengine.diff(f, x[i]) for i in range(self.numCovariates + 1)])
-
         fd = self.convertSym(x, bh, "numpy")
 
-        optimize_start = time.process_time()    # record time
-
-        bounds = [(0.0001, 0.9999) for i in range(self.numCovariates + 1)]  # temporary
-
-        itertmp, lnLtmp, outParamtmp, timeiterTemp = PSO(costFunc=self.RLL_PSO, x0=initial,
-                bounds=bounds, num_particles=2**5, maxiter=64, verbose=False)
-
-
-        # search_space = [[0.0001, 0.9999] for i in range(self.numCovariates + 1)]
-        search_space = [[0.0001, 0.9999] for i in range(Model.maxCovariates + 1)]
-        sol = self.optimizeSolution(fd, outParamtmp[-1])
-        # print(sol)
-
-
+        solution_object = scipy.optimize.minimize(self.RLL_minimize, x0=initial, method='Nelder-Mead')
+        sol = self.optimizeSolution(fd, solution_object.x)
         optimize_stop = time.process_time()
         log.info("Optimization time: %s", optimize_stop - optimize_start)
         log.info("Optimized solution: %s", sol)
@@ -355,50 +320,60 @@ class Model(ABC):
         print("betas =", self.betas)
         # hazard = self.calcHazard(self.b, self.n)
 
-        hazard = [self.hazardFunction(i, self.b) for i in range(1, self.n + 1)]
+        hazard = [self.hazardFunction(i + 1, self.b) for i in range(self.n)]
         self.hazard = hazard    # for MVF prediction, don't want to calculate again
-        self.modelFitting(hazard, self.betas)
+        self.modelFitting(hazard, sol)
 
     def initialEstimates(self):
-        betasEstimate = np.random.uniform(self.coxParameterEstimateRange[0], self.coxParameterEstimateRange[1], self.numCovariates)
-        bEstimate = np.random.uniform(self.shapeParameterEstimateRange[0], self.shapeParameterEstimateRange[1], 1)
-        return np.insert(betasEstimate, 0, bEstimate)   # insert b in the 0th location of betaEstimate array
+        bEstimate = [self.b0]
+        betaEstimate = [self.beta0 for i in range(self.numCovariates)]
+        return np.array(bEstimate + betaEstimate)
 
     def optimizeSolution(self, fd, B):
         log.info("Solving for MLEs...")
 
-        solution = scipy.optimize.fsolve(fd, x0=B)
+        # solution, infodict, convergence, mesg = scipy.optimize.fsolve(fd, x0=B, maxfev=1000, full_output=True)
+
+        # convergence is integer flag indicating if a solution was found
+        # solution found if flag == 1
+
+        # if convergence == 1:
+        #     self.converged = True
+        #     log.info("MLEs solved.")
+        # else:
+        #     self.converged = False
+        #     log.warning(mesg)
+
+
+        sol_object = scipy.optimize.root(fd, x0=B)
+        solution = sol_object.x
+        self.converged = sol_object.success
+        print("root solving converged?", sol_object.success)
         
-        log.info("MLEs solved.")
         return solution
 
-    def modelFitting(self, hazard, betas):
-        self.omega = self.calcOmega(hazard, betas)
+    def modelFitting(self, hazard, mle):
+        self.omega = self.calcOmega(hazard, self.betas)
         log.info("Calculated omega: %s", self.omega)
 
         # check if user implemented their own LLF
         if self.config[self.__class__.__name__]['LLF'].lower() != 'yes':
             # additional LLF function not implemented,
             # calculate LLF value using dynamic function
-            self.llfVal = self.LLF(hazard, betas)      # log likelihood value
+            # self.llfVal = self.LLF(hazard, betas)      # log likelihood value
+            self.llfVal = self.RLL(mle)
         else:
             # user implemented LLF
             # need to choose LLF for specified number of covariates
             self.llfVal = self.LLF_dict[self.numCovariates](hazard, betas)
         log.info("Calculated log-likelihood value: %s", self.llfVal)
-        self.aicVal = self.AIC(hazard, betas)
+
+        p = self.calcP(mle)
+        self.aicVal = self.AIC(p)
         log.info("Calculated AIC: %s", self.aicVal)
-        self.bicVal = self.BIC(hazard, betas)
+        self.bicVal = self.BIC(p)
         log.info("Calculated BIC: %s", self.bicVal)
-        self.mvfList = self.MVF_all(hazard, self.omega, betas)
-
-        # temporary
-        # if (np.isnan(self.llfVal) or np.isinf(self.llfVal)):
-        #     self.converged = False
-        # else:
-        #     self.converged = True
-
-        self.converged = True
+        self.mvfList = self.MVF_all(mle, self.omega)
 
         self.sseVal = self.SSE(self.mvfList, self.cumulativeFailures)
         log.info("Calculated SSE: %s", self.sseVal)
@@ -428,81 +403,23 @@ class Model(ABC):
 
         return numerator / denominator
 
-    def LLF(self, h, betas):
-
-        # pass betas? or use class attribute (self.betas)?
-
-        # can clean this up to use less loops, probably
-        second = []
-        prodlist = []
-        for i in range(self.n):
-            sum1 = 1
-            sum2 = 1
-            TempTerm1 = 1
-            for j in range(self.numCovariates):
-                TempTerm1 = TempTerm1 * np.exp(self.covariateData[j][i] * betas[j])
-            sum1 = 1 - ((1 - h[i]) ** (TempTerm1))
-            for k in range(i):
-                TempTerm2 = 1
-                for j in range(self.numCovariates):
-                    TempTerm2 = TempTerm2 * np.exp(self.covariateData[j][k] * betas[j])
-                sum2 = sum2*((1 - h[i])**(TempTerm2))
-            second.append(sum2)
-            # print("sum2 =", sum2)
-            prodlist.append(sum1*sum2)
-            # print("sum1*sum2 =", sum1*sum2)
-
-        firstTerm = -sum(self.failures) #Verified
-
-        # print("sum of failures =", sum(self.failures))
-        # print("sum of prodlist =", sum(prodlist))
-        # print("failures/prodlist =", sum(self.failures)/sum(prodlist))
-        # print("log =", np.log(sum(self.failures)/sum(prodlist)))
-
-        secondTerm = sum(self.failures)*np.log(sum(self.failures)/sum(prodlist))
-        logTerm = [] #Verified
-        for i in range(self.n):
-            # if 0, log will return nan. don't need 0 for sum
-            if prodlist[i] > 0.0:
-                logTerm.append(self.failures[i]*np.log(prodlist[i]))
-        thirdTerm = np.sum(logTerm)
-        factTerm = [] #Verified
-        for i in range(self.n):
-            factTerm.append(np.log(np.math.factorial(self.failures[i])))
-        fourthTerm = sum(factTerm)
-
-        # print("first term =", firstTerm)
-        # print("second term =", secondTerm)
-        # print("third term =", thirdTerm)
-        # print("fourth term =", fourthTerm)
-
-        # print("prodlist =", prodlist)
-
-        return firstTerm + secondTerm + thirdTerm - fourthTerm
-
-    def AIC(self, h, betas):
-        # +2 variables for any other algorithm
-        p = self.calcP(betas)
+    def AIC(self, p):
         return 2 * p - 2 * self.llfVal
-        # return 2 * p - np.multiply(2, self.LLF(h, betas))
-        # return 2 * 5 - 2 * -28.4042
 
-    def BIC(self, h, betas):
-        # +2 variables for any other algorithm
-        p = self.calcP(betas)
+    def BIC(self, p):
         return p * np.log(self.n) - 2 * self.llfVal
         # return p * np.log(self.n) - 2 * self.LLF(h, betas)
         # return 5 * np.log(self.n) - 2 * -28.4042
 
-    def calcP(self, betas):
+    def calcP(self, mle):
         # number of covariates + number of hazard rate parameters + 1 (omega)
-        return len(betas) + 1
+        return len(mle) + 1
 
-    def MVF_all(self, h, omega, betas):
-        mvf_array = np.array([self.MVF(h, self.omega, betas, dataPoints) for dataPoints in range(self.n)])
+    def MVF_all(self, mle, omega):
+        mvf_array = np.array([self.MVF(mle, omega, dataPoints) for dataPoints in range(self.n)])
         return mvf_array
 
-    def MVF(self, h, omega, betas, stop):
+    def MVF_old(self, h, omega, betas, stop):
         # can clean this up to use less loops, probably
         prodlist = []
         for i in range(stop + 1):     # CHANGED THIS FROM self.n + 1 !!!
@@ -518,7 +435,40 @@ class Model(ABC):
                     TempTerm2 = TempTerm2 * np.exp(self.covariateData[j][k] * betas[j])
                 sum2 = sum2 * ((1 - h[i])**(TempTerm2))
             prodlist.append(sum1 * sum2)
-        return omega * sum(prodlist)
+        # return omega * sum(prodlist)
+
+        # print("old sum1:", sum1)
+        # print("old sum2:", sum2)
+
+        original_result = omega * sum(prodlist)
+        print("original MVF:", original_result)
+
+    def MVF(self, x, omega, stop):
+        cov_data = np.array(self.covariateData)
+
+        # gives array with dimensions numCovariates x n, just want n
+        exponent_all = np.array([cov_data[i][:stop + 1] * x[i + 1] for i in range(self.numCovariates)])
+
+        # sum over numCovariates axis to get 1 x n array
+        exponent_array = np.exp(np.sum(exponent_all, axis=0))
+
+        h = np.array([self.hazardFunction(i + 1, x[0]) for i in range(stop + 1)])
+
+        one_minus_hazard = (1 - h)
+        one_minus_h_i = np.power(one_minus_hazard, exponent_array)
+
+        one_minus_h_k = np.zeros(stop + 1)
+        for i in range(stop + 1):
+            k_term = np.array([one_minus_hazard[i] for k in range(i)])
+            exp_term = np.power((one_minus_hazard[i]), exponent_array[:][:len(k_term)])
+            one_minus_h_k[i] = np.prod(exp_term)
+
+        print("*****", i)
+
+        product_array = (1.0 - (one_minus_h_i)) * one_minus_h_k
+
+        result = omega * np.sum(product_array)
+        return result
 
     def SSE(self, fitted, actual):
         sub = np.subtract(fitted, actual)
@@ -592,11 +542,12 @@ class Model(ABC):
             TempTerm1 = 1
             for j in range(self.numCovariates):
                 TempTerm1 = TempTerm1 * np.exp(covData[j][i] * betas[j])
-            sum1 = 1-((1 - h(i, self.b)) ** (TempTerm1))
+            sum1 = 1 - ((1 - h(i + 1, self.b))**(TempTerm1))
             for k in range(i):
                 TempTerm2 = 1
                 for j in range(self.numCovariates):
                     TempTerm2 = TempTerm2 * np.exp(covData[j][k] * betas[j])
-                sum2 = sum2 * ((1 - h(i, self.b))**(TempTerm2))
+                sum2 = sum2 * ((1 - h(i + 1, self.b))**(TempTerm2))
             prodlist.append(sum1 * sum2)
+
         return (omega * sum(prodlist))

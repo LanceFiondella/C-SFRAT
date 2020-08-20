@@ -1,4 +1,7 @@
 scipy
+numpy
 matplotlib
 mpmath
 PyQt5
+pandas
+symengine

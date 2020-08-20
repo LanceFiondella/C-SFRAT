@@ -2,12 +2,15 @@ from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QGridLayout, \
                             QTableWidget, QTableWidgetItem, QAbstractScrollArea, \
                             QSpinBox, QSpacerItem, QSizePolicy, QHeaderView, QVBoxLayout, \
                             QListWidget, QAbstractItemView, QGroupBox, QListWidgetItem, \
-                            QFrame
-from PyQt5.QtCore import pyqtSignal
+                            QFrame, QTableView
+from PyQt5.QtCore import pyqtSignal, QSortFilterProxyModel
 from PyQt5.QtGui import QFont
+
+import pandas as pd
 
 # Local imports
 from core.comparison import Comparison
+from core.dataClass import PandasModel
 
 
 class Tab3(QWidget):
@@ -27,7 +30,7 @@ class Tab3(QWidget):
         super().__init__()
         self._setupTab3()
 
-    def addResultsToTable(self, results):
+    def addResultsToTable_old(self, results):
         """Perfoms comparison calculations, adds goodness of fit results to table.
 
         Args:
@@ -75,6 +78,33 @@ class Tab3(QWidget):
             # do not set cells to bold if they are None
             pass
 
+    def addResultsToTable(self, results):
+        # for key, model in results.items():
+        #     row = [[model.shortName, model.metricString, model.llfVal, model.aicVal, model.bicVal, model.sseVal, 0, 0]]
+        #     row_df = pd.DataFrame(row, columns=["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE",
+        #         "Model ranking", "Weighted model ranking"])
+        #     print(hex(id(self.dataframe)))
+        #     print(self.table.model())
+        #     self.dataframe = self.dataframe.append(row_df, ignore_index=True)
+        #     print(hex(id(self.dataframe)))
+        #     print(self.table.model())
+        #     print(self.dataframe)
+
+        rows = []
+        for key, model in results.items():
+            # print(self.tableModel._data)
+            # row = [model.shortName, model.metricString, model.llfVal, model.aicVal, model.bicVal, model.sseVal, 0, 0]
+            row = [model.shortName, model.metricString, model.llfVal, model.aicVal, model.bicVal, model.sseVal, 0, 0]
+            rows.append(row)
+        row_df = pd.DataFrame(rows, columns=["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE",
+            "Model ranking", "Weighted model ranking"])
+        # self.dataframe.loc[self.dataframe.index.max() + 1] = row
+        self.tableModel.setAllData(row_df)
+
+        self.table.model().layoutChanged.emit()
+        # self.table.model().update()
+        # self.table.update()
+
     def addRow(self, model, results):
         # new row inserted at end of table, after last row
         rowCount = self.table.rowCount()
@@ -92,6 +122,13 @@ class Tab3(QWidget):
             # if no models converge, meanOut and meanOutUniform are set to None
             # don't add item to table if type is None
             pass
+
+
+    # def addRow(self, model, results):
+    #     row = [model.shortName, model.metricString, model.llfVal, model.aicVal, model.bicVal, model.sseVal]
+    #     self.dataframe.append(row)
+
+    #     self.table.model().layoutChanged.emit()
 
     def removeRow(self, model):
         # iterate over all rows, linear search
@@ -118,7 +155,7 @@ class Tab3(QWidget):
         mainLayout.addWidget(self.table, 85)
         self.setLayout(mainLayout)
 
-    def _setupTable(self):
+    def _setupTable_old(self):
         """Creates table widget with proper headers.
 
         Returns:
@@ -141,6 +178,27 @@ class Tab3(QWidget):
         stylesheet = "::section{Background-color:rgb(250,250,250);}"
         header.setStyleSheet(stylesheet)
 
+        return table
+
+    def _setupTable(self):
+
+        self.dataframe = pd.DataFrame(columns=["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
+                                              "SSE", "Model ranking", "Weighted model ranking"])
+        self.tableModel = PandasModel(self.dataframe)
+        # self.proxyModel = QSortFilterProxyModel()
+        # self.proxyModel.setSourceModel(self.tableModel)
+
+        table = QTableView()
+        # table.setModel(self.proxyModel)
+        table.setModel(self.tableModel)
+        table.setEditTriggers(QTableWidget.NoEditTriggers)     # make cells unable to be edited
+        table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+                                                                    # column width fit to contents
+        header = table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        # provides bottom border for header
+        stylesheet = "::section{Background-color:rgb(250,250,250);}"
+        header.setStyleSheet(stylesheet)
         return table
 
 

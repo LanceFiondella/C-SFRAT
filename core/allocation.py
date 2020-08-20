@@ -12,7 +12,7 @@ class EffortAllocation:
 
     def runAllocation(self):
         # cons = ({'type': 'ineq', 'fun': lambda x:  B-x[0]-x[1]-x[2]})
-        cons = ({'type': 'ineq', 'fun': lambda x:  self.B - sum([x[i] for i in range(self.model.numCovariates)])})
+        cons = ({'type': 'ineq', 'fun': lambda x: self.B - sum([x[i] for i in range(self.model.numCovariates)])})
         # bnds = ((0, None), (0, None), (0, None))
         bnds = tuple((0, None) for i in range(self.model.numCovariates))
 

@@ -22,7 +22,8 @@ class Data:
         """
         self.sheetNames = ["None"]
         self._currentSheet = 0
-        self.STATIC_COLUMNS = 6  # 6 for T, FC, CFC, FN, FT, IF columns
+        self.STATIC_NAMES = ['T', 'FC', 'CFC']
+        self.STATIC_COLUMNS = len(self.STATIC_NAMES)  # 3 for T, FC, CFC columns
         self.dataSet = {"None": None}
         # self._numCovariates = 0
         self.numCovariates = 0
@@ -46,6 +47,19 @@ class Data:
             log.info("Cannot set sheet to index %d since the data does not contain a sheet with that index.\
                       Sheet index instead set to 0.", index)
 
+    def getData(self):
+        """
+        Returns dataframe corresponding to the currentSheet index
+        """
+        return self.dataSet[self.sheetNames[self._currentSheet]]
+
+    def getDataModel(self):
+        """
+        Returns PandasModel for the current dataFrame to be displayed
+        on a QTableWidget
+        """
+        return PandasModel(self.getData())
+
     def setupMetricNameDictionary(self):
         """
         For allocation table. Allows the effort allocation to be placed in correct column.
@@ -56,16 +70,96 @@ class Data:
             self.metricNameDictionary[name] = i
             i += 1
 
-    def setNumCovariates(self):
+    def processFT(self, data):
         """
-        Sets number of covariates for each sheet
+        Processes raw FT data to fill in any gaps
+        Args:
+            data: Raw pandas dataframe
+        Returns:
+            data: Processed pandas dataframe
         """
-        # subtract columns for failure times, number of failures, and cumulative failures
-        numCov = len(self.dataSet[self.sheetNames[self._currentSheet]].columns) - self.STATIC_COLUMNS
-        if numCov >= 0:
-            self.numCovariates = numCov
+        # failure time
+        if 'FT' not in data:
+            data["FT"] = data["IF"].cumsum()
+
+        # inter failure time
+        elif 'IF' not in data:
+            data['IF'] = data['FT'].diff()
+            data['IF'].iloc[0] = data['FT'].iloc[0]
+
+        if 'FN' not in data:
+            data['FN'] = pd.Series([i+1 for i in range(data['FT'].size)])
+        return data
+
+    def initialNumCovariates(self, data):
+        """
+        Calculates the number of covariates on a given sheet
+        """
+        numCov = len(data.columns) - self.STATIC_COLUMNS
+        # log.debug("%d covariates.", self._numCovariates)
+        return numCov
+
+    def renameHeader(self, data, numCov):
+        """
+        Renames column headers if covariate metrics are unnamed
+        """
+        data.rename(columns={data.columns[0]:"Time"}, inplace=True)
+        data.rename(columns={data.columns[1]:"Failures"}, inplace=True)
+        for i in range(numCov):
+            data.rename(columns={data.columns[i+2]:"C{0}".format(i+1)}, inplace=True)   # changed from MetricX to CX
+
+    def importFile(self, fname):
+        """
+        Imports data file
+        Args:
+            fname : Filename of csv or excel file
+        """
+        self.filename, fileExtenstion = os.path.splitext(fname)
+        if fileExtenstion == ".csv":
+            if self.hasHeader(fname, fileExtenstion):
+                # data has header, can read in normally
+                data = {}
+                data["None"] = pd.read_csv(fname)
+            else:
+                # data does not have a header, need to specify
+                data = {}
+                data["None"] = pd.read_csv(fname, header=None)
         else:
-            self.numCovariates = 0
+            if self.hasHeader(fname, fileExtenstion):
+                # data has header, can read in normally
+                #   *** don't think it takes into account differences in sheets
+                data = pd.read_excel(fname, sheet_name=None)
+            else:
+                data = pd.read_excel(fname, sheet_name=None, header=None)
+        self.sheetNames = list(data.keys())
+        self._currentSheet = 0
+        self.setData(data)
+        self.setNumCovariates()
+        # self.metricNames = self.dataSet[self.sheetNames[self._currentSheet]].columns.values[2:2+self.numCovariates]
+        self.setMetricNames()
+        self.getMetricNameCombinations()
+        self.setupMetricNameDictionary()
+
+    def hasHeader(self, fname, extension, rows=2):
+        """
+        Determines if loaded data has a header
+        Args:
+            fname : Filename of csv or excel file
+            extension : file extension of opened file
+            rows : number of rows of file to compare
+        Returns:
+            bool : True if data has header, False if it does not
+        """
+        if extension == ".csv":
+            df = pd.read_csv(fname, header=None, nrows=rows)
+            df_header = pd.read_csv(fname, nrows=rows)
+        else:
+            df = pd.read_excel(fname, header=None, nrows=rows)
+            df_header = pd.read_excel(fname, nrows=rows)
+        # has a header if datatypes of loaded dataframes are different 
+        header = tuple(df.dtypes) != tuple(df_header.dtypes)
+        self.containsHeader = header
+        return header
 
     def setData(self, dataSet):
         """
@@ -99,51 +193,34 @@ class Data:
             data : processed pandas dataframe
         """
         # print(data)
-        data["CFC"] = data["FC"].cumsum()  # add column for cumulative failures
+        cumulative_column = data["FC"].cumsum()  # add column for cumulative failures
+        # insert cumulative column in location directly after FC
+        data.insert(data.columns.get_loc("FC") + 1, 'CFC', cumulative_column)
 
-        # 
-        FTData = pd.DataFrame()
-        FT = []
-        for i, fc in enumerate(data['FC']):
-            if fc != 0:
-                if i == 0:
-                    fails = np.array([(j+0.5)*float(data['T'][i]) /
-                                     float(fc) for j in range(int(fc))])
-                    for fail in fails:
-                        FT.append(fail)
-                elif i > 0:
-                    fails = np.array([(j+0.5)*float(data['T'][i] -
-                                      data['T'][i-1]) /
-                                     float(fc) for j in range(int(fc))])
-                    for fail in fails:
-                        FT.append(data['T'][i]+fail)
-        FTData['FT'] = pd.Series(FT)
-        data['FT'] = FTData['FT']
-        data['FN'] = pd.Series([i+1 for i in range(FTData['FT'].size)])
-        data['IF'] = data['FT'].diff()
-        data['IF'].iloc[0] = data['FT'].iloc[0]
+        # added for trend tests,
+        # commented out for now
 
-        return data
+        # FTData = pd.DataFrame()
+        # FT = []
+        # for i, fc in enumerate(data['FC']):
+        #     if fc != 0:
+        #         if i == 0:
+        #             fails = np.array([(j+0.5)*float(data['T'][i]) /
+        #                              float(fc) for j in range(int(fc))])
+        #             for fail in fails:
+        #                 FT.append(fail)
+        #         elif i > 0:
+        #             fails = np.array([(j+0.5)*float(data['T'][i] -
+        #                               data['T'][i-1]) /
+        #                              float(fc) for j in range(int(fc))])
+        #             for fail in fails:
+        #                 FT.append(data['T'][i]+fail)
+        # FTData['FT'] = pd.Series(FT)
+        # data['FT'] = FTData['FT']
+        # data['FN'] = pd.Series([i+1 for i in range(FTData['FT'].size)])
+        # data['IF'] = data['FT'].diff()
+        # data['IF'].iloc[0] = data['FT'].iloc[0]
 
-    def processFT(self, data):
-        """
-        Processes raw FT data to fill in any gaps
-        Args:
-            data: Raw pandas dataframe
-        Returns:
-            data: Processed pandas dataframe
-        """
-        # failure time
-        if 'FT' not in data:
-            data["FT"] = data["IF"].cumsum()
-
-        # inter failure time
-        elif 'IF' not in data:
-            data['IF'] = data['FT'].diff()
-            data['IF'].iloc[0] = data['FT'].iloc[0]
-
-        if 'FN' not in data:
-            data['FN'] = pd.Series([i+1 for i in range(data['FT'].size)])
         return data
 
     def metricsUnnamed(self, data, numCov):
@@ -161,87 +238,26 @@ class Data:
             if "Unnamed: " in str(data.columns[i+2]):
                 data.rename(columns={data.columns[i+2]:"Metric{0}".format(i+1)}, inplace=True)
 
-    def initialNumCovariates(self, data):
+    def setNumCovariates(self):
         """
-        Calculates the number of covariates on a given sheet
+        Sets number of covariates for each sheet
         """
-        numCov = len(data.columns) - self.STATIC_COLUMNS
-        # log.debug("%d covariates.", self._numCovariates)
-        return numCov
-
-    def renameHeader(self, data, numCov):
-        """
-        Renames column headers if covariate metrics are unnamed
-        """
-        data.rename(columns={data.columns[0]:"Time"}, inplace=True)
-        data.rename(columns={data.columns[1]:"Failures"}, inplace=True)
-        for i in range(numCov):
-            data.rename(columns={data.columns[i+2]:"C{0}".format(i+1)}, inplace=True)   # changed from MetricX to CX
-
-    def getData(self):
-        """
-        Returns dataframe corresponding to the currentSheet index
-        """
-        return self.dataSet[self.sheetNames[self._currentSheet]]
-
-    def getDataModel(self):
-        """
-        Returns PandasModel for the current dataFrame to be displayed
-        on a QTableWidget
-        """
-        return PandasModel(self.getData())
-
-    def importFile(self, fname):
-        """
-        Imports data file
-        Args:
-            fname : Filename of csv or excel file
-        """
-        self.filename, fileExtenstion = os.path.splitext(fname)
-        if fileExtenstion == ".csv":
-            if self.hasHeader(fname, fileExtenstion):
-                # data has header, can read in normally
-                data = {}
-                data["None"] = pd.read_csv(fname)
-            else:
-                # data does not have a header, need to specify
-                data = {}
-                data["None"] = pd.read_csv(fname, header=None)
+        # subtract columns for failure times, number of failures, and cumulative failures
+        numCov = len(self.dataSet[self.sheetNames[self._currentSheet]].columns) - self.STATIC_COLUMNS
+        if numCov >= 0:
+            self.numCovariates = numCov
         else:
-            if self.hasHeader(fname, fileExtenstion):
-                # data has header, can read in normally
-                #   *** don't think it takes into account differences in sheets
-                data = pd.read_excel(fname, sheet_name=None)
-            else:
-                data = pd.read_excel(fname, sheet_name=None, header=None)
-        self.sheetNames = list(data.keys())
-        self._currentSheet = 0
-        self.setData(data)
-        self.setNumCovariates()
-        self.metricNames = self.dataSet[self.sheetNames[self._currentSheet]].columns.values[2:2+self.numCovariates]
-        self.getMetricNameCombinations()
-        self.setupMetricNameDictionary()
+            self.numCovariates = 0
 
-    def hasHeader(self, fname, extension, rows=2):
-        """
-        Determines if loaded data has a header
-        Args:
-            fname : Filename of csv or excel file
-            extension : file extension of opened file
-            rows : number of rows of file to compare
-        Returns:
-            bool : True if data has header, False if it does not
-        """
-        if extension == ".csv":
-            df = pd.read_csv(fname, header=None, nrows=rows)
-            df_header = pd.read_csv(fname, nrows=rows)
-        else:
-            df = pd.read_excel(fname, header=None, nrows=rows)
-            df_header = pd.read_excel(fname, nrows=rows)
-        # has a header if datatypes of loaded dataframes are different 
-        header = tuple(df.dtypes) != tuple(df_header.dtypes)
-        self.containsHeader = header
-        return header
+    def setMetricNames(self):
+        # column assumed to be covariate if not labeled T, FC, or CFC
+
+        # iterate over all columns of current sheet in dataset
+        names_list = []
+        for (column_name, column_data) in self.dataSet[self.sheetNames[self._currentSheet]].iteritems():
+            if column_name not in self.STATIC_NAMES:
+                names_list.append(column_name)  # column assumed to be covariate data
+        self.metricNames = names_list
 
     def getMetricNameCombinations(self):
         # if (self.numCovariates > 1):
@@ -263,6 +279,7 @@ class Data:
         """ powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3) """
         s = list(iterable)
         return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
+
 
 # need to edit to fit our data
 class PandasModel(QtCore.QAbstractTableModel):
@@ -294,3 +311,18 @@ class PandasModel(QtCore.QAbstractTableModel):
             columnNames = list(self._data)
             return QtCore.QVariant(str(columnNames[section]))
         return QtCore.QVariant()
+
+    def sort(self, Ncol, order):
+        """Sort table by given column number."""
+        self.layoutAboutToBeChanged.emit()
+        self.data = self.data.sort_values(self.headers[Ncol], ascending=order == Qt.AscendingOrder)
+        self.layoutChanged.emit()
+
+    # def setData(self, index, value):
+    #     self._data.iloc[index] = value
+
+    def setAllData(self, new_data):
+        """
+        data is Pandas dataframe, replaces self._data
+        """
+        self._data = new_data

@@ -255,7 +255,10 @@ class SymbolicThread(QThread):
     """
 
     symbolicSignal = pyqtSignal()
-    complete = False    # if symbolic calculations are complete = True
+
+    ## TEMPORARY
+    ## set complete to True, since symbolic calculations are not run
+    complete = True    # if symbolic calculations are complete = True
 
     def __init__(self, modelList, data, config):
         """Initializes TaskThread class.
