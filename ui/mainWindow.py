@@ -35,6 +35,8 @@ the UI elements. Able to reference all elements and the signals they emit.
 # plot 2 should have label with just covariate data, when no other models selected
 # menu bar naming
 # optimize prediction: don't calculate all points ever time; wasteful and slow
+# make covariateData a numpy array instead of list (then, can update first couple
+#   lines of RLL non-symbolic)
 ###############################################################################
 
 # For handling debug output
@@ -783,7 +785,11 @@ class MainWindow(QMainWindow):
             name = combinations[i]
             if " (No covariates)" not in name:
                 m = self.estimationResults[name]  # model indexed by the name
-                self.allocationResults[name] = [EffortAllocation(m, B, f), m]
+
+                ## RUN PREDICTION USING SPECIFIED SUBSET OF COVARIATE DATA
+                ## for now, just passing full data
+                print(m.name)
+                self.allocationResults[name] = [EffortAllocation(m, B, f, m.covariateData), m]
 
         self._main.tab4.addResultsToTable(self.allocationResults, self.data)
 
@@ -804,7 +810,10 @@ class MainWindow(QMainWindow):
             # gets first selected item
             name = self._main.tab2.sideMenu.modelListWidget.selectedItems()[0].text()
             m = self.estimationResults[name]  # model indexed by the name
-            x, mvf_array, intensity_array = m.prediction(failures)
+
+            ## RUN PREDICTION USING SPECIFIED SUBSET OF COVARIATE DATA
+            ## for now, just passing full data
+            x, mvf_array, intensity_array = m.prediction(failures, m.covariateData)
 
             # self.plotSettings.addLine(self.ax2, x, mvfList, "Prediction")
             # MVF view

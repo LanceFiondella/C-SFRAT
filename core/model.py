@@ -203,7 +203,7 @@ class Model(ABC):
 
         return f
 
-    def LLF_sym(self, hazard):
+    def LLF_sym(self, hazard, covariate_data):
         # x = b, b1, b2, b2 = symengine.symbols('b b1 b2 b3')
         x = symengine.symbols(f'x:{self.numCovariates + 1}')
         second = []
@@ -213,12 +213,12 @@ class Model(ABC):
             sum2 = 1
             TempTerm1 = 1
             for j in range(1, self.numCovariates + 1):
-                TempTerm1 = TempTerm1 * symengine.exp(self.covariateData[j - 1][i] * x[j])
+                TempTerm1 = TempTerm1 * symengine.exp(covariate_data[j - 1][i] * x[j])
             sum1 = 1 - ((1 - (hazard(i + 1, x[0]))) ** (TempTerm1))
             for k in range(i):
                 TempTerm2 = 1
                 for j in range(1, self.numCovariates + 1):
-                    TempTerm2 = TempTerm2 * symengine.exp(self.covariateData[j - 1][k] * x[j])
+                    TempTerm2 = TempTerm2 * symengine.exp(covariate_data[j - 1][k] * x[j])
                 sum2 = sum2 * ((1 - (hazard(i + 1, x[0])))**(TempTerm2))
             second.append(sum2)
             prodlist.append(sum1 * sum2)
@@ -237,10 +237,10 @@ class Model(ABC):
         f = firstTerm + secondTerm + thirdTerm - fourthTerm
         return f, x
 
-    def RLL(self, x):
+    def RLL(self, x, covariate_data):
         # want everything to be array of length n
 
-        cov_data = np.array(self.covariateData)
+        cov_data = np.array(covariate_data)
 
         # gives array with dimensions numCovariates x n, just want n
         exponent_all = np.array([cov_data[i] * x[i + 1] for i in range(self.numCovariates)])
@@ -281,8 +281,8 @@ class Model(ABC):
         f = first_term + second_term + third_term - fourth_term
         return f
 
-    def RLL_minimize(self, x):
-        return -self.RLL(x)
+    def RLL_minimize(self, x, covariate_data):
+        return -self.RLL(x, covariate_data)
 
     def convertSym(self, x, bh, target):
         """Converts the symbolic function to a lambda function
@@ -295,7 +295,7 @@ class Model(ABC):
         # return lambdify(x, bh, target)
         return symengine.lambdify(x, bh, backend='lambda')
 
-    def runEstimation(self):
+    def runEstimation(self, covariate_data):
         # need class of specific model being used, lambda function stored as class variable
 
         # ex. (max covariates = 3) for 3 covariates, zero_array should be length 0
@@ -310,12 +310,12 @@ class Model(ABC):
         initial = self.initialEstimates()
 
         log.info("Initial estimates: %s", initial)
-        f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
+        f, x = self.LLF_sym(self.hazardFunction, covariate_data)    # pass hazard rate function
 
         bh = np.array([symengine.diff(f, x[i]) for i in range(self.numCovariates + 1)])
         fd = self.convertSym(x, bh, "numpy")
 
-        solution_object = scipy.optimize.minimize(self.RLL_minimize, x0=initial, method='Nelder-Mead')
+        solution_object = scipy.optimize.minimize(self.RLL_minimize, x0=initial, args=(covariate_data,), method='Nelder-Mead')
         sol = self.optimizeSolution(fd, solution_object.x)
         optimize_stop = time.process_time()
         log.info("Optimization time: %s", optimize_stop - optimize_start)
@@ -328,7 +328,7 @@ class Model(ABC):
 
         hazard = [self.hazardFunction(i + 1, self.b) for i in range(self.n)]
         self.hazard = hazard    # for MVF prediction, don't want to calculate again
-        self.modelFitting(hazard, sol)
+        self.modelFitting(hazard, sol, covariate_data)
 
     def initialEstimates(self):
         bEstimate = [self.b0]
@@ -358,20 +358,11 @@ class Model(ABC):
         
         return solution
 
-    def modelFitting(self, hazard, mle):
-        self.omega = self.calcOmega(hazard, self.betas)
+    def modelFitting(self, hazard, mle, covariate_data):
+        self.omega = self.calcOmega(hazard, self.betas, covariate_data)
         log.info("Calculated omega: %s", self.omega)
 
-        # check if user implemented their own LLF
-        if self.config[self.__class__.__name__]['LLF'].lower() != 'yes':
-            # additional LLF function not implemented,
-            # calculate LLF value using dynamic function
-            # self.llfVal = self.LLF(hazard, betas)      # log likelihood value
-            self.llfVal = self.RLL(mle)
-        else:
-            # user implemented LLF
-            # need to choose LLF for specified number of covariates
-            self.llfVal = self.LLF_dict[self.numCovariates](hazard, betas)
+        self.llfVal = self.RLL(mle, covariate_data)
         log.info("Calculated log-likelihood value: %s", self.llfVal)
 
         p = self.calcP(mle)
@@ -379,7 +370,7 @@ class Model(ABC):
         log.info("Calculated AIC: %s", self.aicVal)
         self.bicVal = self.BIC(p)
         log.info("Calculated BIC: %s", self.bicVal)
-        self.mvfList = self.MVF_all(mle, self.omega)
+        self.mvfList = self.MVF_all(mle, self.omega, covariate_data)
 
         self.sseVal = self.SSE(self.mvfList, self.cumulativeFailures)
         log.info("Calculated SSE: %s", self.sseVal)
@@ -388,7 +379,7 @@ class Model(ABC):
         log.info("MVF values: %s", self.mvfList)
         log.info("Intensity values: %s", self.intensityList)
 
-    def calcOmega(self, h, betas):
+    def calcOmega(self, h, betas, covariate_data):
         # can clean this up to use less loops, probably
         prodlist = []
         for i in range(self.n):
@@ -396,12 +387,12 @@ class Model(ABC):
             sum2 = 1
             TempTerm1 = 1
             for j in range(self.numCovariates):
-                    TempTerm1 = TempTerm1 * np.exp(self.covariateData[j][i] * betas[j])
+                    TempTerm1 = TempTerm1 * np.exp(covariate_data[j][i] * betas[j])
             sum1 = 1-((1 - h[i]) ** (TempTerm1))
             for k in range(i):
                 TempTerm2 = 1
                 for j in range(self.numCovariates):
-                        TempTerm2 = TempTerm2 * np.exp(self.covariateData[j][k] * betas[j])
+                        TempTerm2 = TempTerm2 * np.exp(covariate_data[j][k] * betas[j])
                 sum2 = sum2*((1 - h[i])**(TempTerm2))
             prodlist.append(sum1*sum2)
         denominator = sum(prodlist)
@@ -421,8 +412,8 @@ class Model(ABC):
         # number of covariates + number of hazard rate parameters + 1 (omega)
         return len(mle) + 1
 
-    def MVF_all(self, mle, omega):
-        mvf_array = np.array([self.MVF(mle, omega, dataPoints) for dataPoints in range(self.n)])
+    def MVF_all(self, mle, omega, covariate_data):
+        mvf_array = np.array([self.MVF(mle, omega, dataPoints, covariate_data) for dataPoints in range(self.n)])
         return mvf_array
 
     def MVF_old(self, h, omega, betas, stop):
@@ -443,8 +434,8 @@ class Model(ABC):
             prodlist.append(sum1 * sum2)
         return omega * sum(prodlist)
 
-    def MVF(self, x, omega, stop):
-        cov_data = np.array(self.covariateData)
+    def MVF(self, x, omega, stop, covariate_data):
+        cov_data = np.array(covariate_data)
 
         # gives array with dimensions numCovariates x n, just want n
         exponent_all = np.array([cov_data[i][:stop + 1] * x[i + 1] for i in range(self.numCovariates)])
@@ -479,7 +470,7 @@ class Model(ABC):
         difference = [mvf_array[i+1]-mvf_array[i] for i in range(len(mvf_array) - 1)]
         return [mvf_array[0]] + difference
 
-    def prediction(self, failures):
+    def prediction(self, failures, covariate_data):
         total_points = self.n + failures
         zero_array = np.zeros(failures) # to append to existing covariate data
         new_covData = [0 for i in range(self.numCovariates)]
@@ -488,7 +479,7 @@ class Model(ABC):
         hazard = self.hazard + newHazard
 
         for j in range(self.numCovariates):
-            new_covData[j] = np.append(self.covariateData[j], zero_array)
+            new_covData[j] = np.append(covariate_data[j], zero_array)
 
         mvf_array = np.array([self.MVF_prediction(new_covData, hazard, dataPoints) for dataPoints in range(total_points)])
         intensity_array = self.intensityFit(mvf_array)
@@ -501,7 +492,7 @@ class Model(ABC):
 
         return (x, mvf_array, intensity_array)
 
-    def MVF_prediction(self, covariateData, hazard, stop):
+    def MVF_prediction(self, covariate_data, hazard, stop):
         # can clean this up to use less loops, probably
         prodlist = []
         for i in range(stop + 1):     # CHANGED THIS FROM self.n + 1 !!!
@@ -509,35 +500,35 @@ class Model(ABC):
             sum2 = 1
             TempTerm1 = 1
             for j in range(self.numCovariates):
-                TempTerm1 = TempTerm1 * np.exp(covariateData[j][i] * self.betas[j])
+                TempTerm1 = TempTerm1 * np.exp(covariate_data[j][i] * self.betas[j])
             sum1 = 1-((1 - hazard[i]) ** (TempTerm1))
             for k in range(i):
                 TempTerm2 = 1
                 for j in range(self.numCovariates):
-                    TempTerm2 = TempTerm2 * np.exp(covariateData[j][k] * self.betas[j])
+                    TempTerm2 = TempTerm2 * np.exp(covariate_data[j][k] * self.betas[j])
                 sum2 = sum2 * ((1 - hazard[i])**(TempTerm2))
             prodlist.append(sum1 * sum2)
         return self.omega * sum(prodlist)
 
-    def allocationFunction(self, x, *args):
-        # failures = args[0]
-        # i = self.n + failures
+    def allocationFunction(self, x, covariate_data):
+        # covariate_data = args[1]
         i = self.n
-        return -(self.MVF_allocation(self.hazardFunction, self.omega, self.betas, i, x))    # must be negative, SHGO uses minimization
+        return -(self.MVF_allocation(self.hazardFunction, self.omega, self.betas, i, x, covariate_data))    # must be negative, SHGO uses minimization
                                                                                             # and we want to maximize fault discovery
 
-    def allocationFunction2(self, x, *args):
+    def allocationFunction2(self, x, covariate_data):
         # failures = args[0]
         # i = self.n + failures
         i = self.n
-        return self.MVF_allocation(self.hazardFunction, self.omega, self.betas, i, x)  # we want to minimize, SHGO uses minimization
+        return self.MVF_allocation(self.hazardFunction, self.omega, self.betas, i, x, covariate_data)  # we want to minimize, SHGO uses minimization
 
-    def MVF_allocation(self, h, omega, betas, stop, x):
+    def MVF_allocation(self, h, omega, betas, stop, x, covariate_data):
         """
         x is vector of covariate metrics chosen for allocation
         """
         # can clean this up to use less loops, probably
-        covData = [list(self.covariateData[j]) for j in range(self.numCovariates)]
+
+        covData = [list(covariate_data[j]) for j in range(self.numCovariates)]
 
         for j in range(self.numCovariates):
             covData[j].append(x[j])  # append a single variable (x[j]) to the end of each vector of covariate data

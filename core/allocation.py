@@ -3,10 +3,12 @@ import numpy as np
 
 
 class EffortAllocation:
-    def __init__(self, model, B, f):
+    def __init__(self, model, B, f, covariate_data):
         self.model = model
         self.B = B
         self.f = f
+        self.covariate_data = covariate_data
+        print("new cov data!", self.covariate_data)
         self.runAllocation()
         self.organizeResults()
 
@@ -22,7 +24,7 @@ class EffortAllocation:
         # bnds = ((0, None), (0, None), (0, None))
         bnds = tuple((0, None) for i in range(self.model.numCovariates))
 
-        self.res = shgo(self.model.allocationFunction, args=(self.f,), bounds=bnds, constraints=cons)#, n=10000, iters=4)
+        self.res = shgo(self.model.allocationFunction, args=(self.covariate_data,), bounds=bnds, constraints=cons)#, n=10000, iters=4)
         self.mvfVal = -self.res.fun
         self.H = self.mvfVal - self.model.mvfList[-1]   # predicted MVF value - last actual MVF value
 
@@ -39,22 +41,20 @@ class EffortAllocation:
 
         # cons2 = ({'type': 'ineq', 'fun': lambda x: self.B - sum([x[i] for i in range(self.model.numCovariates)])},
         #         {'type': 'ineq', 'fun': self.optimization2})
-        cons2 = ({'type': 'eq', 'fun': self.optimization2})
+        cons2 = ({'type': 'eq', 'fun': self.optimization2, 'args': (self.covariate_data,)})
 
         # cons2 = ({'type': 'ineq', 'fun': lambda x: self.f - self.model.allocationFunction2(x)})
         # self.res2 = shgo(self.model.allocationFunction2, args=(self.f,), bounds=bnds, constraints=cons2)
         self.res2 = shgo(lambda x: sum([x[i] for i in range(self.model.numCovariates)]), bounds=bnds, constraints=cons2)
+
+        ## allocation type 2 not integrated into UI yet
+        ## just print results for now
         print(self.res2)
-        print(self.model.allocationFunction2(self.res2.x))
+        print(self.model.allocationFunction2(self.res2.x, self.covariate_data))
         print(np.multiply(np.divide(self.res2.x, np.sum(self.res2.x)), 100))
 
-
-
-
-
-
-    def optimization2(self, x):
-        res = self.model.allocationFunction2(x)
+    def optimization2(self, x, covariate_data):
+        res = self.model.allocationFunction2(x, covariate_data)
         H = res - self.model.mvfList[-1]
         return self.f - H
         # return self.model.allocationFunction2(x) - self.f

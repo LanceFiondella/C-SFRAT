@@ -225,7 +225,10 @@ class TaskThread(QThread):
                 # use shortened name
                 runName = m.shortName + " (" + metricNames + ")"  # "Model (Metric1, Metric2, ...)"
                 self.nextCalculation.emit(runName)
-                m.runEstimation()
+
+                ## THIS IS WHERE SUBSETS OF COVARIATE DATA WILL BE PASSED
+                ## for now, just pass all
+                m.runEstimation(m.covariateData)
                 result[runName] = m
                 self.modelFinished.emit()
         self.taskFinished.emit(result)
