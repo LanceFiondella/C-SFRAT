@@ -44,11 +44,13 @@ class Comparison():
         sseOut = np.zeros(converged)
 
         for i in range(converged):
-            llfOutUniform[i] = self.ahpNegative(llf, i, sideMenu.llfSpinBox, True)
+            # llfOutUniform[i] = self.ahpNegative(llf, i, sideMenu.llfSpinBox, True)
+            llfOutUniform[i] = self.ahp(llf, i, sideMenu.llfSpinBox, True)
             aicOutUniform[i] = self.ahp(aic, i, sideMenu.aicSpinBox, True)
             bicOutUniform[i] = self.ahp(bic, i, sideMenu.bicSpinBox, True)
             sseOutUniform[i] = self.ahp(sse, i, sideMenu.sseSpinBox, True)
-            llfOut[i] = self.ahpNegative(llf, i, sideMenu.llfSpinBox, False)
+            # llfOut[i] = self.ahpNegative(llf, i, sideMenu.llfSpinBox, False)
+            llfOut[i] = self.ahp(llf, i, sideMenu.llfSpinBox, False)
             aicOut[i] = self.ahp(aic, i, sideMenu.aicSpinBox, False)
             bicOut[i] = self.ahp(bic, i, sideMenu.bicSpinBox, False)
             sseOut[i] = self.ahp(sse, i, sideMenu.sseSpinBox, False)
@@ -74,24 +76,25 @@ class Comparison():
     def calcWeightSum(self, sideMenu):
         return sideMenu.llfSpinBox.value() + sideMenu.aicSpinBox.value() + sideMenu.bicSpinBox.value() + sideMenu.sseSpinBox.value()
 
-    def ahpNegative(self, measureList, i, spinBox, uniform):
-        """
-        Calculating weight for LLF is different because its values are negative.
-        """
-        if uniform:
-            weight = 1.0/4.0
-        else:
-            try:
-                weight = spinBox.value()/self._weightSum
-            except ZeroDivisionError:
-                weight = 1.0/4.0
+    # def ahpNegative(self, measureList, i, spinBox, uniform):
+    #     """
+    #     Calculating weight for LLF is different because its values are negative.
+    #     """
+    #     if uniform:
+    #         weight = 1.0/4.0
+    #     else:
+    #         try:
+    #             weight = spinBox.value()/self._weightSum
+    #         except ZeroDivisionError:
+    #             weight = 1.0/4.0
 
-        if len(measureList) > 1:
-            ahp_val = (measureList[i] - max(measureList)) / (min(measureList) - max(measureList)) * weight
-        else:
-            ahp_val = 1.0
+    #     if len(measureList) > 1:
+    #         # ahp_val = (measureList[i] - max(measureList)) / (min(measureList) - max(measureList)) * weight
+    #         ahp_val = (measureList[i] - min(measureList)) / (max(measureList) - min(measureList)) * weight
+    #     else:
+    #         ahp_val = 1.0
 
-        return ahp_val
+    #     return ahp_val
 
     def ahp(self, measureList, i, spinBox, uniform):
         if uniform:
@@ -111,7 +114,7 @@ class Comparison():
         #     ahp_val = .250
 
         if len(measureList) > 1:
-            ahp_val = (measureList[i] - max(measureList)) / (min(measureList) - max(measureList)) * weight
+            ahp_val = (abs(measureList[i]) - max(np.absolute(measureList))) / (min(np.absolute(measureList)) - max(np.absolute(measureList))) * weight
         else:
             ahp_val = 1.0
 

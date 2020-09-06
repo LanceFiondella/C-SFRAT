@@ -72,7 +72,7 @@ class SideMenu2(QVBoxLayout):
     def _setupSideMenu(self):
         """Creates group box widgets and adds them to layout."""
         self.modelsGroup = QGroupBox("Select Model Results")
-        self.failureGroup = QGroupBox("Number of Failures to Predict")
+        self.failureGroup = QGroupBox("Number of Intervals to Predict")
         self.modelsGroup.setLayout(self._setupModelsGroup())
         self.failureGroup.setLayout(self._setupFailureGroup())
         self.addWidget(self.modelsGroup, 7)

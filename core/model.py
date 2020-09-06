@@ -256,8 +256,14 @@ class Model(ABC):
         one_minus_h_k = np.zeros(self.n)
         for i in range(self.n):
             k_term = np.array([one_minus_hazard[i] for k in range(i)])
-            exp_term = np.power((one_minus_hazard[i]), exponent_array[:][:len(k_term)])
-            one_minus_h_k[i] = np.prod(exp_term)
+            
+            # exponent array is just 1 for 0 covariate case, cannot index
+            # have separate case for 0 covariates
+            if self.numCovariates == 0:
+                one_minus_h_k[i] = np.prod(np.array([one_minus_hazard[i]] * len(k_term)))
+            else:
+                exp_term = np.power((one_minus_hazard[i]), exponent_array[:][:len(k_term)])
+                one_minus_h_k[i] = np.prod(exp_term)
 
         failure_sum = np.sum(self.failures)
         product_array = (1.0 - (one_minus_h_i)) * one_minus_h_k
@@ -435,13 +441,7 @@ class Model(ABC):
                     TempTerm2 = TempTerm2 * np.exp(self.covariateData[j][k] * betas[j])
                 sum2 = sum2 * ((1 - h[i])**(TempTerm2))
             prodlist.append(sum1 * sum2)
-        # return omega * sum(prodlist)
-
-        # print("old sum1:", sum1)
-        # print("old sum2:", sum2)
-
-        original_result = omega * sum(prodlist)
-        print("original MVF:", original_result)
+        return omega * sum(prodlist)
 
     def MVF(self, x, omega, stop):
         cov_data = np.array(self.covariateData)
@@ -456,14 +456,14 @@ class Model(ABC):
 
         one_minus_hazard = (1 - h)
         one_minus_h_i = np.power(one_minus_hazard, exponent_array)
-
         one_minus_h_k = np.zeros(stop + 1)
         for i in range(stop + 1):
             k_term = np.array([one_minus_hazard[i] for k in range(i)])
-            exp_term = np.power((one_minus_hazard[i]), exponent_array[:][:len(k_term)])
-            one_minus_h_k[i] = np.prod(exp_term)
-
-        print("*****", i)
+            if self.numCovariates == 0:
+                one_minus_h_k[i] = np.prod(np.array([one_minus_hazard[i]] * len(k_term)))
+            else:
+                exp_term = np.power((one_minus_hazard[i]), exponent_array[:][:len(k_term)])
+                one_minus_h_k[i] = np.prod(exp_term)
 
         product_array = (1.0 - (one_minus_h_i)) * one_minus_h_k
 
@@ -476,7 +476,7 @@ class Model(ABC):
         return sseError
 
     def intensityFit(self, mvf_array):
-        difference = [mvf_array[i+1]-mvf_array[i] for i in range(len(mvf_array)-1)]
+        difference = [mvf_array[i+1]-mvf_array[i] for i in range(len(mvf_array) - 1)]
         return [mvf_array[0]] + difference
 
     def prediction(self, failures):
@@ -492,12 +492,12 @@ class Model(ABC):
 
         mvf_array = np.array([self.MVF_prediction(new_covData, hazard, dataPoints) for dataPoints in range(total_points)])
         intensity_array = self.intensityFit(mvf_array)
-        x = np.arange(0, total_points + 1)
+        x = np.arange(1, total_points + 1)
 
         # add initial point at zero if not present
-        if self.t[0] != 0:
-            mvf_array = np.concatenate((np.zeros(1), mvf_array))
-            intensity_array = np.concatenate((np.zeros(1), intensity_array))
+        # if self.t[0] != 0:
+        #     mvf_array = np.concatenate((np.zeros(1), mvf_array))
+        #     intensity_array = np.concatenate((np.zeros(1), intensity_array))
 
         return (x, mvf_array, intensity_array)
 
@@ -520,10 +520,17 @@ class Model(ABC):
         return self.omega * sum(prodlist)
 
     def allocationFunction(self, x, *args):
-        failures = args[0]
+        # failures = args[0]
         # i = self.n + failures
         i = self.n
         return -(self.MVF_allocation(self.hazardFunction, self.omega, self.betas, i, x))    # must be negative, SHGO uses minimization
+                                                                                            # and we want to maximize fault discovery
+
+    def allocationFunction2(self, x, *args):
+        # failures = args[0]
+        # i = self.n + failures
+        i = self.n
+        return self.MVF_allocation(self.hazardFunction, self.omega, self.betas, i, x)  # we want to minimize, SHGO uses minimization
 
     def MVF_allocation(self, h, omega, betas, stop, x):
         """

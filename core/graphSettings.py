@@ -34,9 +34,9 @@ class PlotSettings:
             # add point at (0, 0) if not there
             x = x.to_numpy()
             y = y.to_numpy()
-            # print(x[0])
-            if x[0] != 0:
-                x, y = self.addZeroPoint(x, y)
+            
+            # if x[0] != 0:
+            #     x, y = self.addZeroPoint(x, y)
 
             # can only have "post" parameter if using a step function
             plotMethod(x, y, self.style, markerSize=self.markerSize, where="post")  # ax.step()
@@ -49,9 +49,9 @@ class PlotSettings:
             # add point at (0, 0) if not there
             x = x.to_numpy()
             y = y.to_numpy()
-            # print(x[0])
-            if x[0] != 0:
-                x, y = self.addZeroPoint(x, y)
+            
+            # if x[0] != 0:
+            #     x, y = self.addZeroPoint(x, y)
 
             plotMethod(x, y, self.style, markerSize=self.markerSize)    # ax.plot()
         return ax
@@ -88,8 +88,8 @@ class PlotSettings:
         plotMethod = getattr(ax, self.plotType)
 
         # add point at (0, 0) if not there
-        if int(x[0]) != 0:
-            x, y = self.addZeroPoint(x, y)
+        # if int(x[0]) != 0:
+        #     x, y = self.addZeroPoint(x, y)
         if self.plotType == "step":
             plotMethod(x, y, self.style, markerSize=self.markerSize, where="post", label=label)
         else:

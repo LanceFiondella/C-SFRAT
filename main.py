@@ -48,7 +48,7 @@ def main(debug):
 
 if __name__ == "__main__":
     # command line arguments
-    parser = argparse.ArgumentParser(description='Covariate Tool')
+    parser = argparse.ArgumentParser(description='C-SFRAT')
     parser.add_argument("-v", '--verbose', action='store_true')
     parser.add_argument('-d', '--debug', action='store_true')
     args = parser.parse_args()

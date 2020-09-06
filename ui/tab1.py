@@ -114,7 +114,7 @@ class SideMenu1(QVBoxLayout):
         modelsGroup.setLayout(self._setupModelsGroup())
         self.addWidget(modelsGroup, 2)
 
-        metricsGroup = QGroupBox("Select Metric(s)")
+        metricsGroup = QGroupBox("Select Covariate(s)")
         metricsGroup.setLayout(self._setupMetricsGroup())
         self.addWidget(metricsGroup, 2)
 

@@ -90,12 +90,16 @@ class Tab3(QWidget):
         #     print(self.table.model())
         #     print(self.dataframe)
 
+        self.sideMenu.comparison.goodnessOfFit(results, self.sideMenu)
+
         rows = []
+        row_index = 0
         for key, model in results.items():
-            # print(self.tableModel._data)
-            # row = [model.shortName, model.metricString, model.llfVal, model.aicVal, model.bicVal, model.sseVal, 0, 0]
-            row = [model.shortName, model.metricString, model.llfVal, model.aicVal, model.bicVal, model.sseVal, 0, 0]
+            row = [model.shortName, model.metricString, model.llfVal, model.aicVal,
+                model.bicVal, model.sseVal, self.sideMenu.comparison.meanOutUniform[row_index],
+                self.sideMenu.comparison.meanOut[row_index]]
             rows.append(row)
+            row_index += 1
         row_df = pd.DataFrame(rows, columns=["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE",
             "Model ranking", "Weighted model ranking"])
         # self.dataframe.loc[self.dataframe.index.max() + 1] = row

@@ -19,13 +19,22 @@ the UI elements. Able to reference all elements and the signals they emit.
 # pay attention to how scaling/strecting works, minimum sizes for UI elements
 # use logging object, removes matplotlib debug messages in debug mode
 # naming "hazard functions" instead of models
-# fsolve doesn't return if converged, so it's not updated for models
-#   should try other scipy functions
 # self.viewType is never updated
 # sometimes metric list doesn't load until interacted with
 # bar chart isn't ideal for large datasets
 # clean up prediction plot
 # tool tips?
+# don't recreate plots, just add/remove lines
+# clear plot 2 when new data is loaded (at least fitted models)
+# ** Plot axes values!
+# handle exceptions in data set (if key not found in column)
+#   currently just crashes
+# default fitted data to smooth plot instead of step plot
+# remove zero point added on plots
+# In tables: integers should not have decimal points
+# plot 2 should have label with just covariate data, when no other models selected
+# menu bar naming
+# optimize prediction: don't calculate all points ever time; wasteful and slow
 ###############################################################################
 
 # For handling debug output
@@ -280,12 +289,15 @@ class MainWindow(QMainWindow):
         self.intensity.setStatusTip("Graphs display failure intensity")
         self.intensity.triggered.connect(self.setIntensityView)
         graphStyle.addAction(self.intensity)
-        # trend test
-        viewTest = QAction("View Trend", self, checkable=True)
-        viewTest.setShortcut('Ctrl+T')
-        viewTest.setStatusTip('View Trend Test')
-        viewTest.triggered.connect(self._main.tab1.sideMenu.testChanged)
-        graphStyle.addAction(viewTest)
+
+        ## REMOVED FOR NOW ##
+        ## trend test
+        # viewTest = QAction("View Trend", self, checkable=True)
+        # viewTest.setShortcut('Ctrl+T')
+        # viewTest.setStatusTip('View Trend Test')
+        # viewTest.triggered.connect(self._main.tab1.sideMenu.testChanged)
+        # graphStyle.addAction(viewTest)
+
         # add actions to view menu
         viewMenu.addSeparator()
         viewMenu.addActions(graphStyle.actions())
