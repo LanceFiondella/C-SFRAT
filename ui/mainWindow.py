@@ -175,7 +175,7 @@ class MainWindow(QMainWindow):
     def _initUI(self):
         """Sets window parameters, fonts, initializes UI elements."""
         # setup main window parameters
-        title = "Covariate Tool"
+        title = "C-SFRAT"
         left = 100
         top = 100
         width = 1280

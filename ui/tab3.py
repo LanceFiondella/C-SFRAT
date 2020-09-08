@@ -105,6 +105,15 @@ class Tab3(QWidget):
         # self.dataframe.loc[self.dataframe.index.max() + 1] = row
         self.tableModel.setAllData(row_df)
 
+
+        # import csv
+
+        # with open('NASA_covariate.csv', 'w') as fileOutput:
+        #     writer = csv.writer(fileOutput)
+        #     writer.writerows(rows)
+
+
+
         self.table.model().layoutChanged.emit()
         # self.table.model().update()
         # self.table.update()

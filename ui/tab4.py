@@ -71,6 +71,12 @@ class Tab4(QWidget):
         self.sideMenu = SideMenu4()
         mainLayout.addLayout(self.sideMenu, 15)
         self.table = self._setupTable()
+
+        ## Adding table should be similar to this. Feel free to add functions
+        # self.table2 = self._setupTable()
+        # self.tabWidget = QTabWidget()
+        # mainLayout.addWidget(self.tabWidget, 85)
+
         mainLayout.addWidget(self.table, 85)
         self.setLayout(mainLayout)
 
@@ -86,7 +92,7 @@ class Tab4(QWidget):
                                                             # column width fit to contents
         table.setRowCount(1)
         table.setColumnCount(3)
-        table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Estimated failures"])
+        table.setHorizontalHeaderLabels(["Model Name", "Covariates", "H"])
 
         header = table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
