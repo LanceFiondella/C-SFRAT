@@ -170,7 +170,7 @@ class SideMenu4(QVBoxLayout):
 
     def _setupSideMenu(self):
         """Creates group box widgets and adds them to layout."""
-        modelsGroup = QGroupBox("Select Models/Metrics for Allocation")
+        modelsGroup = QGroupBox("Select Models for Allocation")
         modelsGroup.setLayout(self._setupModelsGroup())
         optionsGroup = QGroupBox("Allocation Parameters")
         optionsGroup.setLayout(self._setupOptionsGroup())

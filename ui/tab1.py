@@ -4,8 +4,8 @@ import logging as log
 # PyQt5 imports for UI elements
 from PyQt5.QtWidgets import QMessageBox, QWidget, QHBoxLayout, QVBoxLayout, \
                             QLabel, QGroupBox, QComboBox, QListWidget, QPushButton, \
-                            QAbstractItemView, QDoubleSpinBox
-from PyQt5.QtCore import pyqtSignal
+                            QAbstractItemView, QDoubleSpinBox, QSlider
+from PyQt5.QtCore import pyqtSignal, Qt
 
 # Local imports
 import models
@@ -106,15 +106,15 @@ class SideMenu1(QVBoxLayout):
 
     def _setupSideMenu(self):
         """Creates group box widgets and adds them to layout."""
-        sheetGroup = QGroupBox("Select Data")
-        sheetGroup.setLayout(self._setupSheetGroup())
-        self.addWidget(sheetGroup, 1)
+        dataGroup = QGroupBox("Select Data")
+        dataGroup.setLayout(self._setupDataGroup())
+        self.addWidget(dataGroup, 1)
 
-        modelsGroup = QGroupBox("Select Model(s)")
+        modelsGroup = QGroupBox("Select Hazard Functions")
         modelsGroup.setLayout(self._setupModelsGroup())
         self.addWidget(modelsGroup, 2)
 
-        metricsGroup = QGroupBox("Select Covariate(s)")
+        metricsGroup = QGroupBox("Select Covariates")
         metricsGroup.setLayout(self._setupMetricsGroup())
         self.addWidget(metricsGroup, 2)
 
@@ -126,33 +126,27 @@ class SideMenu1(QVBoxLayout):
 
         # signals
         self.sheetSelect.currentIndexChanged.connect(self._emitSheetChangedSignal)   # when sheet selection changed
-        self.testSelect.currentIndexChanged.connect(self.testChanged)   # when trend test selection changed
 
-    def _setupSheetGroup(self):
+        # self.testSelect.currentIndexChanged.connect(self.testChanged)   # when trend test selection changed
+
+    def _setupDataGroup(self):
         """Creates widgets for sheet selection and trend tests.
         
         Returns:
             A QVBoxLayout containing the created sheet group.
         """
 
-        sheetGroupLayout = QVBoxLayout()
+        dataGroupLayout = QVBoxLayout()
 
         self.sheetSelect = QComboBox()
-        self.testSelect = QComboBox()   # select trend test
 
-        trendTests = {cls.__name__: cls for
-                      cls in TrendTest.__subclasses__()}
-        self.testSelect.addItems([test.name for test in
-                                  trendTests.values()])
-        self.testSelect.setEnabled(False)   # begin disabled, showing imported
-                                            # data on startup, not trend test
+        self.slider = QSlider(Qt.Horizontal)
 
-        self.confidenceSpinBox = QDoubleSpinBox()
-        self.confidenceSpinBox.setRange(0.0, 1.0)
-        self.confidenceSpinBox.setSingleStep(0.01)  # step by 0.01
-        self.confidenceSpinBox.setValue(0.95)  # default value
-        self.confidenceSpinBox.setDisabled(True)    # disabled on start up
-        self.confidenceSpinBox.valueChanged.connect(self._emitConfidenceSignal)
+
+        dataGroupLayout.addWidget(QLabel("Select Sheet"))
+        dataGroupLayout.addWidget(self.sheetSelect)
+        dataGroupLayout.addWidget(QLabel("Subset Failure Data"))
+        dataGroupLayout.addWidget(self.slider)
 
 
         ###############################################
@@ -160,14 +154,28 @@ class SideMenu1(QVBoxLayout):
         ###############################################
 
 
-        sheetGroupLayout.addWidget(QLabel("Select Sheet"))
-        sheetGroupLayout.addWidget(self.sheetSelect)
-        # sheetGroupLayout.addWidget(QLabel("Select Trend Test"))
-        # sheetGroupLayout.addWidget(self.testSelect)
-        # sheetGroupLayout.addWidget(QLabel("Specify Laplace Confidence Level"))
-        # sheetGroupLayout.addWidget(self.confidenceSpinBox)
+        # self.testSelect = QComboBox()   # select trend test
 
-        return sheetGroupLayout
+        # trendTests = {cls.__name__: cls for
+        #               cls in TrendTest.__subclasses__()}
+        # self.testSelect.addItems([test.name for test in
+        #                           trendTests.values()])
+        # self.testSelect.setEnabled(False)   # begin disabled, showing imported
+                                            # data on startup, not trend test
+
+        # self.confidenceSpinBox = QDoubleSpinBox()
+        # self.confidenceSpinBox.setRange(0.0, 1.0)
+        # self.confidenceSpinBox.setSingleStep(0.01)  # step by 0.01
+        # self.confidenceSpinBox.setValue(0.95)  # default value
+        # self.confidenceSpinBox.setDisabled(True)    # disabled on start up
+        # self.confidenceSpinBox.valueChanged.connect(self._emitConfidenceSignal)
+        
+        # dataGroupLayout.addWidget(QLabel("Select Trend Test"))
+        # dataGroupLayout.addWidget(self.testSelect)
+        # dataGroupLayout.addWidget(QLabel("Specify Laplace Confidence Level"))
+        # dataGroupLayout.addWidget(self.confidenceSpinBox)
+
+        return dataGroupLayout
 
     def _setupModelsGroup(self):
         """Creates widget containing list of loaded models.

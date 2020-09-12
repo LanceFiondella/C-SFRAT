@@ -236,7 +236,7 @@ class Data:
             data.rename(columns={data.columns[1]:"Failures"}, inplace=True)
         for i in range(numCov):
             if "Unnamed: " in str(data.columns[i+2]):
-                data.rename(columns={data.columns[i+2]:"Metric{0}".format(i+1)}, inplace=True)
+                data.rename(columns={data.columns[i+2]:"Cov{0}".format(i+1)}, inplace=True)
 
     def setNumCovariates(self):
         """

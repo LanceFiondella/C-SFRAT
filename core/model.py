@@ -88,7 +88,7 @@ class Model(ABC):
         self.cumulativeFailures = self.data["CFC"].values
         self.totalFailures = self.cumulativeFailures[-1]
         # list of arrays or array of arrays?
-        self.covariateData = [self.data[name].values for name in self.metricNames]
+        self.covariateData = np.array([self.data[name].values for name in self.metricNames])
         self.numCovariates = len(self.covariateData)
         # self.maxCovariates = self.data.numCovariates    # total number of covariates from imported data
                                                         # data object not passed, just dataframe (which
@@ -316,19 +316,19 @@ class Model(ABC):
         fd = self.convertSym(x, bh, "numpy")
 
         solution_object = scipy.optimize.minimize(self.RLL_minimize, x0=initial, args=(covariate_data,), method='Nelder-Mead')
-        sol = self.optimizeSolution(fd, solution_object.x)
+        self.mle_array = self.optimizeSolution(fd, solution_object.x)
         optimize_stop = time.process_time()
         log.info("Optimization time: %s", optimize_stop - optimize_start)
-        log.info("Optimized solution: %s", sol)
+        log.info("Optimized solution: %s", self.mle_array)
 
-        self.b = sol[0]
-        self.betas = sol[1:]
+        self.b = self.mle_array[0]
+        self.betas = self.mle_array[1:]
         print("betas =", self.betas)
-        # hazard = self.calcHazard(self.b, self.n)
 
-        hazard = [self.hazardFunction(i + 1, self.b) for i in range(self.n)]
-        self.hazard = hazard    # for MVF prediction, don't want to calculate again
-        self.modelFitting(hazard, sol, covariate_data)
+        hazard = np.array([self.hazardFunction(i + 1, self.b) for i in range(self.n)])
+        self.hazard_array = hazard    # for MVF prediction, don't want to calculate again
+        self.modelFitting(hazard, self.mle_array, covariate_data)
+        self.goodnessOfFit(self.mle_array, covariate_data)
 
     def initialEstimates(self):
         bEstimate = [self.b0]
@@ -362,6 +362,12 @@ class Model(ABC):
         self.omega = self.calcOmega(hazard, self.betas, covariate_data)
         log.info("Calculated omega: %s", self.omega)
 
+        self.mvfList = self.MVF_all(mle, self.omega, hazard, covariate_data)
+        log.info("MVF values: %s", self.mvfList)
+        self.intensityList = self.intensityFit(self.mvfList)
+        log.info("Intensity values: %s", self.intensityList)
+
+    def goodnessOfFit(self, mle, covariate_data):
         self.llfVal = self.RLL(mle, covariate_data)
         log.info("Calculated log-likelihood value: %s", self.llfVal)
 
@@ -370,14 +376,10 @@ class Model(ABC):
         log.info("Calculated AIC: %s", self.aicVal)
         self.bicVal = self.BIC(p)
         log.info("Calculated BIC: %s", self.bicVal)
-        self.mvfList = self.MVF_all(mle, self.omega, covariate_data)
 
         self.sseVal = self.SSE(self.mvfList, self.cumulativeFailures)
         log.info("Calculated SSE: %s", self.sseVal)
-        self.intensityList = self.intensityFit(self.mvfList)
 
-        log.info("MVF values: %s", self.mvfList)
-        log.info("Intensity values: %s", self.intensityList)
 
     def calcOmega(self, h, betas, covariate_data):
         # can clean this up to use less loops, probably
@@ -412,30 +414,11 @@ class Model(ABC):
         # number of covariates + number of hazard rate parameters + 1 (omega)
         return len(mle) + 1
 
-    def MVF_all(self, mle, omega, covariate_data):
-        mvf_array = np.array([self.MVF(mle, omega, dataPoints, covariate_data) for dataPoints in range(self.n)])
+    def MVF_all(self, mle, omega, hazard_array, covariate_data):
+        mvf_array = np.array([self.MVF(mle, omega, hazard_array, dataPoints, covariate_data) for dataPoints in range(self.n)])
         return mvf_array
 
-    def MVF_old(self, h, omega, betas, stop):
-        # can clean this up to use less loops, probably
-        prodlist = []
-        for i in range(stop + 1):     # CHANGED THIS FROM self.n + 1 !!!
-            sum1 = 1
-            sum2 = 1
-            TempTerm1 = 1
-            for j in range(self.numCovariates):
-                TempTerm1 = TempTerm1 * np.exp(self.covariateData[j][i] * betas[j])
-            sum1 = 1-((1 - h[i]) ** (TempTerm1))
-            for k in range(i):
-                TempTerm2 = 1
-                for j in range(self.numCovariates):
-                    TempTerm2 = TempTerm2 * np.exp(self.covariateData[j][k] * betas[j])
-                sum2 = sum2 * ((1 - h[i])**(TempTerm2))
-            prodlist.append(sum1 * sum2)
-        return omega * sum(prodlist)
-
-    def MVF(self, x, omega, stop, covariate_data):
-        cov_data = np.array(covariate_data)
+    def MVF(self, x, omega, hazard_array, stop, cov_data):
 
         # gives array with dimensions numCovariates x n, just want n
         exponent_all = np.array([cov_data[i][:stop + 1] * x[i + 1] for i in range(self.numCovariates)])
@@ -443,7 +426,8 @@ class Model(ABC):
         # sum over numCovariates axis to get 1 x n array
         exponent_array = np.exp(np.sum(exponent_all, axis=0))
 
-        h = np.array([self.hazardFunction(i + 1, x[0]) for i in range(stop + 1)])
+        # h = np.array([self.hazardFunction(i + 1, x[0]) for i in range(stop + 1)])
+        h = hazard_array[:stop + 1]
 
         one_minus_hazard = (1 - h)
         one_minus_h_i = np.power(one_minus_hazard, exponent_array)
@@ -475,13 +459,16 @@ class Model(ABC):
         zero_array = np.zeros(failures) # to append to existing covariate data
         new_covData = [0 for i in range(self.numCovariates)]
 
-        newHazard = [self.hazardFunction(i, self.b) for i in range(self.n, total_points)]  # calculate new values for hazard function
-        hazard = self.hazard + newHazard
+        newHazard = np.array([self.hazardFunction(i, self.b) for i in range(self.n, total_points)])  # calculate new values for hazard function
+        # hazard = self.hazard_array + newHazard
+        hazard = np.concatenate((self.hazard_array, newHazard))
 
         for j in range(self.numCovariates):
             new_covData[j] = np.append(covariate_data[j], zero_array)
 
-        mvf_array = np.array([self.MVF_prediction(new_covData, hazard, dataPoints) for dataPoints in range(total_points)])
+        omega = self.calcOmega(hazard, self.betas, covariate_data)
+
+        mvf_array = np.array([self.MVF(self.mle_array, omega, hazard, dataPoints, new_covData) for dataPoints in range(total_points)])
         intensity_array = self.intensityFit(mvf_array)
         x = np.arange(1, total_points + 1)
 
@@ -491,61 +478,3 @@ class Model(ABC):
         #     intensity_array = np.concatenate((np.zeros(1), intensity_array))
 
         return (x, mvf_array, intensity_array)
-
-    def MVF_prediction(self, covariate_data, hazard, stop):
-        # can clean this up to use less loops, probably
-        prodlist = []
-        for i in range(stop + 1):     # CHANGED THIS FROM self.n + 1 !!!
-            sum1 = 1
-            sum2 = 1
-            TempTerm1 = 1
-            for j in range(self.numCovariates):
-                TempTerm1 = TempTerm1 * np.exp(covariate_data[j][i] * self.betas[j])
-            sum1 = 1-((1 - hazard[i]) ** (TempTerm1))
-            for k in range(i):
-                TempTerm2 = 1
-                for j in range(self.numCovariates):
-                    TempTerm2 = TempTerm2 * np.exp(covariate_data[j][k] * self.betas[j])
-                sum2 = sum2 * ((1 - hazard[i])**(TempTerm2))
-            prodlist.append(sum1 * sum2)
-        return self.omega * sum(prodlist)
-
-    def allocationFunction(self, x, covariate_data):
-        # covariate_data = args[1]
-        i = self.n
-        return -(self.MVF_allocation(self.hazardFunction, self.omega, self.betas, i, x, covariate_data))    # must be negative, SHGO uses minimization
-                                                                                            # and we want to maximize fault discovery
-
-    def allocationFunction2(self, x, covariate_data):
-        # failures = args[0]
-        # i = self.n + failures
-        i = self.n
-        return self.MVF_allocation(self.hazardFunction, self.omega, self.betas, i, x, covariate_data)  # we want to minimize, SHGO uses minimization
-
-    def MVF_allocation(self, h, omega, betas, stop, x, covariate_data):
-        """
-        x is vector of covariate metrics chosen for allocation
-        """
-        # can clean this up to use less loops, probably
-
-        covData = [list(covariate_data[j]) for j in range(self.numCovariates)]
-
-        for j in range(self.numCovariates):
-            covData[j].append(x[j])  # append a single variable (x[j]) to the end of each vector of covariate data
-
-        prodlist = []
-        for i in range(stop + 1):     # CHANGED THIS FROM self.n + 1 !!!
-            sum1 = 1
-            sum2 = 1
-            TempTerm1 = 1
-            for j in range(self.numCovariates):
-                TempTerm1 = TempTerm1 * np.exp(covData[j][i] * betas[j])
-            sum1 = 1 - ((1 - h(i + 1, self.b))**(TempTerm1))
-            for k in range(i):
-                TempTerm2 = 1
-                for j in range(self.numCovariates):
-                    TempTerm2 = TempTerm2 * np.exp(covData[j][k] * betas[j])
-                sum2 = sum2 * ((1 - h(i + 1, self.b))**(TempTerm2))
-            prodlist.append(sum1 * sum2)
-
-        return (omega * sum(prodlist))

@@ -543,9 +543,9 @@ class MainWindow(QMainWindow):
         # save previous plot type, always want observed data to be step plot
         previousPlotType = self.plotSettings.plotType
 
-        # disable trend tests when displaying imported data
-        self._main.tab1.sideMenu.testSelect.setDisabled(True)
-        self._main.tab1.sideMenu.confidenceSpinBox.setDisabled(True)
+        ## disable trend tests when displaying imported data
+        # self._main.tab1.sideMenu.testSelect.setDisabled(True)
+        # self._main.tab1.sideMenu.confidenceSpinBox.setDisabled(True)
 
         # tab 1 plot
         self.plotSettings.plotType = "step"
@@ -586,8 +586,8 @@ class MainWindow(QMainWindow):
         # self.plotSettings.plotType = "step"
 
         # disable trend tests when displaying imported data
-        self._main.tab1.sideMenu.testSelect.setDisabled(True)
-        self._main.tab1.sideMenu.confidenceSpinBox.setDisabled(True)
+        # self._main.tab1.sideMenu.testSelect.setDisabled(True)
+        # self._main.tab1.sideMenu.confidenceSpinBox.setDisabled(True)
 
         self.ax = self.plotSettings.generatePlot(self.ax, dataframe['T'], dataframe.iloc[:, 1],
                                                  title="", xLabel="Cumulative time", yLabel="Failures")
