@@ -4,7 +4,8 @@ import logging as log
 # PyQt5 imports for UI elements
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, \
                             QGroupBox, QListWidget, QAbstractItemView, \
-                            QSpinBox
+                            QSpinBox, QDoubleSpinBox, QScrollArea, QLabel, \
+                            QFormLayout
 from PyQt5.QtCore import pyqtSignal
 
 # Local imports
@@ -72,11 +73,11 @@ class SideMenu2(QVBoxLayout):
     def _setupSideMenu(self):
         """Creates group box widgets and adds them to layout."""
         self.modelsGroup = QGroupBox("Select Model Results")
-        self.failureGroup = QGroupBox("Number of Intervals to Predict")
+        self.predictionGroup = QGroupBox("Predictions")
         self.modelsGroup.setLayout(self._setupModelsGroup())
-        self.failureGroup.setLayout(self._setupFailureGroup())
-        self.addWidget(self.modelsGroup, 7)
-        self.addWidget(self.failureGroup, 1)
+        self.predictionGroup.setLayout(self._setupPredictionGroup())
+        self.addWidget(self.modelsGroup, 6)
+        self.addWidget(self.predictionGroup, 4)
 
         self.addStretch(1)
 
@@ -94,20 +95,92 @@ class SideMenu2(QVBoxLayout):
 
         return modelGroupLayout
 
-    def _setupFailureGroup(self):
-        """Creates widget containing failure spin box.
+    def _setupPredictionGroup(self):
+        """Creates widgets that control prediction functionality.
 
         Returns:
-            A QVBoxLayout containing the created failure group.
+            A QVBoxLayout containing the created prediction group.
         """
-        failureGroupLayout = QVBoxLayout()
+        predictionGroupLayout = QVBoxLayout()
+
+        self.scrollLayout = QVBoxLayout()
+        self.scrollWidget = QWidget()
+        self.scrollWidget.setLayout(self.scrollLayout)
+
+        self.effortScrollArea = QScrollArea()
+        self.effortScrollArea.setWidgetResizable(True)
+        # self.effortScrollArea.resize(300, 300)
+        self.effortScrollArea.setWidget(self.scrollWidget)
+
+        self.effortSpinBoxList = []
+
+        predictionGroupLayout.addWidget(QLabel("Specify Effort Per Interval"))
+        predictionGroupLayout.addWidget(self.effortScrollArea, 1)
+
+        # self.addWid("E")
+        # self.addWid("F")
+        # self.addWid("C")
+        # self.addWid("1")
+        # self.addWid("2")
+        # self.addWid("3")
+
+        # self.setupEffortList(["E", "F", "C"])
+
+
+
+
         self.failureSpinBox = QSpinBox()
         self.failureSpinBox.setMinimum(0)
         self.failureSpinBox.setValue(0)
         self.failureSpinBox.valueChanged.connect(self._emitFailureChangedSignal)
-        failureGroupLayout.addWidget(self.failureSpinBox)
+        predictionGroupLayout.addWidget(QLabel("Number of Intervals to Predict"))
+        predictionGroupLayout.addWidget(self.failureSpinBox)
 
-        return failureGroupLayout
+        self.reliabilitySpinBox = QDoubleSpinBox()
+        self.reliabilitySpinBox.setMinimum(0.0)
+        self.reliabilitySpinBox.setValue(0.0)
+        predictionGroupLayout.addWidget(QLabel("Desired Failure Intensity"))
+        predictionGroupLayout.addWidget(self.reliabilitySpinBox)
+
+        return predictionGroupLayout
+
+    def addWid(self, name):
+        hLayout = QHBoxLayout()
+        hLayout.addWidget(QLabel(name), 35)
+        hLayout.addWidget(QDoubleSpinBox(), 65)
+        self.scrollLayout.addLayout(hLayout)
+
+    def updateEffortList(self, covariates):
+        """
+        covariates is list of covariate names
+        """
+
+        self.effortSpinBoxList.clear()
+        
+        self._clearLayout(self.scrollLayout)
+
+        for cov in range(len(covariates)):
+            self.addWid(covariates[cov])
+
+    def _clearLayout(self, layout):
+        # https://stackoverflow.com/questions/4528347/clear-all-widgets-in-a-layout-in-pyqt
+        while self.scrollLayout.count():
+            print(self.scrollLayout.count())
+            child = self.scrollLayout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
+    def setupEffortList(self, covariates):
+        """
+        covariates is list of covariate names
+        """
+        num_cov = len(covariates)
+        # self.effortScrollArea.clear()
+        self.effortSpinBoxList.clear()
+        for i in range(num_cov):
+            effortSpinBox = QDoubleSpinBox()
+            self.effortSpinBoxList.append(effortSpinBox)
+            self.effortScrollArea.add(effortSpinBox)
 
     def _emitModelChangedSignal(self):
         """Emits signal when model list widget selection changed.

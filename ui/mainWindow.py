@@ -378,6 +378,8 @@ class MainWindow(QMainWindow):
         self._main.tab1.sideMenu.sheetSelect.clear()
         # add sheet names from new file
         self._main.tab1.sideMenu.sheetSelect.addItems(self.data.sheetNames)
+        # add spin boxes to tab 2 for each covariate, used for prediction
+        self._main.tab2.sideMenu.updateEffortList(self.data.metricNames)
 
         self.setDataView("view", self.dataViewIndex)
         # self.setMetricList()
@@ -788,7 +790,6 @@ class MainWindow(QMainWindow):
 
                 ## RUN PREDICTION USING SPECIFIED SUBSET OF COVARIATE DATA
                 ## for now, just passing full data
-                print(m.name)
                 self.allocationResults[name] = [EffortAllocation(m, B, f, m.covariateData), m]
 
         self._main.tab4.addResultsToTable(self.allocationResults, self.data)
@@ -828,6 +829,14 @@ class MainWindow(QMainWindow):
             # redraw figure
             self.ax2.legend()
             self.redrawPlot(2)
+
+            ## testing
+            # failure_num = 1
+            # while(mvf_array[-1]-mvf_array[-2] > 0.5):
+            #     print(mvf_array[-1]-mvf_array[-2])
+            #     print(failure_num)
+            #     x, mvf_array, intensity_array = m.prediction(failure_num, m.covariateData)
+            #     failure_num += 1
 
     #endregion
 
