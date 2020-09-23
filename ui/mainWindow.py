@@ -48,7 +48,7 @@ import configparser
 # PyQt5 imports for UI elements
 from PyQt5.QtWidgets import QMainWindow, qApp, QWidget, QTabWidget, \
                             QVBoxLayout, QAction, QActionGroup, QFileDialog
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, Qt
 
 # Local imports
 import models
@@ -220,6 +220,11 @@ class MainWindow(QMainWindow):
         openFile.setShortcut("Ctrl+O")
         openFile.setStatusTip("Import Data File")
         openFile.triggered.connect(self.fileOpened)
+        # export table
+        exportTable = QAction("Export Table", self)
+        exportTable.setShortcut("Ctrl+E")
+        exportTable.setStatusTip("Export Tab 3 Table to csv")
+        exportTable.triggered.connect(self.exportTab3)
         # exit
         exitApp = QAction("Exit", self)
         exitApp.setShortcut("Ctrl+Q")
@@ -227,6 +232,7 @@ class MainWindow(QMainWindow):
         exitApp.triggered.connect(self.closeEvent)
         # add actions to file menu
         fileMenu.addAction(openFile)
+        fileMenu.addAction(exportTable)
         fileMenu.addSeparator()
         fileMenu.addAction(exitApp)
 
@@ -334,6 +340,9 @@ class MainWindow(QMainWindow):
             pass
 
         qApp.quit()
+
+    def exportTab3(self):
+        self._main.tab3.exportTable()
 
     #region Importing, plotting
     def fileOpened(self):
@@ -884,3 +893,33 @@ class MainWidget(QWidget):
         self.tabs.addTab(self.tab4, "Effort Allocation")
 
         self.tabs.resize(300, 200)
+
+    # def keyPressEvent(self, e):
+    #     """
+    #     For copying tab 3 table
+
+    #     https://stackoverflow.com/questions/24971305/copy-pyqt-table-selection-including-column-and-row-headers
+    #     """
+    #     if (e.modifiers() & Qt.ControlModifier):
+    #         # selected = self.tab3.table.selectedIndexes()
+
+    #         selected1 = self.tab3.table.selectionModel()
+    #         print(selected1)
+    #         print(selected1.selection())
+
+    #         selected = selected1.selection()
+    #         print(selected)
+
+    #         if e.key() == Qt.Key_C: #copy
+    #             s = '\t'+"\t".join([str(self.table.horizontalHeaderItem(i).text()) for i in range(selected[0].index(), selected[-1].index()+1)])
+    #             s = s + '\n'
+
+    #             for r in range(selected[0].topRow(), selected[0].bottomRow()+1):
+    #                 s += self.table.verticalHeaderItem(r).text() + '\t'
+    #                 for c in range(selected[0].leftColumn(), selected[0].rightColumn()+1):
+    #                     try:
+    #                         s += str(self.table.item(r ,c).text()) + "\t"
+    #                     except AttributeError:
+    #                         s += "\t"
+    #                 s = s[:-1] + "\n" #eliminate last '\t'
+    #             self.clip.setText(s)

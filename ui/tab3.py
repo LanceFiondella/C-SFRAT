@@ -8,6 +8,9 @@ from PyQt5.QtGui import QFont
 
 import pandas as pd
 
+# For exporting table to csv
+import csv
+
 # Local imports
 from core.comparison import Comparison
 from core.dataClass import PandasModel
@@ -213,6 +216,32 @@ class Tab3(QWidget):
         stylesheet = "::section{Background-color:rgb(250,250,250);}"
         header.setStyleSheet(stylesheet)
         return table
+
+    def exportTable(self):
+        """
+        Export table to csv
+        """
+        # TODO:
+        # permission error (if file is open, etc.)
+        # export other tables
+        # export to excel?
+        # stream writing vs line by line (?), not sure which is better/faster
+
+        # https://stackoverflow.com/questions/57419547/struggling-to-export-csv-data-from-qtablewidget
+        # https://stackoverflow.com/questions/27353026/qtableview-output-save-as-csv-or-txt
+        with open('model_results.csv', 'w', newline='') as stream:
+            writer = csv.writer(stream)
+            for row in range(self.tableModel.rowCount()):
+                rowdata = []
+                for column in range(self.tableModel.columnCount()):
+                    # print(self.tableModel.data(column))
+                    item = self.tableModel._data.iloc[row][column]
+                    if item is not None:
+                        # rowdata.append(unicode(item.text()).encode('utf8'))
+                        rowdata.append(str(item))
+                    else:
+                        rowdata.append('')
+                writer.writerow(rowdata)
 
 
 class SideMenu3(QVBoxLayout):
