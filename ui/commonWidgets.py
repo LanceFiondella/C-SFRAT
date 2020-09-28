@@ -1,6 +1,11 @@
 # PyQt5 imports for UI elements
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QTableView, \
                             QProgressBar, QLabel
+#Temp Imports
+##########################
+from PyQt5.QtWidgets import QTableWidget, QAbstractScrollArea, QHeaderView
+##########################
+
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtCore import Qt
 
@@ -76,6 +81,57 @@ class PlotAndTable(QTabWidget):
         """
         self.tableWidget = QTableView()
         self.addTab(self.tableWidget, tableTabLabel)
+
+#Temporary Test
+###########################################################
+
+
+class TableTabs(QTabWidget):
+
+    def __init__(self, table1Label, table2Label):
+        super().__init__()
+        self._setupTable1Tab(table1Label)
+        self._setupTable2Tab(table2Label)
+
+    def _setupTable1Tab(self, table1Label):
+
+        self.budgetTab = QTableWidget()
+        self.budgetTab.setEditTriggers(QTableWidget.NoEditTriggers)  # make cells unable to be edited
+        self.budgetTab.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+                                                            # column width fit to contents
+        self.budgetTab.setRowCount(1)
+        self.budgetTab.setColumnCount(3)
+        self.budgetTab.setHorizontalHeaderLabels(["Model Name", "Covariates", "H"])
+
+        header = self.budgetTab.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        # provides bottom border for header
+        stylesheet = "::section{Background-color:rgb(250,250,250);}"
+        header.setStyleSheet(stylesheet)
+        self.budgetTab.move(0, 0)
+
+        self.addTab(self.budgetTab, table1Label)
+
+    def _setupTable2Tab(self, table2Label):
+        self.failureTab = QTableWidget()
+        self.failureTab.setEditTriggers(QTableWidget.NoEditTriggers)  # make cells unable to be edited
+        self.failureTab.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+                                                            # column width fit to contents
+        self.failureTab.setRowCount(1)
+        self.failureTab.setColumnCount(3)
+        self.failureTab.setHorizontalHeaderLabels(["Model Name", "Covariates", "Effort"])
+
+        header = self.failureTab.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        # provides bottom border for header
+        stylesheet = "::section{Background-color:rgb(250,250,250);}"
+        header.setStyleSheet(stylesheet)
+        self.failureTab.move(0, 0)
+
+        self.addTab(self.failureTab, table2Label)
+
+#############################################################
+
 
 
 class ComputeWidget(QWidget):

@@ -81,4 +81,4 @@ class EffortAllocation:
         return self.model.MVF(self.model.mle_array, omega, self.hazard_array, new_cov_data.shape[1] - 1, new_cov_data)
 
     def organizeResults(self, results, budget):
-        self.percentages = np.multiply(np.divide(results, budget), 100)
+        return np.multiply(np.divide(results, budget), 100)

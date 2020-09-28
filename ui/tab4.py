@@ -6,9 +6,13 @@ from PyQt5.QtWidgets import QWidget, QMessageBox, QHBoxLayout, QVBoxLayout, QLab
                             QGroupBox, QListWidget, QPushButton, QAbstractItemView, \
                             QTableWidget, QTableWidgetItem, QAbstractScrollArea, \
                             QSpinBox, QDoubleSpinBox, QHeaderView, QRadioButton, \
-                            QSpacerItem, QSizePolicy
+                            QSpacerItem, QSizePolicy, QTabWidget
 from PyQt5.QtCore import pyqtSignal
 
+#Temp Imports
+##########################
+from ui.commonWidgets import TableTabs
+##########################
 
 class Tab4(QWidget):
     """Contains all widgets displayed on tab 4.
@@ -37,32 +41,53 @@ class Tab4(QWidget):
                 results[name] = [EffortAllocation, Model]
             data: Data object contiaining imported data as a Pandas dataframe.
         """
-        self.table.setSortingEnabled(False)  # disable sorting while editing contents
-        self.table.clear()
-        self.table.setColumnCount(3 + len(data.metricNames))
-        self.table.setHorizontalHeaderLabels(self._createHeaderLabels(data.metricNames))
-        self.table.setRowCount(len(results))    # set row count to include all model results, 
+
+        #FOR BUDGET
+        self.TableAndTable.budgetTab.setSortingEnabled(False)  # disable sorting while editing contents
+        self.TableAndTable.budgetTab.clear()
+        self.TableAndTable.budgetTab.setColumnCount(3 + len(data.metricNames))
+        self.TableAndTable.budgetTab.setHorizontalHeaderLabels(self._createHeaderLabels(data.metricNames)[0])
+        self.TableAndTable.budgetTab.setRowCount(len(results))    # set row count to include all model results,
                                                 # even if not converged
+
+        self.TableAndTable.failureTab.setSortingEnabled(False)  # disable sorting while editing contents
+        self.TableAndTable.failureTab.clear()
+        self.TableAndTable.failureTab.setColumnCount(3 + len(data.metricNames))
+        self.TableAndTable.failureTab.setHorizontalHeaderLabels(self._createHeaderLabels(data.metricNames)[1])
+        self.TableAndTable.failureTab.setRowCount(len(results))    # set row count to include all model results,
+                                                # even if not converged
+
         row = 0   # rows
 
         for key, value in results.items():
             res = value[0]
             model = value[1]
 
-            self.table.setItem(row, 0, QTableWidgetItem(model.shortName))   # model name
-            self.table.setItem(row, 1, QTableWidgetItem(model.metricString))  # model metrics
-            self.table.setItem(row, 2, QTableWidgetItem("{0:.2f}".format(res.H)))
+            self.TableAndTable.budgetTab.setItem(row, 0, QTableWidgetItem(model.shortName))   # model name
+            self.TableAndTable.budgetTab.setItem(row, 1, QTableWidgetItem(model.metricString))  # model metrics
+            self.TableAndTable.budgetTab.setItem(row, 2, QTableWidgetItem("{0:.2f}".format(res.H)))
+
+            self.TableAndTable.failureTab.setItem(row, 0, QTableWidgetItem(model.shortName))   # model name
+            self.TableAndTable.failureTab.setItem(row, 1, QTableWidgetItem(model.metricString))  # model metrics
+            self.TableAndTable.failureTab.setItem(row, 2, QTableWidgetItem("{0:.2f}".format(res.budget)))
             # number of columns = number of covariates
+            # For failures tab, do : res.Effort
             j = 0
             for name in model.metricNames:
                 col = data.metricNameDictionary[name]
-                self.table.setItem(row, 3 + col, QTableWidgetItem("{0:.2f}".format(res.percentages[j])))
+                self.TableAndTable.budgetTab.setItem(row, 3 + col, QTableWidgetItem("{0:.2f}".format(res.percentages2[j])))
+                self.TableAndTable.failureTab.setItem(row, 3 + col, QTableWidgetItem("{0:.2f}".format(res.percentages[j])))
+                #For failures tab, do : res.percetages2[]
                 j += 1
             row += 1
 
-        self.table.setRowCount(row)   # set row count to only include converged models
-        self.table.resizeColumnsToContents()    # resize column width after table is edited
-        self.table.setSortingEnabled(True)      # re-enable sorting after table is edited
+        self.TableAndTable.budgetTab.setRowCount(row)   # set row count to only include converged models
+        self.TableAndTable.budgetTab.resizeColumnsToContents()    # resize column width after table is edited
+        self.TableAndTable.budgetTab.setSortingEnabled(True)      # re-enable sorting after table is edited
+
+        self.TableAndTable.failureTab.setRowCount(row)   # set row count to only include converged models
+        self.TableAndTable.failureTab.resizeColumnsToContents()    # resize column width after table is edited
+        self.TableAndTable.failureTab.setSortingEnabled(True)      # re-enable sorting after table is edited
 
     def _setupTab4(self):
         """Creates tab 4 widgets and adds them to layout."""
@@ -77,7 +102,8 @@ class Tab4(QWidget):
         # self.tabWidget = QTabWidget()
         # mainLayout.addWidget(self.tabWidget, 85)
 
-        mainLayout.addWidget(self.table, 85)
+        self.TableAndTable = TableTabs("Allocation 1", "Allocation 2")
+        mainLayout.addWidget(self.TableAndTable, 85)
         self.setLayout(mainLayout)
 
     def _setupTable(self):
@@ -119,12 +145,14 @@ class Tab4(QWidget):
             A list of column headers as strings, including the specifed metric
             names.
         """
+        headerLabels=[]
         percentNames = []
         i = 0
         for name in metricNames:
             percentNames.append("%" + name)
             i += 1
-        headerLabels = ["Model Name", "Covariates", "H"] + percentNames
+        headerLabels.append(["Model Name", "Covariates", "H"] + percentNames)
+        headerLabels.append(["Model Name", "Covariates", "Effort"] + percentNames)
         return headerLabels
 
 
