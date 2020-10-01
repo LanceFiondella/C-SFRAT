@@ -164,6 +164,7 @@ class MainWindow(QMainWindow):
 
         # connect tab2 list changed to refreshing tab 2 plot
         self._main.tab2.sideMenu.failureChangedSignal.connect(self.runPrediction)
+        self._main.tab2.sideMenu.intensityChangedSignal.connect(self.prediction2) # temporary
         self._main.tab3.sideMenu.modelChangedSignal.connect(self.updateComparisonTable)
         # self._main.tab3.sideMenu.modelListWidget.itemActivated().connect(self._main.tab3.addRow)
         self._main.tab3.sideMenu.spinBoxChangedSignal.connect(self.runGoodnessOfFit)
@@ -823,7 +824,8 @@ class MainWindow(QMainWindow):
 
             ## RUN PREDICTION USING SPECIFIED SUBSET OF COVARIATE DATA
             ## for now, just passing full data
-            x, mvf_array, intensity_array = m.prediction(failures, m.covariateData)
+            print(self._main.tab2.sideMenu.effortSpinBoxDict)
+            x, mvf_array, intensity_array = m.prediction(failures, m.covariateData, self._main.tab2.sideMenu.effortSpinBoxDict)
 
             # self.plotSettings.addLine(self.ax2, x, mvfList, "Prediction")
             # MVF view
@@ -846,6 +848,22 @@ class MainWindow(QMainWindow):
             #     print(failure_num)
             #     x, mvf_array, intensity_array = m.prediction(failure_num, m.covariateData)
             #     failure_num += 1
+
+    def prediction2(self, intensity):
+        # run prediction on currently selected combinations in tab 2
+        itemsSelected = len(self._main.tab2.sideMenu.modelListWidget.selectedItems())
+
+        # check to make sure that model combinations are selected before
+        # running prediction
+        if self.estimationComplete and itemsSelected > 0:
+            # gets first selected item
+            name = self._main.tab2.sideMenu.modelListWidget.selectedItems()[0].text()
+            m = self.estimationResults[name]  # model indexed by the name
+
+            ## RUN PREDICTION USING SPECIFIED SUBSET OF COVARIATE DATA
+            ## for now, just passing full data
+            # x, mvf_array, intensity_array = m.prediction_intensity(intensity, m.covariateData)
+            m.prediction_intensity(intensity, m.covariateData)
 
     #endregion
 

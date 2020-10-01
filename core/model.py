@@ -80,6 +80,7 @@ class Model(ABC):
         self.data = kwargs["data"]                  # dataframe
         self.metricNames = kwargs["metricNames"]    # selected metric names (strings)
         self.config = kwargs['config']
+        # self.covariate_indices = kwargs['indices']
         # self.t = self.data.iloc[:, 0].values            # failure times, from first column of dataframe
         # self.failures = self.data.iloc[:, 1].values     # number of failures, from second column of dataframe
         self.t = self.data["T"].values     # failure times
@@ -384,6 +385,9 @@ class Model(ABC):
     def calcOmega(self, h, betas, covariate_data):
         # can clean this up to use less loops, probably
         prodlist = []
+        # for i in range(self.n):
+        print(self.n)
+        print(len(h))
         for i in range(self.n):
             sum1 = 1
             sum2 = 1
@@ -454,21 +458,47 @@ class Model(ABC):
         difference = [mvf_array[i+1]-mvf_array[i] for i in range(len(mvf_array) - 1)]
         return [mvf_array[0]] + difference
 
-    def prediction(self, failures, covariate_data):
+    def prediction(self, failures, covariate_data, effortDict):
+        """
+        effortDict: dictionary containing all prediction effort spin box widgets,
+            indexed by covariate string
+        """
+
+        print(effortDict)
         total_points = self.n + failures
-        zero_array = np.zeros(failures) # to append to existing covariate data
-        new_covData = [0 for i in range(self.numCovariates)]
+
+        # new_array = np.zeros(self.numCovariates)
+        new_array = []
+        i = 0
+        for cov in self.metricNames:
+            value = effortDict[cov].value()
+            new_array.append(np.full(failures, value))
+            i += 1
+        print(new_array)
+
+        if self.numCovariates == 0:
+            combined_array = np.concatenate((covariate_data, np.array(new_array)))
+        else:
+            combined_array = np.concatenate((covariate_data, np.array(new_array)), axis=1)
+
+        print(combined_array)
 
         newHazard = np.array([self.hazardFunction(i, self.b) for i in range(self.n, total_points)])  # calculate new values for hazard function
         # hazard = self.hazard_array + newHazard
         hazard = np.concatenate((self.hazard_array, newHazard))
 
-        for j in range(self.numCovariates):
-            new_covData[j] = np.append(covariate_data[j], zero_array)
 
-        omega = self.calcOmega(hazard, self.betas, covariate_data)
 
-        mvf_array = np.array([self.MVF(self.mle_array, omega, hazard, dataPoints, new_covData) for dataPoints in range(total_points)])
+        ## VERIFY OMEGA VALUE, should we continue updating??
+
+        # omega = self.calcOmega(hazard, self.betas, new_covData)
+        omega = self.calcOmega(hazard, self.betas, combined_array)
+
+        # print(omega)
+        # print(self.omega)
+
+
+        mvf_array = np.array([self.MVF(self.mle_array, omega, hazard, dataPoints, combined_array) for dataPoints in range(total_points)])
         intensity_array = self.intensityFit(mvf_array)
         x = np.arange(1, total_points + 1)
 
@@ -478,3 +508,36 @@ class Model(ABC):
         #     intensity_array = np.concatenate((np.zeros(1), intensity_array))
 
         return (x, mvf_array, intensity_array)
+
+    def prediction_intensity(self, intensity, covariate_data):
+        res = scipy.optimize.root_scalar(self.pred_function, x0=self.n+1, x1=self.n+3, args=(intensity, covariate_data))
+        print(res)
+
+
+    def pred_function(self, n, intensity, covariate_data):
+        print("n =", n)
+        x = int(n)
+        print("x =", x)
+
+        zero_array = np.zeros(x - self.n)    # to append to existing covariate data
+        new_covData = [0 for i in range(self.numCovariates)]
+
+        newHazard = np.array([self.hazardFunction(i, self.b) for i in range(self.n, x)])  # calculate new values for hazard function
+        # hazard = self.hazard_array + newHazard
+        hazard = np.concatenate((self.hazard_array, newHazard))
+
+        for j in range(self.numCovariates):
+            new_covData[j] = np.append(covariate_data[j], zero_array)
+
+        # print(self.n)
+        # print(len(new_covData))
+        
+        omega1 = self.calcOmega(hazard, self.betas, new_covData)
+        omega2 = self.calcOmega(hazard[:-1], self.betas, new_covData)
+
+        # print(len(hazard), x, len(new_covData[0]))
+        mvf_unknown = self.MVF(self.mle_array, omega1, hazard, x-1, new_covData)
+        mvf_known = self.MVF(self.mle_array, omega2, hazard, x-2, new_covData)
+
+        print(mvf_unknown - mvf_known - intensity)
+        return mvf_unknown - mvf_known - intensity

@@ -45,7 +45,7 @@ class Tab3(QWidget):
         self.table.setSortingEnabled(False) # disable sorting while editing contents
         self.table.clear()
         self.table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
-                                              "SSE", "Model ranking", "Weighted model ranking"])
+                                              "SSE", "Critic (Mean)", "Critic (Median)"])
                                               #"Weighted selection (mean)", "Weighted selection (median)"])
         self.table.setRowCount(len(results))    # set row count to include all model results, 
                                                 # even if not converged
@@ -62,8 +62,8 @@ class Tab3(QWidget):
                 self.table.setItem(i, 4, QTableWidgetItem("{0:.3f}".format(model.bicVal)))
                 self.table.setItem(i, 5, QTableWidgetItem("{0:.3f}".format(model.sseVal)))
                 try:
-                    self.table.setItem(i, 6, QTableWidgetItem("{0:.3f}".format(self.sideMenu.comparison.meanOutUniform[i])))
-                    self.table.setItem(i, 7, QTableWidgetItem("{0:.3f}".format(self.sideMenu.comparison.meanOut[i])))
+                    self.table.setItem(i, 6, QTableWidgetItem("{0:.3f}".format(self.sideMenu.comparison.meanOut[i])))
+                    self.table.setItem(i, 7, QTableWidgetItem("{0:.3f}".format(self.sideMenu.comparison.medianOut[i])))
                 except TypeError:
                     # if no models converge, meanOut and meanOutUniform are set to None
                     # don't add item to table if type is None
@@ -74,8 +74,8 @@ class Tab3(QWidget):
         self.table.setSortingEnabled(True)      # re-enable sorting after table is edited
 
         try:
-            self.table.item(self.sideMenu.comparison.bestMeanUniform, 6).setFont(self.font)
-            self.table.item(self.sideMenu.comparison.bestMean, 7).setFont(self.font)
+            self.table.item(self.sideMenu.comparison.bestMean, 6).setFont(self.font)
+            self.table.item(self.sideMenu.comparison.bestMedian, 7).setFont(self.font)
         except TypeError:
             # if no models converge, bestMean and bestMeanUniform will be None type
             # do not set cells to bold if they are None
@@ -98,13 +98,18 @@ class Tab3(QWidget):
         rows = []
         row_index = 0
         for key, model in results.items():
-            row = [model.shortName, model.metricString, model.llfVal, model.aicVal,
-                model.bicVal, model.sseVal, self.sideMenu.comparison.meanOutUniform[row_index],
-                self.sideMenu.comparison.meanOut[row_index]]
+            row = [model.shortName,
+                   model.metricString,
+                   model.llfVal,
+                   model.aicVal,
+                   model.bicVal,
+                   model.sseVal,
+                   self.sideMenu.comparison.meanOut[row_index],
+                   self.sideMenu.comparison.medianOut[row_index]]
             rows.append(row)
             row_index += 1
         row_df = pd.DataFrame(rows, columns=["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE",
-            "Model ranking", "Weighted model ranking"])
+            "Critic (Mean)", "Critic (Median)"])
         # self.dataframe.loc[self.dataframe.index.max() + 1] = row
         self.tableModel.setAllData(row_df)
 
@@ -121,44 +126,25 @@ class Tab3(QWidget):
         # self.table.model().update()
         # self.table.update()
 
-    def addRow(self, model, results):
-        # new row inserted at end of table, after last row
-        rowCount = self.table.rowCount()
-
-        self.table.setItem(rowCount, 0, QTableWidgetItem(model.shortName))
-        self.table.setItem(rowCount, 1, QTableWidgetItem(model.metricString))
-        self.table.setItem(rowCount, 2, QTableWidgetItem("{0:.3f}".format(model.llfVal)))
-        self.table.setItem(rowCount, 3, QTableWidgetItem("{0:.3f}".format(model.aicVal)))
-        self.table.setItem(rowCount, 4, QTableWidgetItem("{0:.3f}".format(model.bicVal)))
-        self.table.setItem(rowCount, 5, QTableWidgetItem("{0:.3f}".format(model.sseVal)))
-        try:
-            self.table.setItem(rowCount, 6,QTableWidgetItem("{0:.3f}".format(self.sideMenu.comparison.meanOutUniformDict[model.combinationName])))
-            self.table.setItem(rowCount, 7, QTableWidgetItem("{0:.3f}".format(self.sideMenu.comparison.meanOutDict[model.combinationName])))
-        except TypeError:
-            # if no models converge, meanOut and meanOutUniform are set to None
-            # don't add item to table if type is None
-            pass
-
-
     # def addRow(self, model, results):
     #     row = [model.shortName, model.metricString, model.llfVal, model.aicVal, model.bicVal, model.sseVal]
     #     self.dataframe.append(row)
 
     #     self.table.model().layoutChanged.emit()
 
-    def removeRow(self, model):
-        # iterate over all rows, linear search
-        rowCount = self.table.rowCount()
+    # def removeRow(self, model):
+    #     # iterate over all rows, linear search
+    #     rowCount = self.table.rowCount()
 
-        for row in range(rowCount):
-            modelName = self.table.item(row, 0)
-            # first check if model name is the same as in table
-            if modelName == model.shortName:
-                covariates = self.table.item(row, 1)
-                # finally, check if metric names are the same
-                if covariates == model.metricNames:
-                    # if both are the same, then this is the row to be deleted
-                    self.table.removeRow(row)
+    #     for row in range(rowCount):
+    #         modelName = self.table.item(row, 0)
+    #         # first check if model name is the same as in table
+    #         if modelName == model.shortName:
+    #             covariates = self.table.item(row, 1)
+    #             # finally, check if metric names are the same
+    #             if covariates == model.metricNames:
+    #                 # if both are the same, then this is the row to be deleted
+    #                 self.table.removeRow(row)
 
     def _setupTab3(self):
         """Creates tab 3 widgets and adds them to layout."""
@@ -183,7 +169,7 @@ class Tab3(QWidget):
                                                                     # column width fit to contents
         table.setRowCount(1)
         columnLabels = ["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
-                        "SSE", "Model ranking", "Weighted model ranking"]
+                        "SSE", "Critic (Mean)", "Critic (Median)"]
         table.setColumnCount(len(columnLabels))
         table.setHorizontalHeaderLabels(columnLabels)
         table.move(0, 0)
@@ -199,7 +185,7 @@ class Tab3(QWidget):
     def _setupTable(self):
 
         self.dataframe = pd.DataFrame(columns=["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
-                                              "SSE", "Model ranking", "Weighted model ranking"])
+                                              "SSE", "Critic (Mean)", "Critic (Median)"])
         self.tableModel = PandasModel(self.dataframe)
         # self.proxyModel = QSortFilterProxyModel()
         # self.proxyModel.setSourceModel(self.tableModel)

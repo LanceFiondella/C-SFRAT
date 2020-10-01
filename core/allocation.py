@@ -12,7 +12,7 @@ class EffortAllocation:
         self.runAllocation()
         self.runAllocation2()
         self.percentages = self.organizeResults(self.res.x, self.B)
-        self.percentages2 = self.organizeResults(self.res2.x, self.budget)
+        self.percentages2 = self.organizeResults(self.res2.x, self.effort)
 
     def runAllocation(self):
 

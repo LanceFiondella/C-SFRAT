@@ -55,6 +55,7 @@ class SideMenu2(QVBoxLayout):
     modelChangedSignal = pyqtSignal(list)   # changes based on selection of
                                             # models in tab 2
     failureChangedSignal = pyqtSignal(int)  # changes based on failure spin box
+    intensityChangedSignal = pyqtSignal(int)
 
     def __init__(self):
         """Initializes tab 2 side menu UI elements."""
@@ -112,7 +113,7 @@ class SideMenu2(QVBoxLayout):
         # self.effortScrollArea.resize(300, 300)
         self.effortScrollArea.setWidget(self.scrollWidget)
 
-        self.effortSpinBoxList = []
+        self.effortSpinBoxDict = {}
 
         predictionGroupLayout.addWidget(QLabel("Specify Effort Per Interval"))
         predictionGroupLayout.addWidget(self.effortScrollArea, 1)
@@ -127,8 +128,6 @@ class SideMenu2(QVBoxLayout):
         # self.setupEffortList(["E", "F", "C"])
 
 
-
-
         self.failureSpinBox = QSpinBox()
         self.failureSpinBox.setMinimum(0)
         self.failureSpinBox.setValue(0)
@@ -139,6 +138,7 @@ class SideMenu2(QVBoxLayout):
         self.reliabilitySpinBox = QDoubleSpinBox()
         self.reliabilitySpinBox.setMinimum(0.0)
         self.reliabilitySpinBox.setValue(0.0)
+        self.reliabilitySpinBox.valueChanged.connect(self._emitIntensityChangedSignal)
         predictionGroupLayout.addWidget(QLabel("Desired Failure Intensity"))
         predictionGroupLayout.addWidget(self.reliabilitySpinBox)
 
@@ -147,7 +147,11 @@ class SideMenu2(QVBoxLayout):
     def addWid(self, name):
         hLayout = QHBoxLayout()
         hLayout.addWidget(QLabel(name), 35)
-        hLayout.addWidget(QDoubleSpinBox(), 65)
+        spinBox = QDoubleSpinBox()
+        hLayout.addWidget(spinBox, 65)
+
+        self.effortSpinBoxDict[name] = spinBox
+
         self.scrollLayout.addLayout(hLayout)
 
     def updateEffortList(self, covariates):
@@ -155,7 +159,7 @@ class SideMenu2(QVBoxLayout):
         covariates is list of covariate names
         """
 
-        self.effortSpinBoxList.clear()
+        self.effortSpinBoxDict.clear()
         
         self._clearLayout(self.scrollLayout)
 
@@ -164,23 +168,48 @@ class SideMenu2(QVBoxLayout):
 
     def _clearLayout(self, layout):
         # https://stackoverflow.com/questions/4528347/clear-all-widgets-in-a-layout-in-pyqt
-        while self.scrollLayout.count():
-            print(self.scrollLayout.count())
-            child = self.scrollLayout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
+        # need to loop twice:
+        # scoll area contains vbox layout
+        # each element of vbox layout contains hbox layout
+        # then, we delete all widgets for each hbox (label and spin box)
+        # deleting child widgets of layout should delete layout
 
-    def setupEffortList(self, covariates):
-        """
-        covariates is list of covariate names
-        """
-        num_cov = len(covariates)
-        # self.effortScrollArea.clear()
-        self.effortSpinBoxList.clear()
-        for i in range(num_cov):
-            effortSpinBox = QDoubleSpinBox()
-            self.effortSpinBoxList.append(effortSpinBox)
-            self.effortScrollArea.add(effortSpinBox)
+        # loop over all hbox layouts in main vbox layout
+        while layout.count():
+            # access hbox at index 0
+            hbox = layout.takeAt(0)
+            # loop over all widgets in hbox
+            while hbox.count():
+                # access widget at index 0
+                child = hbox.takeAt(0)
+                if child.widget():
+                    # delete widget
+                    child.widget().deleteLater()
+
+        # for i in reversed(range(layout.count())):
+        #     print(i)
+        #     layout.itemAt(i).widget().setParent(None)
+
+        # if layout is not None:
+        #     while layout.count():
+        #         item = layout.takeAt(0)
+        #         widget = item.widget()
+        #         if widget is not None:
+        #             widget.deleteLater()
+        #         else:
+        #             self.clearLayout(item.layout())
+
+    # def setupEffortList(self, covariates):
+    #     """
+    #     covariates is list of covariate names
+    #     """
+    #     num_cov = len(covariates)
+    #     # self.effortScrollArea.clear()
+    #     self.effortSpinBoxList.clear()
+    #     for i in range(num_cov):
+    #         effortSpinBox = QDoubleSpinBox()
+    #         self.effortSpinBoxList.append(effortSpinBox)
+    #         self.effortScrollArea.add(effortSpinBox)
 
     def _emitModelChangedSignal(self):
         """Emits signal when model list widget selection changed.
@@ -198,3 +227,6 @@ class SideMenu2(QVBoxLayout):
         The emitted signal contains the number of future failures to predict.
         """
         self.failureChangedSignal.emit(failures)
+
+    def _emitIntensityChangedSignal(self, intensity):
+        self.intensityChangedSignal.emit(intensity)

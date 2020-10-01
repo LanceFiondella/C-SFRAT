@@ -7,10 +7,12 @@ class Comparison():
     """
 
     def __init__(self):
-        self.meanOutUniform = None
+        # self.meanOutUniform = None
         self.meanOut = None
-        self.bestMeanUniform = None
+        self.medianOut = None
+        # self.bestMeanUniform = None
         self.bestMean = None
+        self.bestMedian = None
 
         # self.meanOutUniformDict = {}
         # self.meanOutDict = {}
@@ -58,9 +60,10 @@ class Comparison():
         ahpArrayUniform = np.array([llfOutUniform, aicOutUniform, bicOutUniform, sseOutUniform])
         ahpArray = np.array([llfOut, aicOut, bicOut, sseOut])   # array of goodness of fit arrays
 
-        self.meanOutUniform = np.mean(ahpArrayUniform, axis=0)
+        # self.meanOutUniform = np.mean(ahpArrayUniform, axis=0)
         self.meanOut = np.mean(ahpArray, axis=0)  # mean of each goodness of fit measure,
                                                     # for each model/metric combination
+        self.medianOut = np.median(ahpArray, axis=0)
 
         # store results in dictionary indexed by combination name
         # for key, model in results.items():
@@ -123,8 +126,10 @@ class Comparison():
     def bestCombinations(self):
         # store the index of model combinations that have the highest value, will bold these cells
         try:
-            self.bestMeanUniform = np.argmax(self.meanOutUniform)
+            # self.bestMeanUniform = np.argmax(self.meanOutUniform)
             self.bestMean = np.argmax(self.meanOut)
+            self.bestMedian = np.argmax(self.meanOut)
         except ValueError:
-            self.bestMeanUniform = None
+            # self.bestMeanUniform = None
             self.bestMean = None
+            self.bestMedian = None

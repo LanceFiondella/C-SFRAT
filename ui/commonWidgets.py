@@ -275,6 +275,15 @@ class TaskThread(QThread):
                 metricNames = ", ".join(metricCombination)
                 if (metricCombination == ["None"]):
                     metricCombination = []
+
+                # # record indices of covariates, relative to stored data
+                # print(self._data.metricNames)
+                # print(metricCombination)
+                # indices = []
+                # for cov in metricCombination:
+                #     print(self._data.metricNames.index(cov))
+                #     indices.append(self._data.metricNames.index(cov))
+
                 m = model(data=self._data.getData(), metricNames=metricCombination, config=self._config)
 
                 # this is the name used in tab 2 and tab 4 side menus
