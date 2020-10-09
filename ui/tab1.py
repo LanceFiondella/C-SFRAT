@@ -71,6 +71,7 @@ class SideMenu1(QVBoxLayout):
                                                 # for enabling/disabling confidence spin box
     confidenceSignal = pyqtSignal(float)
     runModelSignal = pyqtSignal(dict)
+    sliderSignal = pyqtSignal(int)
 
     def __init__(self):
         """Initializes tab 1 side menu UI elements."""
@@ -103,6 +104,15 @@ class SideMenu1(QVBoxLayout):
         self.confidenceSpinBox.setEnabled(True)
         # self.viewMode.setEnabled(False)
         self.viewChangedSignal.emit('trend', self.testSelect.currentIndex())
+
+    def updateSlider(self, max_value):
+        """
+        Called when new data is imported/sheet changed. Updates slider to
+        include all data points.
+        """
+        self.slider.setMaximum(max_value)
+        self.slider.setValue(max_value)
+        self.sliderLabel.setText(str(max_value))
 
     def _setupSideMenu(self):
         """Creates group box widgets and adds them to layout."""
@@ -140,13 +150,24 @@ class SideMenu1(QVBoxLayout):
 
         self.sheetSelect = QComboBox()
 
-        self.slider = QSlider(Qt.Horizontal)
+        sliderLayout = QHBoxLayout()
 
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setTickPosition(QSlider.TicksBelow)
+        self.slider.setTickInterval(1)
+        self.slider.setMinimum(1)
+        self.slider.setMaximum(1)
+        self.slider.valueChanged.connect(self._emitSliderSignal)
+
+        self.sliderLabel = QLabel("")
+
+        sliderLayout.addWidget(self.slider, 9)
+        sliderLayout.addWidget(self.sliderLabel, 1)
 
         dataGroupLayout.addWidget(QLabel("Select Sheet"))
         dataGroupLayout.addWidget(self.sheetSelect)
         dataGroupLayout.addWidget(QLabel("Subset Failure Data"))
-        dataGroupLayout.addWidget(self.slider)
+        dataGroupLayout.addLayout(sliderLayout)
 
 
         ###############################################
@@ -280,3 +301,7 @@ class SideMenu1(QVBoxLayout):
         changed to, as a float.
         """
         self.confidenceSignal.emit(self.confidenceSpinBox.value())
+
+    def _emitSliderSignal(self):
+        self.sliderLabel.setText(str(self.slider.value()))
+        self.sliderSignal.emit(self.slider.value())

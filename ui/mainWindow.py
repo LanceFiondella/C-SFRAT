@@ -157,6 +157,7 @@ class MainWindow(QMainWindow):
         # SIGNAL CONNECTIONS
         self.importFileSignal.connect(self.importFile)
         self._main.tab1.sideMenu.viewChangedSignal.connect(self.setDataView)
+        self._main.tab1.sideMenu.sliderSignal.connect(self.subsetData)
         # run models when signal is received
         self._main.tab1.sideMenu.runModelSignal.connect(self.runModels)
         self._main.tab1.sideMenu.confidenceSignal.connect(self.updateLaplaceConfidencePlot)
@@ -391,8 +392,9 @@ class MainWindow(QMainWindow):
         # add spin boxes to tab 2 for each covariate, used for prediction
         self._main.tab2.sideMenu.updateEffortList(self.data.metricNames)
 
-        self.setDataView("view", self.dataViewIndex)
-        # self.setMetricList()
+        # self.setDataView("view", self.dataViewIndex)
+
+        self.changeSheet(self.dataViewIndex)
 
     def runSymbolic(self):
         """Initiates symbolic calculations that run on SymbolicThread.
@@ -426,6 +428,13 @@ class MainWindow(QMainWindow):
             self.ax2.autoscale_view()
             self._main.tab2.plot.figure.canvas.draw()
 
+    def subsetData(self, slider_value):
+        # minimum subset is 5 data points
+        if slider_value < 5:
+            self._main.tab1.sideMenu.slider.setValue(5)
+        self.data.max_interval = slider_value
+        self.updateUI()
+
     def changeSheet(self, index):
         """Changes the current sheet displayed.
 
@@ -433,7 +442,10 @@ class MainWindow(QMainWindow):
             index: The index of the sheet (int).
         """
         self.data.currentSheet = index      # store
-        self.setDataView("view", self.dataViewIndex)
+        self.data.max_interval = self.data.n
+        self._main.tab1.sideMenu.updateSlider(self.data.n)
+        # self.setDataView("view", self.dataViewIndex)
+        self.updateUI()
         self.redrawPlot(1)
         self.setMetricList()
 
@@ -579,7 +591,7 @@ class MainWindow(QMainWindow):
             for modelName in self.selectedModelNames:
                 # add line for model if selected
                 model = self.estimationResults[modelName]
-                self.plotSettings.addLine(self.ax2, model.t, model.mvfList, modelName)
+                self.plotSettings.addLine(self.ax2, model.t, model.mvf_array, modelName)
 
     def createIntensityPlot(self, dataframe):
         """Creates intensity plots for tabs 1 and 2.
@@ -669,7 +681,8 @@ class MainWindow(QMainWindow):
         self.dataViewIndex = 0
         log.info("Data plots set to MVF view.")
 
-        self.setDataView("view", self.dataViewIndex)
+        # self.setDataView("view", self.dataViewIndex)
+        self.updateUI()
         # if self.dataLoaded:
         #     self.setRawDataView(self.dataViewIndex)
 
@@ -863,7 +876,7 @@ class MainWindow(QMainWindow):
             ## RUN PREDICTION USING SPECIFIED SUBSET OF COVARIATE DATA
             ## for now, just passing full data
             # x, mvf_array, intensity_array = m.prediction_intensity(intensity, m.covariateData)
-            m.prediction_intensity(intensity, m.covariateData)
+            m.prediction_intensity(intensity, m.covariateData, self._main.tab2.sideMenu.effortSpinBoxDict)
 
     #endregion
 

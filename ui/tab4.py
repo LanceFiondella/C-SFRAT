@@ -69,7 +69,7 @@ class Tab4(QWidget):
 
             self.TableAndTable.failureTab.setItem(row, 0, QTableWidgetItem(model.shortName))   # model name
             self.TableAndTable.failureTab.setItem(row, 1, QTableWidgetItem(model.metricString))  # model metrics
-            self.TableAndTable.failureTab.setItem(row, 2, QTableWidgetItem("{0:.2f}".format(res.budget)))
+            self.TableAndTable.failureTab.setItem(row, 2, QTableWidgetItem("{0:.2f}".format(res.effort)))
             # number of columns = number of covariates
             # For failures tab, do : res.Effort
             j = 0
@@ -265,7 +265,7 @@ class SideMenu4(QVBoxLayout):
         self.budgetSpinBox.setValue(20)
         budgetVertical.addWidget(self.budgetSpinBox)
 
-        tempBudget.addWidget(QRadioButton())
+        # tempBudget.addWidget(QRadioButton())
         tempBudget.addLayout(budgetVertical, 1)
 
         failuresVertical.addWidget(QLabel("Failures"))
@@ -274,7 +274,7 @@ class SideMenu4(QVBoxLayout):
         self.failureSpinBox.setRange(1, 999999)
         failuresVertical.addWidget(self.failureSpinBox)
 
-        tempFailures.addWidget(QRadioButton())
+        # tempFailures.addWidget(QRadioButton())
         tempFailures.addLayout(failuresVertical,1)
 
         optionsGroupLayout.addLayout(tempBudget)

@@ -27,10 +27,12 @@ class Data:
         self.dataSet = {"None": None}
         # self._numCovariates = 0
         self.numCovariates = 0
+        self.n = 0
         self.containsHeader = True
         self.metricNames = []
         self.metricNameCombinations = []
         self.metricNameDictionary = {}
+        self._max_interval = 0
         self.setupMetricNameDictionary()
 
     @property
@@ -47,10 +49,26 @@ class Data:
             log.info("Cannot set sheet to index %d since the data does not contain a sheet with that index.\
                       Sheet index instead set to 0.", index)
 
+    @property
+    def max_interval(self):
+        return self._max_interval
+
+    @max_interval.setter
+    def max_interval(self, interval):
+        if interval < 5:
+            self._max_interval = 5
+        else:
+            self._max_interval = interval
+
     def getData(self):
         """
         Returns dataframe corresponding to the currentSheet index
         """
+        full_dataset = self.dataSet[self.sheetNames[self._currentSheet]]
+        subset = full_dataset[:self._max_interval]
+        return subset
+
+    def getFullData(self):
         return self.dataSet[self.sheetNames[self._currentSheet]]
 
     def getDataModel(self):
@@ -135,6 +153,7 @@ class Data:
         self._currentSheet = 0
         self.setData(data)
         self.setNumCovariates()
+        self.n = data[self.sheetNames[self._currentSheet]]['FC'].size
         # self.metricNames = self.dataSet[self.sheetNames[self._currentSheet]].columns.values[2:2+self.numCovariates]
         self.setMetricNames()
         self.getMetricNameCombinations()
@@ -297,7 +316,22 @@ class PandasModel(QtCore.QAbstractTableModel):
     def data(self, index, role=QtCore.Qt.DisplayRole):
         if index.isValid():
             if role == QtCore.Qt.DisplayRole:
+                # credit: https://www.learnpyqt.com/courses/model-views/qtableview-modelviews-numpy-pandas/
+                # get raw value
+                value = self._data.values[index.row()][index.column()]
+
+                # Perform per-type checks and render accordingly
+                if isinstance(value, float):
+                    # Render float to 3 decimal places
+                    return QtCore.QVariant("%.3f" % value)
+
+                if isinstance(value, str):
+                    return QtCore.QVariant("%s" % value)
+
+                # Default
                 return QtCore.QVariant(self.round(self._data.values[index.row()][index.column()]))
+
+        # Not valid
         return QtCore.QVariant()
 
     def round(self, value):
@@ -314,12 +348,15 @@ class PandasModel(QtCore.QAbstractTableModel):
 
     def sort(self, Ncol, order):
         """Sort table by given column number."""
-        self.layoutAboutToBeChanged.emit()
-        self.data = self.data.sort_values(self.headers[Ncol], ascending=order == Qt.AscendingOrder)
+        self.layoutAboutToBeChanged.emit()  # not sure where this conects
+        data = self._data
+        # self.data = self.data.sort_values(self.headers[Ncol], ascending=order == Qt.AscendingOrder)
+        try:
+            self._data = data.sort_values(data.columns[Ncol], ascending=order == QtCore.Qt.AscendingOrder)
+        except IndexError:
+            # occurs on startup, when dataframe contains no data
+            pass
         self.layoutChanged.emit()
-
-    # def setData(self, index, value):
-    #     self._data.iloc[index] = value
 
     def setAllData(self, new_data):
         """

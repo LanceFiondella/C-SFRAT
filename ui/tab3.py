@@ -33,66 +33,7 @@ class Tab3(QWidget):
         super().__init__()
         self._setupTab3()
 
-    def addResultsToTable_old(self, results):
-        """Perfoms comparison calculations, adds goodness of fit results to table.
-
-        Args:
-            results: A dict containing the model objects as values, indexed by
-                the name of the model/metric combination. The model objects
-                contain the goodness of fit measures as properties.
-        """
-        # numResults = len(results)
-        self.table.setSortingEnabled(False) # disable sorting while editing contents
-        self.table.clear()
-        self.table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
-                                              "SSE", "Critic (Mean)", "Critic (Median)"])
-                                              #"Weighted selection (mean)", "Weighted selection (median)"])
-        self.table.setRowCount(len(results))    # set row count to include all model results, 
-                                                # even if not converged
-        i = 0   # number of converged models
-
-        self.sideMenu.comparison.goodnessOfFit(results, self.sideMenu)
-
-        for key, model in results.items():
-            if model.converged:
-                self.table.setItem(i, 0, QTableWidgetItem(model.shortName))
-                self.table.setItem(i, 1, QTableWidgetItem(model.metricString))
-                self.table.setItem(i, 2, QTableWidgetItem("{0:.3f}".format(model.llfVal)))
-                self.table.setItem(i, 3, QTableWidgetItem("{0:.3f}".format(model.aicVal)))
-                self.table.setItem(i, 4, QTableWidgetItem("{0:.3f}".format(model.bicVal)))
-                self.table.setItem(i, 5, QTableWidgetItem("{0:.3f}".format(model.sseVal)))
-                try:
-                    self.table.setItem(i, 6, QTableWidgetItem("{0:.3f}".format(self.sideMenu.comparison.meanOut[i])))
-                    self.table.setItem(i, 7, QTableWidgetItem("{0:.3f}".format(self.sideMenu.comparison.medianOut[i])))
-                except TypeError:
-                    # if no models converge, meanOut and meanOutUniform are set to None
-                    # don't add item to table if type is None
-                    pass
-                i += 1
-        self.table.setRowCount(i)   # set row count to only include converged models
-        self.table.resizeColumnsToContents()    # resize column width after table is edited
-        self.table.setSortingEnabled(True)      # re-enable sorting after table is edited
-
-        try:
-            self.table.item(self.sideMenu.comparison.bestMean, 6).setFont(self.font)
-            self.table.item(self.sideMenu.comparison.bestMedian, 7).setFont(self.font)
-        except TypeError:
-            # if no models converge, bestMean and bestMeanUniform will be None type
-            # do not set cells to bold if they are None
-            pass
-
     def addResultsToTable(self, results):
-        # for key, model in results.items():
-        #     row = [[model.shortName, model.metricString, model.llfVal, model.aicVal, model.bicVal, model.sseVal, 0, 0]]
-        #     row_df = pd.DataFrame(row, columns=["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE",
-        #         "Model ranking", "Weighted model ranking"])
-        #     print(hex(id(self.dataframe)))
-        #     print(self.table.model())
-        #     self.dataframe = self.dataframe.append(row_df, ignore_index=True)
-        #     print(hex(id(self.dataframe)))
-        #     print(self.table.model())
-        #     print(self.dataframe)
-
         self.sideMenu.comparison.goodnessOfFit(results, self.sideMenu)
 
         rows = []
@@ -110,41 +51,11 @@ class Tab3(QWidget):
             row_index += 1
         row_df = pd.DataFrame(rows, columns=["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE",
             "Critic (Mean)", "Critic (Median)"])
-        # self.dataframe.loc[self.dataframe.index.max() + 1] = row
+
         self.tableModel.setAllData(row_df)
 
-
-        # import csv
-
-        # with open('NASA_covariate.csv', 'w') as fileOutput:
-        #     writer = csv.writer(fileOutput)
-        #     writer.writerows(rows)
-
-
-
         self.table.model().layoutChanged.emit()
-        # self.table.model().update()
-        # self.table.update()
 
-    # def addRow(self, model, results):
-    #     row = [model.shortName, model.metricString, model.llfVal, model.aicVal, model.bicVal, model.sseVal]
-    #     self.dataframe.append(row)
-
-    #     self.table.model().layoutChanged.emit()
-
-    # def removeRow(self, model):
-    #     # iterate over all rows, linear search
-    #     rowCount = self.table.rowCount()
-
-    #     for row in range(rowCount):
-    #         modelName = self.table.item(row, 0)
-    #         # first check if model name is the same as in table
-    #         if modelName == model.shortName:
-    #             covariates = self.table.item(row, 1)
-    #             # finally, check if metric names are the same
-    #             if covariates == model.metricNames:
-    #                 # if both are the same, then this is the row to be deleted
-    #                 self.table.removeRow(row)
 
     def _setupTab3(self):
         """Creates tab 3 widgets and adds them to layout."""
@@ -187,15 +98,14 @@ class Tab3(QWidget):
         self.dataframe = pd.DataFrame(columns=["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
                                               "SSE", "Critic (Mean)", "Critic (Median)"])
         self.tableModel = PandasModel(self.dataframe)
-        # self.proxyModel = QSortFilterProxyModel()
-        # self.proxyModel.setSourceModel(self.tableModel)
 
         table = QTableView()
-        # table.setModel(self.proxyModel)
         table.setModel(self.tableModel)
+        # table.setModel(self.tableModel)
         table.setEditTriggers(QTableWidget.NoEditTriggers)     # make cells unable to be edited
         table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
                                                                     # column width fit to contents
+        table.setSortingEnabled(True)
         header = table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
         # provides bottom border for header

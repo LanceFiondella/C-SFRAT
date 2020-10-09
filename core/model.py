@@ -363,9 +363,9 @@ class Model(ABC):
         self.omega = self.calcOmega(hazard, self.betas, covariate_data)
         log.info("Calculated omega: %s", self.omega)
 
-        self.mvfList = self.MVF_all(mle, self.omega, hazard, covariate_data)
-        log.info("MVF values: %s", self.mvfList)
-        self.intensityList = self.intensityFit(self.mvfList)
+        self.mvf_array = self.MVF_all(mle, self.omega, hazard, covariate_data)
+        log.info("MVF values: %s", self.mvf_array)
+        self.intensityList = self.intensityFit(self.mvf_array)
         log.info("Intensity values: %s", self.intensityList)
 
     def goodnessOfFit(self, mle, covariate_data):
@@ -378,7 +378,7 @@ class Model(ABC):
         self.bicVal = self.BIC(p)
         log.info("Calculated BIC: %s", self.bicVal)
 
-        self.sseVal = self.SSE(self.mvfList, self.cumulativeFailures)
+        self.sseVal = self.SSE(self.mvf_array, self.cumulativeFailures)
         log.info("Calculated SSE: %s", self.sseVal)
 
 
@@ -386,8 +386,8 @@ class Model(ABC):
         # can clean this up to use less loops, probably
         prodlist = []
         # for i in range(self.n):
-        print(self.n)
-        print(len(h))
+        # print(self.n)
+        # print(len(h))
         for i in range(self.n):
             sum1 = 1
             sum2 = 1
@@ -509,9 +509,69 @@ class Model(ABC):
 
         return (x, mvf_array, intensity_array)
 
-    def prediction_intensity(self, intensity, covariate_data):
-        res = scipy.optimize.root_scalar(self.pred_function, x0=self.n+1, x1=self.n+3, args=(intensity, covariate_data))
-        print(res)
+    def prediction_intensity(self, intensity, covariate_data, effortDict):
+        # res = scipy.optimize.root_scalar(self.pred_function, x0=self.n+1, x1=self.n+3, args=(intensity, covariate_data))
+        # print(res)
+
+        #########################################
+
+        mvf_list = self.mvf_array.tolist()
+
+        for i in range(1, 100):
+            total_points = self.n + i
+
+            # new_array = np.zeros(self.numCovariates)
+            new_array = []
+            j = 0
+            for cov in self.metricNames:
+                value = effortDict[cov].value()
+                new_array.append(np.full(i, value))
+                j += 1
+            print(new_array)
+
+            if self.numCovariates == 0:
+                combined_array = np.concatenate((covariate_data, np.array(new_array)))
+            else:
+                combined_array = np.concatenate((covariate_data, np.array(new_array)), axis=1)
+
+            print(combined_array)
+
+            newHazard = np.array([self.hazardFunction(j, self.b) for j in range(self.n, total_points)])  # calculate new values for hazard function
+            # hazard = self.hazard_array + newHazard
+            hazard = np.concatenate((self.hazard_array, newHazard))
+
+
+
+            ## VERIFY OMEGA VALUE, should we continue updating??
+
+            # omega = self.calcOmega(hazard, self.betas, new_covData)
+            omega = self.calcOmega(hazard, self.betas, combined_array)
+
+            # print(omega)
+            # print(self.omega)
+
+
+            #### IGNORE IF 0 !!!!!! ####
+
+            mvf_list.append(self.MVF(self.mle_array, omega, hazard, total_points - 1, combined_array))
+            calculated_intensity = mvf_list[-1] - mvf_list[-2]
+            print("calculated intensity:", calculated_intensity)
+            print("desired intensity:", intensity)
+            if calculated_intensity < intensity:
+                print("desired failure intensity reached in {0} intervals".format(i))
+                return
+
+
+            # mvf_array = np.array([self.MVF(self.mle_array, omega, hazard, dataPoints, combined_array) for dataPoints in range(total_points)])
+            # intensity_array = self.intensityFit(mvf_array)
+            # x = np.arange(1, total_points + 1)
+
+            # add initial point at zero if not present
+            # if self.t[0] != 0:
+            #     mvf_array = np.concatenate((np.zeros(1), mvf_array))
+            #     intensity_array = np.concatenate((np.zeros(1), intensity_array))
+
+        print("desired failure intensity not reached within 100 intervals")
 
 
     def pred_function(self, n, intensity, covariate_data):

@@ -27,7 +27,7 @@ class EffortAllocation:
         self.res = shgo(self.allocationFunction, args=(self.covariate_data,), bounds=bnds, constraints=cons)#, n=10000, iters=4)
         # print(self.res)
         self.mvfVal = -self.res.fun
-        self.H = self.mvfVal - self.model.mvfList[-1]   # predicted MVF value - last actual MVF value
+        self.H = self.mvfVal - self.model.mvf_array[-1]   # predicted MVF value - last actual MVF value
 
     def allocationFunction(self, x, covariate_data):
         # covariate_data = args[1]
@@ -67,7 +67,7 @@ class EffortAllocation:
 
     def optimization2(self, x, covariate_data):
         res = self.allocationFunction2(x, covariate_data)
-        H = res - self.model.mvfList[-1]
+        H = res - self.model.mvf_array[-1]
         return self.f - H
         # return self.model.allocationFunction2(x) - self.f
 

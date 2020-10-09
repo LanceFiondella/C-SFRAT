@@ -55,7 +55,7 @@ class SideMenu2(QVBoxLayout):
     modelChangedSignal = pyqtSignal(list)   # changes based on selection of
                                             # models in tab 2
     failureChangedSignal = pyqtSignal(int)  # changes based on failure spin box
-    intensityChangedSignal = pyqtSignal(int)
+    intensityChangedSignal = pyqtSignal(float)
 
     def __init__(self):
         """Initializes tab 2 side menu UI elements."""
