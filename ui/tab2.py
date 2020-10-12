@@ -10,7 +10,7 @@ from PyQt5.QtCore import pyqtSignal
 
 # Local imports
 from ui.commonWidgets import PlotWidget
-# from ui.tab1 import Tab1
+from ui.tab3 import Tab3, SideMenu3
 
 
 class Tab2(QWidget):
@@ -218,8 +218,10 @@ class SideMenu2(QVBoxLayout):
         that are currently selected.
         """
         selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
-        log.debug("Selected models: %s", selectedModelNames)
+        #log.debug("Selected models: %s", selectedModelNames)
+        print("Changed Tab 2: %s", selectedModelNames)
         self.modelChangedSignal.emit(selectedModelNames)
+
 
     def _emitFailureChangedSignal(self, failures):
         """Emits signal when failure spin box changed.

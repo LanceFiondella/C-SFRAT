@@ -273,6 +273,7 @@ class SideMenu3(QVBoxLayout):
         """
         selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
         self.modelChangedSignal.emit(selectedModelNames)
+        print("Changed Tab 3: %s", selectedModelNames)
 
     def _emitSpinBoxChangedSignal(self):
         """Emits signal if any goodness-of-fit spin box is changed."""
