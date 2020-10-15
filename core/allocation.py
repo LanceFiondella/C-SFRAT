@@ -3,18 +3,26 @@ import numpy as np
 
 
 class EffortAllocation:
-    def __init__(self, model, B, f, covariate_data):
+    def __init__(self, model, covariate_data, allocation_type, *args):
+        """
+        *args will either be budget (if allocation 1) or failures (if allocation 2)
+        """
         self.model = model
-        self.B = B
-        self.f = f
+        
+        
         self.covariate_data = covariate_data
         self.hazard_array = np.concatenate((self.model.hazard_array, [self.model.hazardFunction(self.model.n + 1, self.model.b)]))
-        self.runAllocation()
-        self.runAllocation2()
-        self.percentages = self.organizeResults(self.res.x, self.B)
-        self.percentages2 = self.organizeResults(self.res2.x, self.effort)
 
-    def runAllocation(self):
+        if allocation_type == 1:
+            self.B = args[0]
+            self.runAllocation1()
+            self.percentages = self.organizeResults(self.res.x, self.B)
+        else:
+            self.f = args[0]
+            self.runAllocation2()
+            self.percentages2 = self.organizeResults(self.res2.x, self.effort)
+
+    def runAllocation1(self):
 
         ##############################################
         ## Optimization 1: Maximize fault discovery ##
@@ -57,11 +65,11 @@ class EffortAllocation:
         # print(np.multiply(np.divide(self.res2.x, np.sum(self.res2.x)), 100))
 
 
-        print(f'{self.model.name} - ({self.model.metricString})')
-        print("Effort per covariate:", self.res2.x)
-        print("Total effort:", self.effort)
-        print("Effort percentages:", np.multiply(np.divide(self.res2.x, np.sum(self.res2.x)), 100))
-        print()
+        # print(f'{self.model.name} - ({self.model.metricString})')
+        # print("Effort per covariate:", self.res2.x)
+        # print("Total effort:", self.effort)
+        # print("Effort percentages:", np.multiply(np.divide(self.res2.x, np.sum(self.res2.x)), 100))
+        # print()
 
 
 

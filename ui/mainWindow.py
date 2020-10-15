@@ -169,7 +169,8 @@ class MainWindow(QMainWindow):
         self._main.tab3.sideMenu.modelChangedSignal.connect(self.updateComparisonTable)
         # self._main.tab3.sideMenu.modelListWidget.itemActivated().connect(self._main.tab3.addRow)
         self._main.tab3.sideMenu.spinBoxChangedSignal.connect(self.runGoodnessOfFit)
-        self._main.tab4.sideMenu.runAllocationSignal.connect(self.runAllocation)
+        self._main.tab4.sideMenu.runAllocation1Signal.connect(self.runAllocation1)
+        self._main.tab4.sideMenu.runAllocation2Signal.connect(self.runAllocation2)
 
         self._initUI()
         log.info("UI loaded.")
@@ -722,7 +723,8 @@ class MainWindow(QMainWindow):
         """
         # disable buttons until estimation complete
         self._main.tab1.sideMenu.runButton.setDisabled(True)
-        self._main.tab4.sideMenu.allocationButton.setDisabled(True)
+        self._main.tab4.sideMenu.allocation1Button.setDisabled(True)
+        self._main.tab4.sideMenu.allocation2Button.setDisabled(True)
         modelsToRun = modelDetails["modelsToRun"]
         metricNames = modelDetails["metricNames"]
         if self.data:
@@ -749,8 +751,8 @@ class MainWindow(QMainWindow):
         self.estimationComplete = True
         self.estimationResults = results
         self._main.tab1.sideMenu.runButton.setEnabled(True)  # re-enable button, can run another estimation
-        self._main.tab4.sideMenu.allocationButton.setEnabled(True)  # re-enable allocation button, can't run
-                                                                    # if estimation not complete
+        self._main.tab4.sideMenu.allocation1Button.setEnabled(True)     # re-enable allocation buttons, can't run
+        self._main.tab4.sideMenu.allocation2Button.setEnabled(True)     # if estimation not complete
         # self.setDataView("view", self.dataViewIndex)
         self.updateUI()
         # set initial model selected
@@ -796,14 +798,13 @@ class MainWindow(QMainWindow):
                 selectedDict[key] = model
         self._main.tab3.addResultsToTable(selectedDict)
 
-    def runAllocation(self, combinations):
+    def runAllocation1(self, combinations):
         """Runs effort allocation on selected model/metric combinations.
 
         Args:
             combinations: List of model/metric combination names as strings.
         """
         B = self._main.tab4.sideMenu.budgetSpinBox.value()  # budget
-        f = self._main.tab4.sideMenu.failureSpinBox.value()  # number of failures (UNUSED)
 
         self.allocationResults = {}  # create a dictionary for allocation results
         for i in range(len(combinations)):
@@ -813,9 +814,30 @@ class MainWindow(QMainWindow):
 
                 ## RUN PREDICTION USING SPECIFIED SUBSET OF COVARIATE DATA
                 ## for now, just passing full data
-                self.allocationResults[name] = [EffortAllocation(m, B, f, m.covariateData), m]
+                self.allocationResults[name] = [EffortAllocation(m, m.covariateData, 1, B), m]
 
-        self._main.tab4.addResultsToTable(self.allocationResults, self.data)
+        self._main.tab4.addResultsToTable(self.allocationResults, self.data, 1)
+
+    def runAllocation2(self, combinations):
+        """Runs effort allocation on selected model/metric combinations.
+
+        Args:
+            combinations: List of model/metric combination names as strings.
+        """
+        f = self._main.tab4.sideMenu.failureSpinBox.value()  # number of failures
+
+        self.allocationResults = {}  # create a dictionary for allocation results
+        for i in range(len(combinations)):
+            name = combinations[i]
+            if " (No covariates)" not in name:
+                m = self.estimationResults[name]  # model indexed by the name
+
+                ## RUN PREDICTION USING SPECIFIED SUBSET OF COVARIATE DATA
+                ## for now, just passing full data
+                self.allocationResults[name] = [EffortAllocation(m, m.covariateData, 2, f), m]
+
+        # just add to table 2
+        self._main.tab4.addResultsToTable(self.allocationResults, self.data, 2)
 
     def runPrediction(self, failures):
         """Runs predictions for future points according to model results.

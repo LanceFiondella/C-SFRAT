@@ -94,14 +94,13 @@ class TableTabs(QTabWidget):
         self._setupTable2Tab(table2Label)
 
     def _setupTable1Tab(self, table1Label):
-
         self.budgetTab = QTableWidget()
         self.budgetTab.setEditTriggers(QTableWidget.NoEditTriggers)  # make cells unable to be edited
         self.budgetTab.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
                                                             # column width fit to contents
         self.budgetTab.setRowCount(1)
         self.budgetTab.setColumnCount(3)
-        self.budgetTab.setHorizontalHeaderLabels(["Model Name", "Covariates", "H"])
+        self.budgetTab.setHorizontalHeaderLabels(["Model Name", "Covariates", "Faults"])
 
         header = self.budgetTab.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -119,7 +118,7 @@ class TableTabs(QTabWidget):
                                                             # column width fit to contents
         self.failureTab.setRowCount(1)
         self.failureTab.setColumnCount(3)
-        self.failureTab.setHorizontalHeaderLabels(["Model Name", "Covariates", "Effort"])
+        self.failureTab.setHorizontalHeaderLabels(["Model Name", "Covariates", "Budget"])
 
         header = self.failureTab.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)

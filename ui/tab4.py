@@ -31,7 +31,7 @@ class Tab4(QWidget):
         super().__init__()
         self._setupTab4()
 
-    def addResultsToTable(self, results, data):
+    def addResultsToTable(self, results, data, allocation_type):
         """Adds effort allocation results to the tab 4 table.
 
         Args:
@@ -42,52 +42,64 @@ class Tab4(QWidget):
             data: Data object contiaining imported data as a Pandas dataframe.
         """
 
-        #FOR BUDGET
-        self.TableAndTable.budgetTab.setSortingEnabled(False)  # disable sorting while editing contents
-        self.TableAndTable.budgetTab.clear()
-        self.TableAndTable.budgetTab.setColumnCount(3 + len(data.metricNames))
-        self.TableAndTable.budgetTab.setHorizontalHeaderLabels(self._createHeaderLabels(data.metricNames)[0])
-        self.TableAndTable.budgetTab.setRowCount(len(results))    # set row count to include all model results,
-                                                # even if not converged
+        if allocation_type == 1:
+            # FOR BUDGET
+            self.TableAndTable.budgetTab.setSortingEnabled(False)  # disable sorting while editing contents
+            self.TableAndTable.budgetTab.clear()
+            self.TableAndTable.budgetTab.setColumnCount(3 + len(data.metricNames))
+            self.TableAndTable.budgetTab.setHorizontalHeaderLabels(self._createHeaderLabels(data.metricNames)[0])
+            self.TableAndTable.budgetTab.setRowCount(len(results))      # set row count to include all model results,
+                                                                        # even if not converged
 
-        self.TableAndTable.failureTab.setSortingEnabled(False)  # disable sorting while editing contents
-        self.TableAndTable.failureTab.clear()
-        self.TableAndTable.failureTab.setColumnCount(3 + len(data.metricNames))
-        self.TableAndTable.failureTab.setHorizontalHeaderLabels(self._createHeaderLabels(data.metricNames)[1])
-        self.TableAndTable.failureTab.setRowCount(len(results))    # set row count to include all model results,
-                                                # even if not converged
+            row = 0
+            for key, value in results.items():
+                res = value[0]
+                model = value[1]
 
-        row = 0   # rows
+                self.TableAndTable.budgetTab.setItem(row, 0, QTableWidgetItem(model.shortName))   # model name
+                self.TableAndTable.budgetTab.setItem(row, 1, QTableWidgetItem(model.metricString))  # model metrics
+                self.TableAndTable.budgetTab.setItem(row, 2, QTableWidgetItem("{0:.2f}".format(res.H)))
 
-        for key, value in results.items():
-            res = value[0]
-            model = value[1]
+                # number of columns = number of covariates
+                j = 0
+                for name in model.metricNames:
+                    col = data.metricNameDictionary[name]
+                    self.TableAndTable.budgetTab.setItem(row, 3 + col, QTableWidgetItem("{0:.2f}".format(res.percentages[j])))
+                    j += 1
+                row += 1
 
-            self.TableAndTable.budgetTab.setItem(row, 0, QTableWidgetItem(model.shortName))   # model name
-            self.TableAndTable.budgetTab.setItem(row, 1, QTableWidgetItem(model.metricString))  # model metrics
-            self.TableAndTable.budgetTab.setItem(row, 2, QTableWidgetItem("{0:.2f}".format(res.H)))
+            self.TableAndTable.budgetTab.setRowCount(row)   # set row count to only include converged models
+            self.TableAndTable.budgetTab.resizeColumnsToContents()    # resize column width after table is edited
+            self.TableAndTable.budgetTab.setSortingEnabled(True)      # re-enable sorting after table is edited
 
-            self.TableAndTable.failureTab.setItem(row, 0, QTableWidgetItem(model.shortName))   # model name
-            self.TableAndTable.failureTab.setItem(row, 1, QTableWidgetItem(model.metricString))  # model metrics
-            self.TableAndTable.failureTab.setItem(row, 2, QTableWidgetItem("{0:.2f}".format(res.effort)))
-            # number of columns = number of covariates
-            # For failures tab, do : res.Effort
-            j = 0
-            for name in model.metricNames:
-                col = data.metricNameDictionary[name]
-                self.TableAndTable.budgetTab.setItem(row, 3 + col, QTableWidgetItem("{0:.2f}".format(res.percentages2[j])))
-                self.TableAndTable.failureTab.setItem(row, 3 + col, QTableWidgetItem("{0:.2f}".format(res.percentages[j])))
-                #For failures tab, do : res.percetages2[]
-                j += 1
-            row += 1
+        else:
+            self.TableAndTable.failureTab.setSortingEnabled(False)  # disable sorting while editing contents
+            self.TableAndTable.failureTab.clear()
+            self.TableAndTable.failureTab.setColumnCount(3 + len(data.metricNames))
+            self.TableAndTable.failureTab.setHorizontalHeaderLabels(self._createHeaderLabels(data.metricNames)[1])
+            self.TableAndTable.failureTab.setRowCount(len(results))    # set row count to include all model results,
+                                                    # even if not converged
 
-        self.TableAndTable.budgetTab.setRowCount(row)   # set row count to only include converged models
-        self.TableAndTable.budgetTab.resizeColumnsToContents()    # resize column width after table is edited
-        self.TableAndTable.budgetTab.setSortingEnabled(True)      # re-enable sorting after table is edited
+            row = 0
+            for key, value in results.items():
+                res = value[0]
+                model = value[1]
+                self.TableAndTable.failureTab.setItem(row, 0, QTableWidgetItem(model.shortName))   # model name
+                self.TableAndTable.failureTab.setItem(row, 1, QTableWidgetItem(model.metricString))  # model metrics
+                self.TableAndTable.failureTab.setItem(row, 2, QTableWidgetItem("{0:.2f}".format(res.effort)))
+                
+                # number of columns = number of covariates
+                j = 0
+                for name in model.metricNames:
+                    col = data.metricNameDictionary[name]
+                    self.TableAndTable.failureTab.setItem(row, 3 + col, QTableWidgetItem("{0:.2f}".format(res.percentages2[j])))
+                    #For failures tab, do : res.percetages2[]
+                    j += 1
+                row += 1
 
-        self.TableAndTable.failureTab.setRowCount(row)   # set row count to only include converged models
-        self.TableAndTable.failureTab.resizeColumnsToContents()    # resize column width after table is edited
-        self.TableAndTable.failureTab.setSortingEnabled(True)      # re-enable sorting after table is edited
+            self.TableAndTable.failureTab.setRowCount(row)   # set row count to only include converged models
+            self.TableAndTable.failureTab.resizeColumnsToContents()    # resize column width after table is edited
+            self.TableAndTable.failureTab.setSortingEnabled(True)      # re-enable sorting after table is edited
 
     def _setupTab4(self):
         """Creates tab 4 widgets and adds them to layout."""
@@ -160,7 +172,7 @@ class SideMenu4(QVBoxLayout):
     """Side menu for tab 4.
 
     Attributes:
-        allocationButton: QPushButton object, begins effort allocation when
+        allocation1Button: QPushButton object, begins effort allocation when
             clicked.
         modelListWidget: QListWidget containing the names of converged
             model/metric combinations.
@@ -173,7 +185,8 @@ class SideMenu4(QVBoxLayout):
     """
 
     # signals
-    runAllocationSignal = pyqtSignal(list)  # starts allocation computation
+    runAllocation1Signal = pyqtSignal(list)  # starts allocation 1 computation
+    runAllocation2Signal = pyqtSignal(list)  # starts allocation 2 computation
 
     def __init__(self):
         """Initializes tab 4 side menu UI elements."""
@@ -200,13 +213,16 @@ class SideMenu4(QVBoxLayout):
         """Creates group box widgets and adds them to layout."""
         modelsGroup = QGroupBox("Select Models for Allocation")
         modelsGroup.setLayout(self._setupModelsGroup())
-        optionsGroup = QGroupBox("Allocation Parameters")
-        optionsGroup.setLayout(self._setupOptionsGroup())
-        self._setupAllocationButton()
+        # optionsGroup = QGroupBox("Allocation Parameters")
+        # optionsGroup.setLayout(self._setupOptionsGroup())
+        # self.allocation1Button = self._setupAllocationButton("Run Allocation")
+        allocation1Group = self._setupAllocation1Group("Allocation 1")
+        allocation2Group = self._setupAllocation2Group("Allocation 2")
 
         self.addWidget(modelsGroup, 10)
-        self.addWidget(optionsGroup)
-        self.addWidget(self.allocationButton, 1)
+        self.addWidget(allocation1Group)
+        self.addWidget(allocation2Group)
+        # self.addWidget(self.allocation1Button, 1)
 
         self.addStretch(1)
 
@@ -223,75 +239,70 @@ class SideMenu4(QVBoxLayout):
 
         return modelGroupLayout
 
-    def _setupOptionsGroup_old(self):
-        """Creates widgets for specifying effort allocation parameters.
 
-        Returns:
-            A created VBoxLayout containing the created options group.
-        """
-        optionsGroupLayout = QVBoxLayout()
-        optionsGroupLayout.addWidget(QLabel("Budget"))
+    def _setupAllocation1Group(self, label):
+        group = QGroupBox(label)
+        groupLayout = QVBoxLayout()
+        # Effort allocation to discover maximum number of faults within given budget 'B'
+        description = QLabel("Maximize fault discovery within\nbudget.")
+        # description.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        groupLayout.addWidget(description)
+
+        verticalSpacer = QSpacerItem(20, 20, QSizePolicy.Fixed, QSizePolicy.Expanding)
+        groupLayout.addItem(verticalSpacer)
+
+        groupLayout.addWidget(QLabel("Enter budget"))
         self.budgetSpinBox = QDoubleSpinBox()
         # self.budgetSpinBox.setMaximumWidth(200)
         self.budgetSpinBox.setRange(0.0, 999999.0)
         self.budgetSpinBox.setValue(20)
-        optionsGroupLayout.addWidget(self.budgetSpinBox)
-        
-        optionsGroupLayout.addWidget(QLabel("Failures"))
+        groupLayout.addWidget(self.budgetSpinBox)
+        self.allocation1Button = self._setupAllocationButton("Run Allocation 1", self._button1Pressed)
+        groupLayout.addWidget(self.allocation1Button)
+
+        group.setLayout(groupLayout)
+
+        return group
+
+    def _setupAllocation2Group(self, label):
+        group = QGroupBox(label)
+        groupLayout = QVBoxLayout()
+        # Effort allocation to expose 'k' number of additional faults with the smallest budget possible
+        description = QLabel("Minimum budget to discover\nspecified additonal faults")
+        # description.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        groupLayout.addWidget(description)
+
+        verticalSpacer = QSpacerItem(20, 20, QSizePolicy.Fixed, QSizePolicy.Preferred)
+        groupLayout.addItem(verticalSpacer)
+
+        groupLayout.addWidget(QLabel("Enter number of additional failures"))
         self.failureSpinBox = QSpinBox()
         # self.failureSpinBox.setMaximumWidth(200)
         self.failureSpinBox.setRange(1, 999999)
-        optionsGroupLayout.addWidget(self.failureSpinBox)
+        groupLayout.addWidget(self.failureSpinBox)
+        self.allocation2Button = self._setupAllocationButton("Run Allocation 2", self._button2Pressed)
+        groupLayout.addWidget(self.allocation2Button)
 
-        return optionsGroupLayout
+        group.setLayout(groupLayout)
 
-    def _setupOptionsGroup(self):
-        """Creates widgets for specifying effort allocation parameters.
+        return group
 
-        Returns:
-            A created VBoxLayout containing the created options group.
-        """
-
-        optionsGroupLayout = QVBoxLayout()
-        tempBudget = QHBoxLayout()
-        tempFailures = QHBoxLayout()
-        budgetVertical = QVBoxLayout()
-        failuresVertical = QVBoxLayout()
-
-        budgetVertical.addWidget(QLabel("Budget"))
-        self.budgetSpinBox = QDoubleSpinBox()
-        # self.budgetSpinBox.setMaximumWidth(200)
-        self.budgetSpinBox.setRange(0.0, 999999.0)
-        self.budgetSpinBox.setValue(20)
-        budgetVertical.addWidget(self.budgetSpinBox)
-
-        # tempBudget.addWidget(QRadioButton())
-        tempBudget.addLayout(budgetVertical, 1)
-
-        failuresVertical.addWidget(QLabel("Failures"))
-        self.failureSpinBox = QSpinBox()
-        # self.failureSpinBox.setMaximumWidth(200)
-        self.failureSpinBox.setRange(1, 999999)
-        failuresVertical.addWidget(self.failureSpinBox)
-
-        # tempFailures.addWidget(QRadioButton())
-        tempFailures.addLayout(failuresVertical,1)
-
-        optionsGroupLayout.addLayout(tempBudget)
-        vspacer = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        optionsGroupLayout.addItem(vspacer)
-        optionsGroupLayout.addLayout(tempFailures)
-
-        return optionsGroupLayout
-
-    def _setupAllocationButton(self):
+    def _setupAllocationButton(self, label, slot):
         """Creates the button that begins effort allocation."""
-        self.allocationButton = QPushButton("Run Allocation")
-        self.allocationButton.setEnabled(False) # begins disabled since no model has been run yet
+        button = QPushButton(label)
+        button.setEnabled(False) # begins disabled since no model has been run yet
         # self.allocationButton.setMaximumWidth(250)
-        self.allocationButton.clicked.connect(self._emitRunAllocationSignal)
+        button.clicked.connect(slot)
 
-    def _emitRunAllocationSignal(self):
+        return button
+
+    def _button1Pressed(self):
+        self._emitRunAllocationSignal(1)
+
+    def _button2Pressed(self):
+        self._emitRunAllocationSignal(2)
+
+    def _emitRunAllocationSignal(self, allocation_type):
         """Emits signal that effort allocation with model/metric combiations.
 
         Method called when Run Allocation button is pressed. The emitted signal
@@ -299,11 +310,17 @@ class SideMenu4(QVBoxLayout):
         allocation on. The signal is only emitted if at least one combination
         is selected.
         """
+        print(type(allocation_type))
         selectedCombinationNames = [item.text() for item in self.modelListWidget.selectedItems()]
         if selectedCombinationNames:
             selectedCombinationNames = [item.text() for item in self.modelListWidget.selectedItems()]
             log.info("Selected for Allocation: %s", selectedCombinationNames)
-            self.runAllocationSignal.emit(selectedCombinationNames)
+
+            print(allocation_type)
+            if allocation_type == 1:
+                self.runAllocation1Signal.emit(selectedCombinationNames)
+            else:
+                self.runAllocation2Signal.emit(selectedCombinationNames)
 
         # if no models/metric combinations selected, create message box to
         # display this warning
