@@ -161,12 +161,14 @@ class MainWindow(QMainWindow):
         # run models when signal is received
         self._main.tab1.sideMenu.runModelSignal.connect(self.runModels)
         self._main.tab1.sideMenu.confidenceSignal.connect(self.updateLaplaceConfidencePlot)
-        self._main.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2)
+        #self._main.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2)
+        self._main.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2AndUpdateComparisonTable)
 
         # connect tab2 list changed to refreshing tab 2 plot
         self._main.tab2.sideMenu.failureChangedSignal.connect(self.runPrediction)
         self._main.tab2.sideMenu.intensityChangedSignal.connect(self.prediction2) # temporary
-        self._main.tab3.sideMenu.modelChangedSignal.connect(self.updateComparisonTable)
+        #self._main.tab3.sideMenu.modelChangedSignal.connect(self.updateComparisonTable)
+        self._main.tab3.sideMenu.modelChangedSignal.connect(self.changePlot2AndUpdateComparisonTable)
         # self._main.tab3.sideMenu.modelListWidget.itemActivated().connect(self._main.tab3.addRow)
         self._main.tab3.sideMenu.spinBoxChangedSignal.connect(self.runGoodnessOfFit)
         self._main.tab4.sideMenu.runAllocation1Signal.connect(self.runAllocation1)
@@ -693,6 +695,21 @@ class MainWindow(QMainWindow):
         log.info("Data plots set to intensity view.")
         if self.dataLoaded:
             self.setRawDataView(self.dataViewIndex)
+    def changePlot2AndUpdateComparisonTable(self,selectedModels):
+        # Access Selected Items
+        # Find which tab the change came from
+        # Disable the signals
+        # Change the other tab
+        # Change both plot and table
+        # self._main.tab2.sideMenu.modelList.selectedItems()
+
+        selectedDict = {}
+        for key, model in self.estimationResults.items():
+            if key in selectedModels:
+                selectedDict[key] = model
+        self._main.tab3.addResultsToTable(selectedDict)
+        self.selectedModelNames = selectedModels
+        self.updateUI()
 
     def changePlot2(self, selectedModels):
         """Updates plot 2 to show newly selected models to display.
