@@ -49,8 +49,7 @@ class Tab3(QWidget):
                    self.sideMenu.comparison.medianOut[row_index]]
             rows.append(row)
             row_index += 1
-        row_df = pd.DataFrame(rows, columns=["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC", "SSE",
-            "Critic (Mean)", "Critic (Median)"])
+        row_df = pd.DataFrame(rows, columns=self.column_names)
 
         self.tableModel.setAllData(row_df)
 
@@ -68,35 +67,10 @@ class Tab3(QWidget):
         mainLayout.addWidget(self.table, 85)
         self.setLayout(mainLayout)
 
-    def _setupTable_old(self):
-        """Creates table widget with proper headers.
-
-        Returns:
-            A QTableWidget with specified column headers.
-        """
-        table = QTableWidget()
-        table.setEditTriggers(QTableWidget.NoEditTriggers)     # make cells unable to be edited
-        table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
-                                                                    # column width fit to contents
-        table.setRowCount(1)
-        columnLabels = ["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
-                        "SSE", "Critic (Mean)", "Critic (Median)"]
-        table.setColumnCount(len(columnLabels))
-        table.setHorizontalHeaderLabels(columnLabels)
-        table.move(0, 0)
-
-        header = table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        # provides bottom border for header
-        stylesheet = "::section{Background-color:rgb(250,250,250);}"
-        header.setStyleSheet(stylesheet)
-
-        return table
-
     def _setupTable(self):
-
-        self.dataframe = pd.DataFrame(columns=["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
-                                              "SSE", "Critic (Mean)", "Critic (Median)"])
+        self.column_names = ["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
+                             "SSE", "Critic (Mean)", "Critic (Median)"]
+        self.dataframe = pd.DataFrame(columns=self.column_names)
         self.tableModel = PandasModel(self.dataframe)
 
         table = QTableView()
@@ -113,7 +87,7 @@ class Tab3(QWidget):
         header.setStyleSheet(stylesheet)
         return table
 
-    def exportTable(self):
+    def exportTable(self, path):
         """
         Export table to csv
         """
@@ -125,8 +99,9 @@ class Tab3(QWidget):
 
         # https://stackoverflow.com/questions/57419547/struggling-to-export-csv-data-from-qtablewidget
         # https://stackoverflow.com/questions/27353026/qtableview-output-save-as-csv-or-txt
-        with open('model_results.csv', 'w', newline='') as stream:
+        with open(path, 'w', newline='') as stream:
             writer = csv.writer(stream)
+            writer.writerow(self.column_names)
             for row in range(self.tableModel.rowCount()):
                 rowdata = []
                 for column in range(self.tableModel.columnCount()):

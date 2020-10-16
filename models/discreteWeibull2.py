@@ -1,6 +1,3 @@
-import logging
-import numpy as np
-
 from core.model import Model
 
 
@@ -13,8 +10,10 @@ class DiscreteWeibull2(Model):
     b0 = 0.994
     beta0 = 0.01
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    parameterEstimates = (0.994, 0.01)
+
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
 
     def hazardFunction(self, i, b):
         f = 1 - b**(i**2 - (i - 1)**2)

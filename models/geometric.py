@@ -1,6 +1,3 @@
-#import logging
-#import numpy as np
-
 from core.model import Model
 
 
@@ -12,6 +9,8 @@ class Geometric(Model):
 
     b0 = 0.01
     beta0 = 0.01
+
+    parameterEstimates = (0.01, 0.01)
 
     # def __init__(self, *args, **kwargs):
     #     super().__init__(*args, **kwargs)

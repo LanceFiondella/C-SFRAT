@@ -229,7 +229,7 @@ class MainWindow(QMainWindow):
         exportTable = QAction("Export Table", self)
         exportTable.setShortcut("Ctrl+E")
         exportTable.setStatusTip("Export Tab 3 Table to csv")
-        exportTable.triggered.connect(self.exportTab3)
+        exportTable.triggered.connect(self.exportTable)
         # exit
         exitApp = QAction("Exit", self)
         exitApp.setShortcut("Ctrl+Q")
@@ -346,8 +346,12 @@ class MainWindow(QMainWindow):
 
         qApp.quit()
 
-    def exportTab3(self):
-        self._main.tab3.exportTable()
+    def exportTable(self):
+        path = QFileDialog.getSaveFileName( 
+            self, 'Export model results', 'model_results.csv', filter='CSV (*.csv)')
+
+        if path[0]:
+            self._main.tab3.exportTable(path[0])
 
     #region Importing, plotting
     def fileOpened(self):
