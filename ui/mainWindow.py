@@ -174,6 +174,7 @@ class MainWindow(QMainWindow):
         self._main.tab4.sideMenu.runAllocation1Signal.connect(self.runAllocation1)
         self._main.tab4.sideMenu.runAllocation2Signal.connect(self.runAllocation2)
 
+
         self._initUI()
         log.info("UI loaded.")
 
@@ -706,6 +707,21 @@ class MainWindow(QMainWindow):
         # Change the other tab
         # Change both plot and table
         # self._main.tab2.sideMenu.modelList.selectedItems()
+
+
+        if self._main.tabs.currentIndex() == 1:
+            currenttab = 2;
+            for i in selectedModels:
+                for j in range(0,self._main.tab3.sideMenu.modelListWidget.count()):
+                    if i == self._main.tab3.sideMenu.modelListWidget.item(j).text():
+                        self._main.tab3.sideMenu.modelListWidget.setCurrentItem(self._main.tab3.sideMenu.modelListWidget.item(j))
+
+        elif self._main.tabs.currentIndex() == 2:
+            currenttab = 3;
+            for i in selectedModels:
+                for j in range(0,self._main.tab2.sideMenu.modelListWidget.count()):
+                    if i == self._main.tab2.sideMenu.modelListWidget.item(j).text():
+                        self._main.tab2.sideMenu.modelListWidget.setCurrentItem(self._main.tab2.sideMenu.modelListWidget.item(j))
 
         selectedDict = {}
         for key, model in self.estimationResults.items():
