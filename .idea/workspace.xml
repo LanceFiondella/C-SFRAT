@@ -2,14 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="a6bbf19f-7006-428c-b888-fe7ef84a9c94" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/Covariate_Tool.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Covariate_Tool.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/unnamed.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/shelf/unnamed.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/graphSettings.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/graphSettings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/mainWindow.py" beforeDir="false" afterPath="$PROJECT_DIR$/ui/mainWindow.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/tab2.py" beforeDir="false" afterPath="$PROJECT_DIR$/ui/tab2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/tab3.py" beforeDir="false" afterPath="$PROJECT_DIR$/ui/tab3.py" afterDir="false" />
     </list>
     <ignored path="C:\Users\Dragon\Covariate_Tool\.idea\shelf/" />
     <ignored path="E:\UmassD\Resarch\Covariate_Tool\.idea\shelf/" />
@@ -72,8 +65,8 @@
       <file leaf-file-name="mainWindow.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ui/mainWindow.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="432">
-              <caret line="721" column="72" selection-start-line="721" selection-start-column="72" selection-end-line="721" selection-end-column="72" />
+            <state relative-caret-position="27">
+              <caret line="709" column="62" lean-forward="true" selection-start-line="709" selection-start-column="62" selection-end-line="709" selection-end-column="62" />
               <folding>
                 <element signature="e#1879#1900#0" expanded="true" />
               </folding>
@@ -84,8 +77,8 @@
       <file leaf-file-name="graphSettings.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/core/graphSettings.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="275">
-              <caret line="96" column="17" lean-forward="true" selection-start-line="96" selection-start-column="17" selection-end-line="96" selection-end-column="17" />
+            <state relative-caret-position="999">
+              <caret line="41" column="48" selection-start-line="41" selection-start-column="48" selection-end-line="41" selection-end-column="48" />
             </state>
           </provider>
         </entry>
@@ -93,7 +86,7 @@
       <file leaf-file-name="tab1.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ui/tab1.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="27">
+            <state relative-caret-position="162">
               <caret line="17" selection-start-line="17" selection-end-line="17" />
               <folding>
                 <element signature="e#28#49#0" expanded="true" />
@@ -105,7 +98,7 @@
       <file leaf-file-name="tab2.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ui/tab2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="621">
+            <state relative-caret-position="1728">
               <caret line="75" column="36" selection-start-line="75" selection-start-column="36" selection-end-line="75" selection-end-column="36" />
               <folding>
                 <element signature="e#28#49#0" expanded="true" />
@@ -117,7 +110,7 @@
       <file leaf-file-name="tab3.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ui/tab3.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="573">
+            <state relative-caret-position="6345">
               <caret line="250" selection-start-line="250" selection-end-line="250" />
               <folding>
                 <element signature="e#0#384#0" expanded="true" />
@@ -129,11 +122,8 @@
       <file leaf-file-name="main.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="223">
-              <caret line="29" column="36" lean-forward="true" selection-start-line="29" selection-start-column="36" selection-end-line="29" selection-end-column="36" />
-              <folding>
-                <element signature="e#763#814#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="115">
+              <caret line="27" column="39" lean-forward="true" selection-start-line="27" selection-start-column="39" selection-end-line="27" selection-end-column="39" />
             </state>
           </provider>
         </entry>
@@ -212,30 +202,7 @@
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
     </navigator>
-    <panes>
-      <pane id="Scope" />
-      <pane id="ProjectPane">
-        <subPane>
-          <expand>
-            <path>
-              <item name="Covariate_Tool" type="b2602c69:ProjectViewProjectNode" />
-              <item name="Covariate_Tool" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="Covariate_Tool" type="b2602c69:ProjectViewProjectNode" />
-              <item name="Covariate_Tool" type="462c0819:PsiDirectoryNode" />
-              <item name="models" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="Covariate_Tool" type="b2602c69:ProjectViewProjectNode" />
-              <item name="Covariate_Tool" type="462c0819:PsiDirectoryNode" />
-              <item name="ui" type="462c0819:PsiDirectoryNode" />
-            </path>
-          </expand>
-          <select />
-        </subPane>
-      </pane>
-    </panes>
+    <panes />
   </component>
   <component name="PropertiesComponent">
     <property name="last_opened_file_path" value="$USER_HOME$/SFRAT" />
@@ -352,7 +319,7 @@
       <window_info anchor="bottom" id="Python Console" order="10" weight="0.32925472" />
       <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.3137255" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
-      <window_info anchor="bottom" id="Terminal" order="8" weight="0.33258426" />
+      <window_info anchor="bottom" id="Terminal" order="8" weight="0.332244" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.3943355" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -366,23 +333,23 @@
     </layout>
     <layout-to-restore>
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.3137255" />
-      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.16965227" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="bottom" id="Find" order="1" weight="0.32925472" />
-      <window_info anchor="bottom" id="Python Console" order="10" weight="0.32925472" />
+      <window_info anchor="bottom" id="Version Control" order="7" weight="0.32925472" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.3137255" />
+      <window_info anchor="bottom" id="Message" order="0" />
       <window_info active="true" anchor="bottom" id="Debug" order="3" visible="true" weight="0.3943355" />
       <window_info anchor="bottom" id="Terminal" order="8" weight="0.33258426" />
       <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
-      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
-      <window_info anchor="bottom" id="Version Control" order="7" weight="0.32925472" />
-      <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Messages" order="11" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32925472" />
+      <window_info anchor="bottom" id="Messages" order="11" />
+      <window_info anchor="bottom" id="Python Console" order="10" weight="0.32925472" />
     </layout-to-restore>
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -702,7 +669,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/ui/tab3.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="573">
+        <state relative-caret-position="6345">
           <caret line="250" selection-start-line="250" selection-end-line="250" />
           <folding>
             <element signature="e#0#384#0" expanded="true" />
@@ -710,20 +677,20 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ui/tab1.py">
+    <entry file="file://$PROJECT_DIR$/ui/tab2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="27">
-          <caret line="17" selection-start-line="17" selection-end-line="17" />
+        <state relative-caret-position="1728">
+          <caret line="75" column="36" selection-start-line="75" selection-start-column="36" selection-end-line="75" selection-end-column="36" />
           <folding>
             <element signature="e#28#49#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ui/tab2.py">
+    <entry file="file://$PROJECT_DIR$/ui/tab1.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="621">
-          <caret line="75" column="36" selection-start-line="75" selection-start-column="36" selection-end-line="75" selection-end-column="36" />
+        <state relative-caret-position="162">
+          <caret line="17" selection-start-line="17" selection-end-line="17" />
           <folding>
             <element signature="e#28#49#0" expanded="true" />
           </folding>
@@ -732,15 +699,15 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/core/graphSettings.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="275">
-          <caret line="96" column="17" lean-forward="true" selection-start-line="96" selection-start-column="17" selection-end-line="96" selection-end-column="17" />
+        <state relative-caret-position="999">
+          <caret line="41" column="48" selection-start-line="41" selection-start-column="48" selection-end-line="41" selection-end-column="48" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/ui/mainWindow.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="432">
-          <caret line="721" column="72" selection-start-line="721" selection-start-column="72" selection-end-line="721" selection-end-column="72" />
+        <state relative-caret-position="27">
+          <caret line="709" column="62" lean-forward="true" selection-start-line="709" selection-start-column="62" selection-end-line="709" selection-end-column="62" />
           <folding>
             <element signature="e#1879#1900#0" expanded="true" />
           </folding>
@@ -749,11 +716,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="223">
-          <caret line="29" column="36" lean-forward="true" selection-start-line="29" selection-start-column="36" selection-end-line="29" selection-end-column="36" />
-          <folding>
-            <element signature="e#763#814#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="115">
+          <caret line="27" column="39" lean-forward="true" selection-start-line="27" selection-start-column="39" selection-end-line="27" selection-end-column="39" />
         </state>
       </provider>
     </entry>
