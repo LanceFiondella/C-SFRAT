@@ -707,21 +707,22 @@ class MainWindow(QMainWindow):
         # Change the other tab
         # Change both plot and table
         # self._main.tab2.sideMenu.modelList.selectedItems()
+        ModelsList2 = self._main.tab2.sideMenu.modelListWidget
+        ModelsList3 = self._main.tab3.sideMenu.modelListWidget
+        Modelstext = self._main.tab2.sideMenu.ModelsText
+        ModelsList2.blockSignals(True)
+        ModelsList3.blockSignals(True)
 
+        for i in Modelstext:
+            if i in selectedModels:
+                ModelsList3.item(Modelstext.index(i)).setSelected(True)
+                ModelsList2.item(Modelstext.index(i)).setSelected(True)
+            else:
+                ModelsList3.item(Modelstext.index(i)).setSelected(False)
+                ModelsList2.item(Modelstext.index(i)).setSelected(False)
 
-        if self._main.tabs.currentIndex() == 1:
-            currenttab = 2;
-            for i in selectedModels:
-                for j in range(0,self._main.tab3.sideMenu.modelListWidget.count()):
-                    if i == self._main.tab3.sideMenu.modelListWidget.item(j).text():
-                        self._main.tab3.sideMenu.modelListWidget.setCurrentItem(self._main.tab3.sideMenu.modelListWidget.item(j))
-
-        elif self._main.tabs.currentIndex() == 2:
-            currenttab = 3;
-            for i in selectedModels:
-                for j in range(0,self._main.tab2.sideMenu.modelListWidget.count()):
-                    if i == self._main.tab2.sideMenu.modelListWidget.item(j).text():
-                        self._main.tab2.sideMenu.modelListWidget.setCurrentItem(self._main.tab2.sideMenu.modelListWidget.item(j))
+        ModelsList2.blockSignals(False)
+        ModelsList3.blockSignals(False)
 
         selectedDict = {}
         for key, model in self.estimationResults.items():
@@ -730,6 +731,7 @@ class MainWindow(QMainWindow):
         self._main.tab3.addResultsToTable(selectedDict)
         self.selectedModelNames = selectedModels
         self.updateUI()
+
 
     def changePlot2(self, selectedModels):
         """Updates plot 2 to show newly selected models to display.

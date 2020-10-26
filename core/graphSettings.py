@@ -39,7 +39,7 @@ class PlotSettings:
             #     x, y = self.addZeroPoint(x, y)
 
             # can only have "post" parameter if using a step function
-            plotMethod(x, y, self.style, markerSize=self.markerSize, where="post")  # ax.step()
+            plotMethod(x, y, self.style, markerSize=self.markerSizeize, where="post")  # ax.step()
             # plotMethod(x, y, self.style, markerSize=self.markerSize)  # ax.step()
         elif self.plotType == "bar":
             # ax.set_xticks(x)

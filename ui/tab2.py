@@ -57,10 +57,12 @@ class SideMenu2(QVBoxLayout):
     failureChangedSignal = pyqtSignal(int)  # changes based on failure spin box
     intensityChangedSignal = pyqtSignal(float)
 
+
     def __init__(self):
         """Initializes tab 2 side menu UI elements."""
         super().__init__()
         self._setupSideMenu()
+        self.ModelsText = []
 
     def addSelectedModels(self, modelNames):
         """Adds model names to the model list widget.
@@ -70,6 +72,8 @@ class SideMenu2(QVBoxLayout):
                 widget.
         """
         self.modelListWidget.addItems(modelNames)
+        self.ModelsText.clear()
+        self.ModelsText = modelNames
 
     def _setupSideMenu(self):
         """Creates group box widgets and adds them to layout."""
@@ -218,8 +222,7 @@ class SideMenu2(QVBoxLayout):
         that are currently selected.
         """
         selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
-        #log.debug("Selected models: %s", selectedModelNames)
-        print("Changed Tab 2: %s", selectedModelNames)
+        #log.debug("Selected models: %s", selectedModelNames
         self.modelChangedSignal.emit(selectedModelNames)
 
 
