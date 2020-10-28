@@ -80,6 +80,12 @@ class PlotAndTable(QTabWidget):
             tableTabLabel: Text label (string) for table tab.
         """
         self.tableWidget = QTableView()
+
+        self.tableWidget.setEditTriggers(QTableWidget.NoEditTriggers)     # make cells unable to be edited
+        self.tableWidget.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+                                                                    # column width fit to contents
+        # self.tableWidget.setSortingEnabled(True)
+
         self.addTab(self.tableWidget, tableTabLabel)
 
 #Temporary Test

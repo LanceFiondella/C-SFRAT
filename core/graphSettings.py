@@ -10,6 +10,8 @@ class PlotSettings:
         self._style = '-o'
         self._plotType = "step"
         self.markerSize = 3
+        self.linewidth = 2
+        self.color = "black"
 
     @property
     def style(self):
@@ -39,12 +41,13 @@ class PlotSettings:
             #     x, y = self.addZeroPoint(x, y)
 
             # can only have "post" parameter if using a step function
-            plotMethod(x, y, self.style, markerSize=self.markerSize, where="post")  # ax.step()
+            plotMethod(x, y, self.style, linewidth=self.linewidth, color=self.color, markerSize=self.markerSize, where="post")  # ax.step()
             # plotMethod(x, y, self.style, markerSize=self.markerSize)  # ax.step()
         elif self.plotType == "bar":
             # ax.set_xticks(x)
             ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
-            plotMethod(x, y, color='skyblue')    # ax.bar()
+            # plotMethod(x, y, color='skyblue')    # ax.bar()
+            plotMethod(x, y, color='darkgrey')
         else:
             # add point at (0, 0) if not there
             x = x.to_numpy()

@@ -268,7 +268,7 @@ class SideMenu4(QVBoxLayout):
         group = QGroupBox(label)
         groupLayout = QVBoxLayout()
         # Effort allocation to expose 'k' number of additional faults with the smallest budget possible
-        description = QLabel("Minimum budget to discover\nspecified additonal faults")
+        description = QLabel("Minimum budget (B) to discover\nspecified additonal faults")
         # description.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         groupLayout.addWidget(description)
 

@@ -152,7 +152,7 @@ class MainWindow(QMainWindow):
         # tab 1 plot and table
         self.ax = self._main.tab1.plotAndTable.figure.add_subplot(111)
         # tab 2 plot and table
-        self.ax2 = self._main.tab2.plot.figure.add_subplot(111)
+        self.ax2 = self._main.tab2.plotAndTable.figure.add_subplot(111)
 
         # SIGNAL CONNECTIONS
         self.importFileSignal.connect(self.importFile)
@@ -165,8 +165,10 @@ class MainWindow(QMainWindow):
         self._main.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2AndUpdateComparisonTable)
 
         # connect tab2 list changed to refreshing tab 2 plot
-        self._main.tab2.sideMenu.failureChangedSignal.connect(self.runPrediction)
-        self._main.tab2.sideMenu.intensityChangedSignal.connect(self.prediction2) # temporary
+        # self._main.tab2.sideMenu.failureChangedSignal.connect(self.runPrediction)
+        self._main.tab2.sideMenu.failureChangedSignal.connect(self.updateUI)
+        # self._main.tab2.sideMenu.intensityChangedSignal.connect(self.prediction2)
+        self._main.tab2.sideMenu.intensityChangedSignal.connect(self.updateUI)
         #self._main.tab3.sideMenu.modelChangedSignal.connect(self.updateComparisonTable)
         self._main.tab3.sideMenu.modelChangedSignal.connect(self.changePlot2AndUpdateComparisonTable)
         # self._main.tab3.sideMenu.modelListWidget.itemActivated().connect(self._main.tab3.addRow)
@@ -434,7 +436,7 @@ class MainWindow(QMainWindow):
             # rescale plot: https://stackoverflow.com/questions/10944621/dynamically-updating-plot-in-matplotlib
             self.ax2.relim()
             self.ax2.autoscale_view()
-            self._main.tab2.plot.figure.canvas.draw()
+            self._main.tab2.plotAndTable.figure.canvas.draw()
 
     def subsetData(self, slider_value):
         # minimum subset is 5 data points
@@ -507,10 +509,19 @@ class MainWindow(QMainWindow):
             # MVF
             self.mvf.setChecked(True)
             self.createMVFPlot(dataframe)
+
+            # disable reliability spin box, enable failure spin box
+            self._main.tab2.sideMenu.reliabilitySpinBox.setDisabled(True)
+            self._main.tab2.sideMenu.failureSpinBox.setEnabled(True)
+
         if self.dataViewIndex == 1:
             # Intensity
             self.intensity.setChecked(True)
             self.createIntensityPlot(dataframe)
+
+            # disable failure spin box, enable reliability spin box
+            self._main.tab2.sideMenu.failureSpinBox.setDisabled(True)
+            self._main.tab2.sideMenu.reliabilitySpinBox.setEnabled(True)
 
         # redraw figures
         self.ax2.legend()
@@ -595,11 +606,17 @@ class MainWindow(QMainWindow):
             self.ax2.axvline(x=dataframe['T'].iloc[-1], color='red', linestyle='dotted')
 
             # self.plotSettings.plotType = "step"
-            # model name and metric combination
+            # model name and covariate combination
             for modelName in self.selectedModelNames:
                 # add line for model if selected
                 model = self.estimationResults[modelName]
-                self.plotSettings.addLine(self.ax2, model.t, model.mvf_array, modelName)
+
+                # check if prediction is specified
+                if self._main.tab2.sideMenu.failureSpinBox.value() > 0:
+                    x, mvf_array = self.runPrediction(modelName, self._main.tab2.sideMenu.failureSpinBox.value())
+                    self.plotSettings.addLine(self.ax2, x, mvf_array, modelName)
+                else:
+                    self.plotSettings.addLine(self.ax2, model.t, model.mvf_array, modelName)
 
     def createIntensityPlot(self, dataframe):
         """Creates intensity plots for tabs 1 and 2.
@@ -628,11 +645,17 @@ class MainWindow(QMainWindow):
                                                       title="", xLabel="Cumulative time", yLabel="Failures")
             self.plotSettings.plotType = previousPlotType
 
-            # model name and metric combination!
+            # model name and covariate combination
             for modelName in self.selectedModelNames:
                 # add line for model if selected
                 model = self.estimationResults[modelName]
-                self.plotSettings.addLine(self.ax2, model.t, model.intensityList, modelName)
+
+                # check if prediction is specified
+                if self._main.tab2.sideMenu.reliabilitySpinBox.value() > 0.0:
+                    x, intensity_array, interval = self.runPrediction2(modelName, self._main.tab2.sideMenu.reliabilitySpinBox.value())
+                    self.plotSettings.addLine(self.ax2, x, intensity_array, modelName)
+                else:
+                    self.plotSettings.addLine(self.ax2, model.t, model.intensityList, modelName)
 
     #region plot styles
     def setPlotStyle(self, style='-o'):
@@ -700,6 +723,7 @@ class MainWindow(QMainWindow):
         log.info("Data plots set to intensity view.")
         if self.dataLoaded:
             self.setRawDataView(self.dataViewIndex)
+
     def changePlot2AndUpdateComparisonTable(self,selectedModels):
         # Access Selected Items
         # Find which tab the change came from
@@ -878,7 +902,7 @@ class MainWindow(QMainWindow):
         # just add to table 2
         self._main.tab4.addResultsToTable(self.allocationResults, self.data, 2)
 
-    def runPrediction(self, failures):
+    def runPrediction(self, modelName, failures):
         """Runs predictions for future points according to model results.
 
         Called when failure spin box value is changed.
@@ -886,58 +910,20 @@ class MainWindow(QMainWindow):
         Args:
             failures: Number of future failure points to predict (int).
         """
-        # run prediction on currently selected combinations in tab 2
-        itemsSelected = len(self._main.tab2.sideMenu.modelListWidget.selectedItems())
-        
-        # check to make sure that model combinations are selected before
-        # running prediction
-        if self.estimationComplete and itemsSelected > 0:
-            # gets first selected item
-            name = self._main.tab2.sideMenu.modelListWidget.selectedItems()[0].text()
-            m = self.estimationResults[name]  # model indexed by the name
 
-            ## RUN PREDICTION USING SPECIFIED SUBSET OF COVARIATE DATA
-            ## for now, just passing full data
-            print(self._main.tab2.sideMenu.effortSpinBoxDict)
-            x, mvf_array, intensity_array = m.prediction(failures, m.covariateData, self._main.tab2.sideMenu.effortSpinBoxDict)
+        m = self.estimationResults[modelName]  # model indexed by the name
 
-            # self.plotSettings.addLine(self.ax2, x, mvfList, "Prediction")
-            # MVF view
-            if self.dataViewIndex == 0:
-                self.ax2.lines[-1].set_xdata(x)
-                self.ax2.lines[-1].set_ydata(mvf_array)
-            # Intensity view
-            elif self.dataViewIndex == 1:
-                self.ax2.lines[-1].set_xdata(x)
-                self.ax2.lines[-1].set_ydata(intensity_array)
+        x, mvf_array = m.prediction(failures, m.covariateData, self._main.tab2.sideMenu.effortSpinBoxDict)
 
-            # redraw figure
-            self.ax2.legend()
-            self.redrawPlot(2)
+        return x, mvf_array#, intensity_array
 
-            ## testing
-            # failure_num = 1
-            # while(mvf_array[-1]-mvf_array[-2] > 0.5):
-            #     print(mvf_array[-1]-mvf_array[-2])
-            #     print(failure_num)
-            #     x, mvf_array, intensity_array = m.prediction(failure_num, m.covariateData)
-            #     failure_num += 1
+    def runPrediction2(self, modelName, intensity):
 
-    def prediction2(self, intensity):
-        # run prediction on currently selected combinations in tab 2
-        itemsSelected = len(self._main.tab2.sideMenu.modelListWidget.selectedItems())
+        m = self.estimationResults[modelName]  # model indexed by the name
 
-        # check to make sure that model combinations are selected before
-        # running prediction
-        if self.estimationComplete and itemsSelected > 0:
-            # gets first selected item
-            name = self._main.tab2.sideMenu.modelListWidget.selectedItems()[0].text()
-            m = self.estimationResults[name]  # model indexed by the name
+        x, intensity_array, intervals = m.prediction_intensity(intensity, m.covariateData, self._main.tab2.sideMenu.effortSpinBoxDict)
 
-            ## RUN PREDICTION USING SPECIFIED SUBSET OF COVARIATE DATA
-            ## for now, just passing full data
-            # x, mvf_array, intensity_array = m.prediction_intensity(intensity, m.covariateData)
-            m.prediction_intensity(intensity, m.covariateData, self._main.tab2.sideMenu.effortSpinBoxDict)
+        return x, intensity_array, intervals
 
     #endregion
 

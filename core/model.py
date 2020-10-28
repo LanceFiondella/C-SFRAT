@@ -498,16 +498,16 @@ class Model(ABC):
         # print(self.omega)
 
 
-        mvf_array = np.array([self.MVF(self.mle_array, omega, hazard, dataPoints, combined_array) for dataPoints in range(total_points)])
-        intensity_array = self.intensityFit(mvf_array)
-        x = np.arange(1, total_points + 1)
+        mvf_array = np.array([self.MVF(self.mle_array, self.omega, hazard, dataPoints, combined_array) for dataPoints in range(total_points)])
+        # intensity_array = self.intensityFit(mvf_array)
+        x = np.concatenate((self.t, np.arange(self.n + 1, total_points + 1)))
 
         # add initial point at zero if not present
         # if self.t[0] != 0:
         #     mvf_array = np.concatenate((np.zeros(1), mvf_array))
         #     intensity_array = np.concatenate((np.zeros(1), intensity_array))
 
-        return (x, mvf_array, intensity_array)
+        return (x, mvf_array)
 
     def prediction_intensity(self, intensity, covariate_data, effortDict):
         # res = scipy.optimize.root_scalar(self.pred_function, x0=self.n+1, x1=self.n+3, args=(intensity, covariate_data))
@@ -553,13 +553,18 @@ class Model(ABC):
 
             #### IGNORE IF 0 !!!!!! ####
 
-            mvf_list.append(self.MVF(self.mle_array, omega, hazard, total_points - 1, combined_array))
+            mvf_list.append(self.MVF(self.mle_array, self.omega, hazard, total_points - 1, combined_array))
             calculated_intensity = mvf_list[-1] - mvf_list[-2]
             print("calculated intensity:", calculated_intensity)
             print("desired intensity:", intensity)
             if calculated_intensity < intensity:
                 print("desired failure intensity reached in {0} intervals".format(i))
-                return
+                x = np.concatenate((self.t, np.arange(self.n + 1, len(mvf_list) + 1)))
+                return (x, self.intensityFit(mvf_list), i)
+                print("***** after return????")
+
+        print("desired failure intensity not reached within 100 intervals")
+        return (self.t, self.intensityList, 0)
 
 
             # mvf_array = np.array([self.MVF(self.mle_array, omega, hazard, dataPoints, combined_array) for dataPoints in range(total_points)])
@@ -571,7 +576,7 @@ class Model(ABC):
             #     mvf_array = np.concatenate((np.zeros(1), mvf_array))
             #     intensity_array = np.concatenate((np.zeros(1), intensity_array))
 
-        print("desired failure intensity not reached within 100 intervals")
+        
 
 
     def pred_function(self, n, intensity, covariate_data):

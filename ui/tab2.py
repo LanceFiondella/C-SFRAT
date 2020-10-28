@@ -5,12 +5,15 @@ import logging as log
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, \
                             QGroupBox, QListWidget, QAbstractItemView, \
                             QSpinBox, QDoubleSpinBox, QScrollArea, QLabel, \
-                            QFormLayout
+                            QFormLayout, QHeaderView
 from PyQt5.QtCore import pyqtSignal
 
+import pandas as pd
+
 # Local imports
-from ui.commonWidgets import PlotWidget
+from ui.commonWidgets import PlotAndTable#, PlotWidget
 from ui.tab3 import Tab3, SideMenu3
+from core.dataClass import PandasModel
 
 
 class Tab2(QWidget):
@@ -29,9 +32,48 @@ class Tab2(QWidget):
         horizontalLayout = QHBoxLayout()       # main layout
         self.sideMenu = SideMenu2()
         horizontalLayout.addLayout(self.sideMenu, 15)
-        self.plot = PlotWidget()
-        horizontalLayout.addWidget(self.plot, 85)
+        # self.plot = PlotWidget()
+        # horizontalLayout.addWidget(self.plot, 85)
+        self.plotAndTable = PlotAndTable("Plot", "Table")
+        horizontalLayout.addWidget(self.plotAndTable, 85)
         self.setLayout(horizontalLayout)
+
+    def _setupTable(self):
+        # header = self.plotAndTable.tableWidget.horizontalHeader()
+        # header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        # # provides bottom border for header
+        # stylesheet = "::section{Background-color:rgb(250,250,250);}"
+        # header.setStyleSheet(stylesheet)
+        
+        column_names = ["Interval", "FC"]
+        self.df = pd.DataFrame(columns=column_names)
+        self.table_model = PandasModel(self.df)
+        self.plotAndTable.tableWidget.setModel(self.table_model)
+
+        
+
+
+    def updateTable(self, results):
+        self.sideMenu.comparison.goodnessOfFit(results, self.sideMenu)
+
+        rows = []
+        row_index = 0
+        for key, model in results.items():
+            row = [model.shortName,
+                   model.metricString,
+                   model.llfVal,
+                   model.aicVal,
+                   model.bicVal,
+                   model.sseVal,
+                   self.sideMenu.comparison.meanOut[row_index],
+                   self.sideMenu.comparison.medianOut[row_index]]
+            rows.append(row)
+            row_index += 1
+        row_df = pd.DataFrame(rows, columns=self.column_names)
+
+        self.tableModel.setAllData(row_df)
+
+        self.table.model().layoutChanged.emit()
 
 
 class SideMenu2(QVBoxLayout):
@@ -54,7 +96,7 @@ class SideMenu2(QVBoxLayout):
     # signals
     modelChangedSignal = pyqtSignal(list)   # changes based on selection of
                                             # models in tab 2
-    failureChangedSignal = pyqtSignal(int)  # changes based on failure spin box
+    failureChangedSignal = pyqtSignal()  # changes based on failure spin box
     intensityChangedSignal = pyqtSignal(float)
 
 
@@ -122,15 +164,6 @@ class SideMenu2(QVBoxLayout):
         predictionGroupLayout.addWidget(QLabel("Specify Effort Per Interval"))
         predictionGroupLayout.addWidget(self.effortScrollArea, 1)
 
-        # self.addWid("E")
-        # self.addWid("F")
-        # self.addWid("C")
-        # self.addWid("1")
-        # self.addWid("2")
-        # self.addWid("3")
-
-        # self.setupEffortList(["E", "F", "C"])
-
 
         self.failureSpinBox = QSpinBox()
         self.failureSpinBox.setMinimum(0)
@@ -140,8 +173,10 @@ class SideMenu2(QVBoxLayout):
         predictionGroupLayout.addWidget(self.failureSpinBox)
 
         self.reliabilitySpinBox = QDoubleSpinBox()
+        self.reliabilitySpinBox.setDecimals(4)
         self.reliabilitySpinBox.setMinimum(0.0)
         self.reliabilitySpinBox.setValue(0.0)
+        self.reliabilitySpinBox.setSingleStep(0.1)
         self.reliabilitySpinBox.valueChanged.connect(self._emitIntensityChangedSignal)
         predictionGroupLayout.addWidget(QLabel("Desired Failure Intensity"))
         predictionGroupLayout.addWidget(self.reliabilitySpinBox)
@@ -231,7 +266,8 @@ class SideMenu2(QVBoxLayout):
 
         The emitted signal contains the number of future failures to predict.
         """
-        self.failureChangedSignal.emit(failures)
+        # self.failureChangedSignal.emit(failures)
+        self.failureChangedSignal.emit()
 
     def _emitIntensityChangedSignal(self, intensity):
         self.intensityChangedSignal.emit(intensity)

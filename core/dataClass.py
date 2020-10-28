@@ -65,7 +65,12 @@ class Data:
         Returns dataframe corresponding to the currentSheet index
         """
         full_dataset = self.dataSet[self.sheetNames[self._currentSheet]]
-        subset = full_dataset[:self._max_interval]
+        try:
+            subset = full_dataset[:self._max_interval]
+        except TypeError:
+            # if None type, data hasn't been loaded
+            # cannot subscript None type
+            return full_dataset
         return subset
 
     def getFullData(self):
