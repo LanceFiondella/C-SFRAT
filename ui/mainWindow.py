@@ -747,7 +747,8 @@ class MainWindow(QMainWindow):
 
         ModelsList2.blockSignals(False)
         ModelsList3.blockSignals(False)
-
+        selectedModelsTemp = [x.split('. ')[1] for x in selectedModels]
+        selectedModels = selectedModelsTemp
         selectedDict = {}
         for key, model in self.estimationResults.items():
             if key in selectedModels:
@@ -830,6 +831,9 @@ class MainWindow(QMainWindow):
                 nonConvergedNames.append(key)
 
         log.info("DID NOT CONVERGE: %s", nonConvergedNames)
+
+        for i in range(1,len(convergedNames)+1):
+            convergedNames[i-1]= str(i)+". " + convergedNames[i-1]
 
         self._main.tab2.sideMenu.addSelectedModels(convergedNames)  # add models to tab 2 list
                                                                     # so they can be selected
