@@ -34,17 +34,23 @@ class Tab3(QWidget):
         self._setupTab3()
 
     def addResultsToTable(self, results):
-        self.sideMenu.comparison.goodnessOfFit(results, self.sideMenu)
+        results_1 = {}
+        for key, model in results.items():
+            results_1[key] = model[0]
+
+        self.sideMenu.comparison.goodnessOfFit(results_1, self.sideMenu)
 
         rows = []
         row_index = 0
         for key, model in results.items():
-            row = [model.shortName,
-                   model.metricString,
-                   model.llfVal,
-                   model.aicVal,
-                   model.bicVal,
-                   model.sseVal,
+            row = [
+                   str(model[1]),
+                   model[0].shortName,
+                   model[0].metricString,
+                   model[0].llfVal,
+                   model[0].aicVal,
+                   model[0].bicVal,
+                   model[0].sseVal,
                    self.sideMenu.comparison.meanOut[row_index],
                    self.sideMenu.comparison.medianOut[row_index]]
             rows.append(row)
@@ -68,7 +74,7 @@ class Tab3(QWidget):
         self.setLayout(mainLayout)
 
     def _setupTable(self):
-        self.column_names = ["Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
+        self.column_names = ["", "Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
                              "SSE", "Critic (Mean)", "Critic (Median)"]
         self.dataframe = pd.DataFrame(columns=self.column_names)
         self.tableModel = PandasModel(self.dataframe)

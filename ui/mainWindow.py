@@ -747,12 +747,17 @@ class MainWindow(QMainWindow):
 
         ModelsList2.blockSignals(False)
         ModelsList3.blockSignals(False)
+        selectModelsNumDic = {}
+        for i in selectedModels:
+            selectModelsNumDic[i.split('. ')[1]]=i.split('. ')[0]
+
         selectedModelsTemp = [x.split('. ')[1] for x in selectedModels]
         selectedModels = selectedModelsTemp
+
         selectedDict = {}
         for key, model in self.estimationResults.items():
-            if key in selectedModels:
-                selectedDict[key] = model
+            if key in selectModelsNumDic.keys():
+                selectedDict[key] = [model, selectModelsNumDic[key]]
         self._main.tab3.addResultsToTable(selectedDict)
         self.selectedModelNames = selectedModels
         self.updateUI()
