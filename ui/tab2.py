@@ -161,7 +161,7 @@ class SideMenu2(QVBoxLayout):
 
         self.effortSpinBoxDict = {}
 
-        predictionGroupLayout.addWidget(QLabel("Specify Effort Per Interval"))
+        predictionGroupLayout.addWidget(QLabel("Effort per Interval"))
         predictionGroupLayout.addWidget(self.effortScrollArea, 1)
 
 
@@ -178,7 +178,7 @@ class SideMenu2(QVBoxLayout):
         self.reliabilitySpinBox.setValue(0.0)
         self.reliabilitySpinBox.setSingleStep(0.1)
         self.reliabilitySpinBox.valueChanged.connect(self._emitIntensityChangedSignal)
-        predictionGroupLayout.addWidget(QLabel("Desired Failure Intensity"))
+        predictionGroupLayout.addWidget(QLabel("Failure Intensity Target"))
         predictionGroupLayout.addWidget(self.reliabilitySpinBox)
 
         return predictionGroupLayout

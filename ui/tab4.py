@@ -130,7 +130,7 @@ class Tab4(QWidget):
                                                             # column width fit to contents
         table.setRowCount(1)
         table.setColumnCount(3)
-        table.setHorizontalHeaderLabels(["Model Name", "Covariates", "H"])
+        table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Est. Defects"])
 
         header = table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -163,8 +163,8 @@ class Tab4(QWidget):
         for name in metricNames:
             percentNames.append("%" + name)
             i += 1
-        headerLabels.append(["Model Name", "Covariates", "H"] + percentNames)
-        headerLabels.append(["Model Name", "Covariates", "Effort"] + percentNames)
+        headerLabels.append(["Model Name", "Covariates", "Est. Defects"] + percentNames)
+        headerLabels.append(["Model Name", "Covariates", "Est. Budget"] + percentNames)
         return headerLabels
 
 
