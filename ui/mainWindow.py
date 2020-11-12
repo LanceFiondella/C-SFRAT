@@ -724,7 +724,7 @@ class MainWindow(QMainWindow):
         if self.dataLoaded:
             self.setRawDataView(self.dataViewIndex)
 
-    def changePlot2AndUpdateComparisonTable(self,selectedModels):
+    def changePlot2AndUpdateComparisonTable(self, selectedModels):
         # Access Selected Items
         # Find which tab the change came from
         # Disable the signals
@@ -749,9 +749,9 @@ class MainWindow(QMainWindow):
         ModelsList3.blockSignals(False)
         selectModelsNumDic = {}
         for i in selectedModels:
-            selectModelsNumDic[i.split('. ')[1]]=i.split('. ')[0]
+            selectModelsNumDic[i.split('. ', 1)[1]]=i.split('. ', 1)[0]
 
-        selectedModelsTemp = [x.split('. ')[1] for x in selectedModels]
+        selectedModelsTemp = [x.split('. ', 1)[1] for x in selectedModels]
         selectedModels = selectedModelsTemp
 
         selectedDict = {}
@@ -837,8 +837,8 @@ class MainWindow(QMainWindow):
 
         log.info("DID NOT CONVERGE: %s", nonConvergedNames)
 
-        for i in range(1,len(convergedNames)+1):
-            convergedNames[i-1]= str(i)+". " + convergedNames[i-1]
+        for i in range(1, len(convergedNames)+1):
+            convergedNames[i-1] = "{0}. {1}".format(i, convergedNames[i-1])
 
         self._main.tab2.sideMenu.addSelectedModels(convergedNames)  # add models to tab 2 list
                                                                     # so they can be selected

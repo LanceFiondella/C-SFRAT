@@ -44,15 +44,15 @@ class Tab3(QWidget):
         row_index = 0
         for key, model in results.items():
             row = [
-                   str(model[1]),
-                   model[0].shortName,
-                   model[0].metricString,
-                   model[0].llfVal,
-                   model[0].aicVal,
-                   model[0].bicVal,
-                   model[0].sseVal,
-                   self.sideMenu.comparison.meanOut[row_index],
-                   self.sideMenu.comparison.medianOut[row_index]]
+               str(model[1]),
+               model[0].shortName,
+               model[0].metricString,
+               model[0].llfVal,
+               model[0].aicVal,
+               model[0].bicVal,
+               model[0].sseVal,
+               self.sideMenu.comparison.meanOut[row_index],
+               self.sideMenu.comparison.medianOut[row_index]]
             rows.append(row)
             row_index += 1
         row_df = pd.DataFrame(rows, columns=self.column_names)

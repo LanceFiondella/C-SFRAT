@@ -22,6 +22,10 @@ class EffortAllocation:
             self.runAllocation2()
             self.percentages2 = self.organizeResults(self.res2.x, self.effort)
 
+
+        # self.runAllocation3()
+
+
     def runAllocation1(self):
 
         ##############################################
@@ -87,6 +91,29 @@ class EffortAllocation:
 
         # we want to minimize, SHGO uses minimization
         return self.model.MVF(self.model.mle_array, omega, self.hazard_array, new_cov_data.shape[1] - 1, new_cov_data)
+
+
+
+    def runAllocation3(self):
+        cons3 = ({'type': 'eq', 'fun': self.optimization3, 'args': (self.covariate_data,)})
+        bnds = tuple((0, None) for i in range(self.model.numCovariates))
+
+        self.res3 = shgo(lambda x: sum([x[i] for i in range(self.model.numCovariates)]), bounds=bnds, constraints=cons3)
+        self.effort3 = np.sum(self.res2.x)
+
+    def optimization3(self, x, covariate_data):
+        res = self.allocationFunction3(x, covariate_data)
+        H = res - self.model.mvf_array[-1]
+        return self.f - H
+
+    def allocationFunction3(self, x, covariate_data):
+        new_cov_data = np.concatenate((covariate_data, x[:, None]), axis=1)
+        omega = self.model.calcOmega(self.hazard_array, self.model.betas, new_cov_data)
+
+        # we want to minimize, SHGO uses minimization
+        return self.model.MVF(self.model.mle_array, omega, self.hazard_array, new_cov_data.shape[1] - 1, new_cov_data)
+
+
 
     def organizeResults(self, results, budget):
         return np.multiply(np.divide(results, budget), 100)

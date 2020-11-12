@@ -311,9 +311,9 @@ class SideMenu4(QVBoxLayout):
         is selected.
         """
         print(type(allocation_type))
-        selectedCombinationNames = [item.text() for item in self.modelListWidget.selectedItems()]
+        selectedCombinationNames = [item.text().split(". ", 1)[1] for item in self.modelListWidget.selectedItems()]
         if selectedCombinationNames:
-            selectedCombinationNames = [item.text() for item in self.modelListWidget.selectedItems()]
+            # selectedCombinationNames = [item.text() for item in self.modelListWidget.selectedItems()]
             log.info("Selected for Allocation: %s", selectedCombinationNames)
 
             print(allocation_type)

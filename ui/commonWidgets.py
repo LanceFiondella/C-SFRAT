@@ -264,7 +264,7 @@ class TaskThread(QThread):
         Called when thread is started.
         """
         # window says that symbolic equations are being calculated
-        self.nextCalculation.emit("symbolic equations")
+        self.nextCalculation.emit("Symbolic equations")
         while(not SymbolicThread.complete):
             # check if application has been closed
             if self.abort:
@@ -272,6 +272,7 @@ class TaskThread(QThread):
             # wait until symbolic equations are calculated, do nothing until then
             pass
         result = {}
+        combination_index = 1   # for adding integer index to combinations
         for model in self._modelsToRun:
             for metricCombination in self._metricNames:
                 # check if application has been closed
@@ -293,14 +294,20 @@ class TaskThread(QThread):
 
                 # this is the name used in tab 2 and tab 4 side menus
                 # use shortened name
-                runName = m.shortName + " (" + metricNames + ")"  # "Model (Metric1, Metric2, ...)"
+                # runName = "{0}. {1} ({2})".format(combination_index, m.shortName, metricNames)
+                runName = "{0} ({1})".format(m.shortName, metricNames)  # "Model (Metric1, Metric2, ...)"
+                # runName = m.shortName + " (" + metricNames + ")"  # "Model (Metric1, Metric2, ...)"
+                # self.nextCalculation.emit(runName.split(". ", 1)[1])
                 self.nextCalculation.emit(runName)
 
-                ## THIS IS WHERE SUBSETS OF COVARIATE DATA WILL BE PASSED
+                ## THIS IS WHERE SUBSETS OF COVARIATE DATA CAN BE PASSED
                 ## for now, just pass all
                 m.runEstimation(m.covariateData)
                 result[runName] = m
                 self.modelFinished.emit()
+
+                # combination_index += 1  # update index
+
         self.taskFinished.emit(result)
 
 
