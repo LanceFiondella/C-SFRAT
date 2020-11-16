@@ -59,7 +59,7 @@ matrix:
         - pip install -r requirements.txt
         - pip freeze
         - pip install PyQt5
-        
+     '''
     - name: "Python 3.6 on macOS"
       os: osx
       language: generic
@@ -77,9 +77,11 @@ matrix:
         - pip install -r requirements.txt
         - pip freeze
         - pip install PyQt5
+        '''
+    '''
     - name: "Python 3.7 on macOS"
       os: osx
-      language: generic       # 'language: python' is an error on Travis CI macOS
+      language: generic       # language: python is an error on Travis CI macOS
       env:
         - MAC_PYTHON_VERSION=3.7.3
         - MAC_PYTHON_OSX_VERSION=10.6
@@ -94,6 +96,7 @@ matrix:
         - pip install -r requirements.txt
         - pip freeze
         - pip install PyQt5
+        '''
     - name: "Python 3.6 on Windows"
       # if: branch = master
       os: windows           # Windows 10.0.17134 N/A Build 17134
@@ -135,7 +138,7 @@ script:
   - coverage report -m
   - coverage html
 env:
-  - CODECOV_TOKEN = 17c16986-cfba-4ccd-a773-aa4fb84e25f3
+  - CODECOV_TOKEN = 2b763ae2-5bcd-48d7-8896-3102aef8da1a
 
 after_script:
   - codecov
