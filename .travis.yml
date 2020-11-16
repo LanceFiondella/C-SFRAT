@@ -1,0 +1,147 @@
+language: python
+sudo: required
+dist: trusty
+cache:
+  - pip
+  - directories:
+      - ~/cache
+      - $HOME/.pyenv/cache
+      - Library/Caches/Homebrew
+addons:
+  apt:
+    packages:
+    # Should you ever need to run tests on linux; these packages are
+    # required for testing PyQT5 applications on Ubuntu.
+    - x11-utils
+    - libxkbcommon-x11-0
+
+install:
+ - sudo gem install travis
+matrix:
+  include:
+    - name: "Python 3.6 on Xenial Linux"
+      python: 3.6
+      env: TOXENV=py36
+      dist: xenial          # required for Python >= 3.7
+      services:
+        - xvfb
+      before_install:
+        - sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0
+        - sudo apt-get update
+        - sudo apt install python-pyqt5
+      install:
+        - python --version
+        - python -m pip install --upgrade pip
+        - pip install -e .
+        - pip install -U pytest
+        - easy_install distribute
+        - pip install -r requirements.txt
+        - pip freeze
+        - pip install PyQt5
+        
+        
+    - name: "Python 3.7 on Xenial Linux"
+      python: 3.7
+      env: TOXENV=py37
+      dist: xenial          # required for Python >= 3.7
+      services:
+        - xvfb
+      before_install:
+        - sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0
+        - sudo apt-get update
+        - sudo apt install python-pyqt5
+      install:
+        - python --version
+        - python -m pip install --upgrade pip
+        - pip install -e .
+        - pip install -U pytest
+        - easy_install distribute
+        - pip install -r requirements.txt
+        - pip freeze
+        - pip install PyQt5
+        
+    - name: "Python 3.6 on macOS"
+      os: osx
+      language: generic
+      env:
+        - MAC_PYTHON_VERSION=3.6.8
+        - MAC_PYTHON_OSX_VERSION=10.6
+      sudo: required
+      install:
+        - source ./.travis/osx_setup_python.sh $MAC_PYTHON_VERSION $MAC_PYTHON_OSX_VERSION
+        - python --version
+        - pip3 install --upgrade pip
+        - pip install -e .
+        - pip install -U pytest 
+        - easy_install distribute
+        - pip install -r requirements.txt
+        - pip freeze
+        - pip install PyQt5
+    - name: "Python 3.7 on macOS"
+      os: osx
+      language: generic       # 'language: python' is an error on Travis CI macOS
+      env:
+        - MAC_PYTHON_VERSION=3.7.3
+        - MAC_PYTHON_OSX_VERSION=10.6
+      sudo: required
+      install:
+        - source ./.travis/osx_setup_python.sh $MAC_PYTHON_VERSION $MAC_PYTHON_OSX_VERSION
+        - python --version
+        - pip3 install --upgrade pip
+        - pip install -e .
+        - pip install -U pytest 
+        - easy_install distribute
+        - pip install -r requirements.txt
+        - pip freeze
+        - pip install PyQt5
+    - name: "Python 3.6 on Windows"
+      # if: branch = master
+      os: windows           # Windows 10.0.17134 N/A Build 17134
+      language: minimal       # 'language: python' is an error on Travis CI Windows
+      before_install:
+        - choco install python --version 3.6.8
+      env:
+        - TOXENV=py36
+        - PATH=/c/Python36:/c/Python36/Scripts:$PATH
+      install:                                                                                  #
+        - python --version
+        - python -m pip install --upgrade pip
+        - pip install -e .
+        - pip install -U pytest
+        - easy_install distribute
+        - pip install -r requirements.txt
+        - pip freeze
+        - pip install PyQt5
+    - name: "Python 3.7 on Windows"
+      # if: branch = master
+      os: windows           # Windows 10.0.17134 N/A Build 17134
+      language: minimal       # 'language: python' is an error on Travis CI Windows
+      before_install: choco install python --version 3.7.3
+      env:
+        - TOXENV=py37
+        - PATH=/c/Python37:/c/Python37/Scripts:$PATH
+      install:                                                                                  #
+        - python --version
+        - python -m pip install --upgrade pip
+        - pip install -e .
+        - pip install -U pytest
+        - easy_install distribute
+        - pip install -r requirements.txt
+        - pip freeze
+        - pip install PyQt5
+
+script:
+  - coverage run -m pytest
+  - coverage report -m
+  - coverage html
+env:
+  - CODECOV_TOKEN = 17c16986-cfba-4ccd-a773-aa4fb84e25f3
+
+after_script:
+  - codecov
+notifications:
+  email:
+    recipients:
+    - zfaddi@umassd.edu
+    on_success: always
+    on_failure: always
