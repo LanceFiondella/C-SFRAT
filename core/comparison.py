@@ -47,23 +47,32 @@ class Comparison():
 
         for i in range(converged):
             # llfOutUniform[i] = self.ahpNegative(llf, i, sideMenu.llfSpinBox, True)
-            llfOutUniform[i] = self.ahp(llf, i, sideMenu.llfSpinBox, True)
-            aicOutUniform[i] = self.ahp(aic, i, sideMenu.aicSpinBox, True)
-            bicOutUniform[i] = self.ahp(bic, i, sideMenu.bicSpinBox, True)
-            sseOutUniform[i] = self.ahp(sse, i, sideMenu.sseSpinBox, True)
+            # llfOutUniform[i] = self.ahp(llf, i, sideMenu.llfSpinBox, True)
+            # aicOutUniform[i] = self.ahp(aic, i, sideMenu.aicSpinBox, True)
+            # bicOutUniform[i] = self.ahp(bic, i, sideMenu.bicSpinBox, True)
+            # sseOutUniform[i] = self.ahp(sse, i, sideMenu.sseSpinBox, True)
             # llfOut[i] = self.ahpNegative(llf, i, sideMenu.llfSpinBox, False)
             llfOut[i] = self.ahp(llf, i, sideMenu.llfSpinBox, False)
             aicOut[i] = self.ahp(aic, i, sideMenu.aicSpinBox, False)
             bicOut[i] = self.ahp(bic, i, sideMenu.bicSpinBox, False)
             sseOut[i] = self.ahp(sse, i, sideMenu.sseSpinBox, False)
 
-        ahpArrayUniform = np.array([llfOutUniform, aicOutUniform, bicOutUniform, sseOutUniform])
+        # ahpArrayUniform = np.array([llfOutUniform, aicOutUniform, bicOutUniform, sseOutUniform])
         ahpArray = np.array([llfOut, aicOut, bicOut, sseOut])   # array of goodness of fit arrays
+
+        # print(ahpArray)
+        # print(np.sum(ahpArray, axis=0))
+
+        ahp_array_sum = np.sum(ahpArray, axis=0)
 
         # self.meanOutUniform = np.mean(ahpArrayUniform, axis=0)
         self.meanOut = np.mean(ahpArray, axis=0)  # mean of each goodness of fit measure,
                                                     # for each model/metric combination
         self.medianOut = np.median(ahpArray, axis=0)
+
+        self.meanOut = ahp_array_sum
+        # print(self.meanOut)
+        # print(self.medianOut)
 
         # store results in dictionary indexed by combination name
         # for key, model in results.items():
@@ -119,7 +128,7 @@ class Comparison():
         if len(measureList) > 1:
             ahp_val = (abs(measureList[i]) - max(np.absolute(measureList))) / (min(np.absolute(measureList)) - max(np.absolute(measureList))) * weight
         else:
-            ahp_val = 1.0
+            ahp_val = 1.0/4.0
 
         return ahp_val
 
@@ -128,7 +137,7 @@ class Comparison():
         try:
             # self.bestMeanUniform = np.argmax(self.meanOutUniform)
             self.bestMean = np.argmax(self.meanOut)
-            self.bestMedian = np.argmax(self.meanOut)
+            self.bestMedian = np.argmax(self.medianOut)
         except ValueError:
             # self.bestMeanUniform = None
             self.bestMean = None

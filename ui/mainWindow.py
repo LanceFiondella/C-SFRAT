@@ -734,6 +734,7 @@ class MainWindow(QMainWindow):
         ModelsList2 = self._main.tab2.sideMenu.modelListWidget
         ModelsList3 = self._main.tab3.sideMenu.modelListWidget
         Modelstext = self._main.tab2.sideMenu.ModelsText
+
         ModelsList2.blockSignals(True)
         ModelsList3.blockSignals(True)
 
@@ -751,16 +752,25 @@ class MainWindow(QMainWindow):
         for i in selectedModels:
             selectModelsNumDic[i.split('. ', 1)[1]]=i.split('. ', 1)[0]
 
-        selectedModelsTemp = [x.split('. ', 1)[1] for x in selectedModels]
-        selectedModels = selectedModelsTemp
+        selectedModels_names = [x.split('. ', 1)[1] for x in selectedModels]
 
         selectedDict = {}
         for key, model in self.estimationResults.items():
             if key in selectModelsNumDic.keys():
                 selectedDict[key] = [model, selectModelsNumDic[key]]
         self._main.tab3.addResultsToTable(selectedDict)
-        self.selectedModelNames = selectedModels
+        self.selectedModelNames = selectedModels_names
         self.updateUI()
+
+
+    def temptemp(self, selectedModels):
+        selectedModels_names = [x.split('. ', 1)[1] for x in selectedModels]
+
+        selectedDict = {}
+        for key, model in self.estimationResults.items():
+            if key in selectModelsNumDic.keys():
+                selectedDict[key] = [model, selectModelsNumDic[key]]
+        self._main.tab3.addResultsToTable(selectedDict)
 
 
     def changePlot2(self, selectedModels):
@@ -864,11 +874,26 @@ class MainWindow(QMainWindow):
         # else:
         #     self._main.tab3.removeRow(self.estimationResults[listItem.text()])
 
+        selectModelsNumDic = {}
+        for i in combinations:
+            selectModelsNumDic[i.split('. ', 1)[1]]=i.split('. ', 1)[0]
+
+        combination_num = [x.split('. ', 1)[0] for x in combinations]
+        combination_names = [x.split('. ', 1)[1] for x in combinations]
         selectedDict = {}
         for key, model in self.estimationResults.items():
-            if key in combinations:
-                selectedDict[key] = model
+            if key in selectModelsNumDic.keys():
+                selectedDict[key] = [model, selectModelsNumDic[key]]
         self._main.tab3.addResultsToTable(selectedDict)
+
+
+
+
+        # selectedDict = {}
+        # for key, model in self.estimationResults.items():
+        #     if key in combinations:
+        #         selectedDict[key] = [model, combinations[key]]
+        # self._main.tab3.addResultsToTable(selectedDict)
 
     def runAllocation1(self, combinations):
         """Runs effort allocation on selected model/metric combinations.

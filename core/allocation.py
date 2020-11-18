@@ -11,12 +11,21 @@ class EffortAllocation:
         
         
         self.covariate_data = covariate_data
-        self.hazard_array = np.concatenate((self.model.hazard_array, [self.model.hazardFunction(self.model.n + 1, self.model.b)]))
+        self.hazard_array = np.concatenate((self.model.hazard_array, [self.model.hazardFunction(self.model.n + 1, self.model.modelParameters)]))
 
         if allocation_type == 1:
             self.B = args[0]
             self.runAllocation1()
             self.percentages = self.organizeResults(self.res.x, self.B)
+
+
+            # testing with Vidhya's values
+            # print(-self.allocationFunction(np.array([39.6]), self.covariate_data) - self.model.mvf_array[-1])
+            # print(-self.allocationFunction(np.array([39.6, 0.0]), self.covariate_data) - self.model.mvf_array[-1])
+            # print(-self.allocationFunction(np.array([2.2572, 37.3428]), self.covariate_data) - self.model.mvf_array[-1])
+            # print(-self.allocationFunction(np.array([16.137, 23.463]), self.covariate_data) - self.model.mvf_array[-1])
+            # print(-self.allocationFunction(np.array([15.0599, 0.0, 24.5401]), self.covariate_data) - self.model.mvf_array[-1])
+
         else:
             self.f = args[0]
             self.runAllocation2()

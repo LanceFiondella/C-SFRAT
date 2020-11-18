@@ -94,6 +94,8 @@ class Model(ABC):
         # self.maxCovariates = self.data.numCovariates    # total number of covariates from imported data
                                                         # data object not passed, just dataframe (which
                                                         # doesn't have numCovariates as an attribute
+        self.numParameters = len(self.parameterEstimates)
+        self.numSymbols = self.numCovariates + self.numParameters
         self.converged = False
         self.setupMetricString()
 
@@ -196,7 +198,7 @@ class Model(ABC):
         f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
         # bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
 
-        bh = np.array([symengine.diff(f, x[i]) for i in range(self.numCovariates + 1)])
+        bh = np.array([symengine.diff(f, x[i]) for i in range(self.numSymbols)])
 
         f = self.convertSym(x, bh, "numpy")
         t1_stop = time.process_time()
@@ -238,18 +240,53 @@ class Model(ABC):
         f = firstTerm + secondTerm + thirdTerm - fourthTerm
         return f, x
 
+    def LLF_sym_new(self, hazard, covariate_data):
+        # x = b, b1, b2, b2 = symengine.symbols('b b1 b2 b3')
+
+        x = symengine.symbols(f'x:{self.numSymbols}')
+        second = []
+        prodlist = []
+        for i in range(self.n):
+            sum1 = 1
+            sum2 = 1
+            TempTerm1 = 1
+            for j in range(self.numParameters, self.numSymbols):
+                TempTerm1 = TempTerm1 * symengine.exp(covariate_data[j - self.numParameters][i] * x[j])
+            sum1 = 1 - ((1 - (hazard(i + 1, x[:self.numParameters]))) ** (TempTerm1))
+            for k in range(i):
+                TempTerm2 = 1
+                for j in range(self.numParameters, self.numSymbols):
+                    TempTerm2 = TempTerm2 * symengine.exp(covariate_data[j - self.numParameters][k] * x[j])
+                sum2 = sum2 * ((1 - (hazard(i + 1, x[:self.numParameters])))**(TempTerm2))
+            second.append(sum2)
+            prodlist.append(sum1 * sum2)
+
+        firstTerm = -sum(self.failures)  #Verified
+        secondTerm = sum(self.failures) * symengine.log(sum(self.failures) / sum(prodlist))
+        logTerm = []  #Verified
+        for i in range(self.n):
+            logTerm.append(self.failures[i] * symengine.log(prodlist[i]))
+        thirdTerm = sum(logTerm)
+        factTerm = []  #Verified
+        for i in range(self.n):
+            factTerm.append(symengine.log(math.factorial(self.failures[i])))
+        fourthTerm = sum(factTerm)
+
+        f = firstTerm + secondTerm + thirdTerm - fourthTerm
+        return f, x
+
     def RLL(self, x, covariate_data):
         # want everything to be array of length n
 
         cov_data = np.array(covariate_data)
 
         # gives array with dimensions numCovariates x n, just want n
-        exponent_all = np.array([cov_data[i] * x[i + 1] for i in range(self.numCovariates)])
+        exponent_all = np.array([cov_data[i] * x[i + self.numParameters] for i in range(self.numCovariates)])
 
         # sum over numCovariates axis to get 1 x n array
         exponent_array = np.exp(np.sum(exponent_all, axis=0))
 
-        h = np.array([self.hazardFunction(i + 1, x[0]) for i in range(self.n)])
+        h = np.array([self.hazardFunction(i + 1, x[:self.numParameters]) for i in range(self.n)])
 
         one_minus_hazard = (1 - h)
         one_minus_h_i = np.power(one_minus_hazard, exponent_array)
@@ -311,9 +348,9 @@ class Model(ABC):
         initial = self.initialEstimates()
 
         log.info("Initial estimates: %s", initial)
-        f, x = self.LLF_sym(self.hazardFunction, covariate_data)    # pass hazard rate function
+        f, x = self.LLF_sym_new(self.hazardFunction, covariate_data)    # pass hazard rate function
 
-        bh = np.array([symengine.diff(f, x[i]) for i in range(self.numCovariates + 1)])
+        bh = np.array([symengine.diff(f, x[i]) for i in range(self.numSymbols)])
         fd = self.convertSym(x, bh, "numpy")
 
         solution_object = scipy.optimize.minimize(self.RLL_minimize, x0=initial, args=(covariate_data,), method='Nelder-Mead')
@@ -322,19 +359,21 @@ class Model(ABC):
         log.info("Optimization time: %s", optimize_stop - optimize_start)
         log.info("Optimized solution: %s", self.mle_array)
 
-        self.b = self.mle_array[0]
-        self.betas = self.mle_array[1:]
+        print(self.mle_array)
+        self.modelParameters = self.mle_array[:self.numParameters]
+        self.betas = self.mle_array[self.numParameters:]
         print("betas =", self.betas)
 
-        hazard = np.array([self.hazardFunction(i + 1, self.b) for i in range(self.n)])
+        hazard = np.array([self.hazardFunction(i + 1, self.modelParameters) for i in range(self.n)])
         self.hazard_array = hazard    # for MVF prediction, don't want to calculate again
         self.modelFitting(hazard, self.mle_array, covariate_data)
         self.goodnessOfFit(self.mle_array, covariate_data)
 
     def initialEstimates(self):
-        bEstimate = [self.b0]
+        # bEstimate = [self.b0]
+        parameterEstimates = list(self.parameterEstimates)
         betaEstimate = [self.beta0 for i in range(self.numCovariates)]
-        return np.array(bEstimate + betaEstimate)
+        return np.array(parameterEstimates + betaEstimate)
 
     def optimizeSolution(self, fd, B):
         log.info("Solving for MLEs...")
@@ -352,6 +391,8 @@ class Model(ABC):
         #     log.warning(mesg)
 
 
+        print(fd)
+        print(B)
         sol_object = scipy.optimize.root(fd, x0=B)
         solution = sol_object.x
         self.converged = sol_object.success
@@ -493,7 +534,7 @@ class Model(ABC):
 
         print(combined_array)
 
-        newHazard = np.array([self.hazardFunction(i, self.b) for i in range(self.n, total_points)])  # calculate new values for hazard function
+        newHazard = np.array([self.hazardFunction(i, self.modelParameters) for i in range(self.n, total_points)])  # calculate new values for hazard function
         # hazard = self.hazard_array + newHazard
         hazard = np.concatenate((self.hazard_array, newHazard))
 
@@ -546,7 +587,7 @@ class Model(ABC):
 
             print(combined_array)
 
-            newHazard = np.array([self.hazardFunction(j, self.b) for j in range(self.n, total_points)])  # calculate new values for hazard function
+            newHazard = np.array([self.hazardFunction(j, self.modelParameters) for j in range(self.n, total_points)])  # calculate new values for hazard function
             # hazard = self.hazard_array + newHazard
             hazard = np.concatenate((self.hazard_array, newHazard))
 
@@ -586,7 +627,7 @@ class Model(ABC):
             #     mvf_array = np.concatenate((np.zeros(1), mvf_array))
             #     intensity_array = np.concatenate((np.zeros(1), intensity_array))
 
-        
+
 
 
     def pred_function(self, n, intensity, covariate_data):
@@ -597,7 +638,7 @@ class Model(ABC):
         zero_array = np.zeros(x - self.n)    # to append to existing covariate data
         new_covData = [0 for i in range(self.numCovariates)]
 
-        newHazard = np.array([self.hazardFunction(i, self.b) for i in range(self.n, x)])  # calculate new values for hazard function
+        newHazard = np.array([self.hazardFunction(i, self.modelParameters) for i in range(self.n, x)])  # calculate new values for hazard function
         # hazard = self.hazard_array + newHazard
         hazard = np.concatenate((self.hazard_array, newHazard))
 
