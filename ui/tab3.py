@@ -2,8 +2,8 @@ from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QGridLayout, \
                             QTableWidget, QTableWidgetItem, QAbstractScrollArea, \
                             QSpinBox, QSpacerItem, QSizePolicy, QHeaderView, QVBoxLayout, \
                             QListWidget, QAbstractItemView, QGroupBox, QListWidgetItem, \
-                            QFrame, QTableView
-from PyQt5.QtCore import pyqtSignal, QSortFilterProxyModel
+                            QFrame, QTableView, QSlider, QLineEdit, QPushButton
+from PyQt5.QtCore import pyqtSignal, QSortFilterProxyModel, Qt
 from PyQt5.QtGui import QFont
 
 import pandas as pd
@@ -12,7 +12,7 @@ import pandas as pd
 import csv
 
 # Local imports
-from core.comparison import Comparison
+from core.goodnessOfFit import Comparison
 from core.dataClass import PandasModel
 
 
@@ -38,13 +38,13 @@ class Tab3(QWidget):
         for key, model in results.items():
             results_1[key] = model[0]
 
-        self.sideMenu.comparison.goodnessOfFit(results_1, self.sideMenu)
+        self.sideMenu.comparison.criticMethod(results_1, self.sideMenu)
 
         rows = []
         row_index = 0
         for key, model in results.items():
             row = [
-               str(model[1]),
+               model[1],
                model[0].shortName,
                model[0].metricString,
                model[0].llfVal,
@@ -59,6 +59,7 @@ class Tab3(QWidget):
 
         self.tableModel.setAllData(row_df)
 
+        # causes whole table to be redrawn
         self.table.model().layoutChanged.emit()
 
 
@@ -165,12 +166,16 @@ class SideMenu3(QVBoxLayout):
         self.comparisonGroup = QGroupBox("Metric Weights (0-10)")
         self.comparisonGroup.setLayout(self._setupComparisonGroup())
 
+        self.psseGroup = QGroupBox("PSSE Parameters")
+        self.psseGroup.setLayout(self._setupPSSEGroup())
+
         self.modelsGroup = QGroupBox("Select Model Results")
         # sets minumum size for side menu
         self.modelsGroup.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.modelsGroup.setLayout(self._setupModelsGroup())
         
         self.addWidget(self.comparisonGroup, 2)
+        self.addWidget(self.psseGroup)
         self.addWidget(self.modelsGroup, 7)
 
         self.addStretch(1)
@@ -200,6 +205,26 @@ class SideMenu3(QVBoxLayout):
         comparisonLayout.setColumnStretch(1, 1)
 
         return comparisonLayout
+
+    def _setupPSSEGroup(self):
+        """Creates widget containing comparison weight spin boxes.
+
+        Returns:
+            A QVBoxLayout containing controls for SSE parameters.
+        """
+        psseLayout = QVBoxLayout()
+        topLayout = QHBoxLayout()
+        self.psseSlider = QSlider(Qt.Horizontal)
+        self.psseLineEdit = QLineEdit()
+        topLayout.addWidget(self.psseSlider, 9)
+        topLayout.addWidget(self.psseLineEdit, 1)
+
+        self.psseButton = QPushButton("Run PSSE")
+
+        psseLayout.addLayout(topLayout)
+        psseLayout.addWidget(self.psseButton)
+
+        return psseLayout
 
     def _setupModelsGroup(self):
         """Creates widget containing list of converged models.

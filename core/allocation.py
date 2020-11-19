@@ -70,27 +70,10 @@ class EffortAllocation:
         self.res2 = shgo(lambda x: sum([x[i] for i in range(self.model.numCovariates)]), bounds=bnds, constraints=cons2)
         self.effort = np.sum(self.res2.x)
 
-
-        ## allocation type 2 not integrated into UI yet
-        ## just print results for now
-        # print(self.res2)
-        # print(self.allocationFunction2(self.res2.x, self.covariate_data))
-        # print(np.multiply(np.divide(self.res2.x, np.sum(self.res2.x)), 100))
-
-
-        # print(f'{self.model.name} - ({self.model.metricString})')
-        # print("Effort per covariate:", self.res2.x)
-        # print("Total effort:", self.effort)
-        # print("Effort percentages:", np.multiply(np.divide(self.res2.x, np.sum(self.res2.x)), 100))
-        # print()
-
-
-
     def optimization2(self, x, covariate_data):
         res = self.allocationFunction2(x, covariate_data)
         H = res - self.model.mvf_array[-1]
         return self.f - H
-        # return self.model.allocationFunction2(x) - self.f
 
     def allocationFunction2(self, x, covariate_data):
         # failures = args[0]

@@ -206,39 +206,39 @@ class Model(ABC):
 
         return f
 
-    def LLF_sym(self, hazard, covariate_data):
-        # x = b, b1, b2, b2 = symengine.symbols('b b1 b2 b3')
-        x = symengine.symbols(f'x:{self.numCovariates + 1}')
-        second = []
-        prodlist = []
-        for i in range(self.n):
-            sum1 = 1
-            sum2 = 1
-            TempTerm1 = 1
-            for j in range(1, self.numCovariates + 1):
-                TempTerm1 = TempTerm1 * symengine.exp(covariate_data[j - 1][i] * x[j])
-            sum1 = 1 - ((1 - (hazard(i + 1, x[0]))) ** (TempTerm1))
-            for k in range(i):
-                TempTerm2 = 1
-                for j in range(1, self.numCovariates + 1):
-                    TempTerm2 = TempTerm2 * symengine.exp(covariate_data[j - 1][k] * x[j])
-                sum2 = sum2 * ((1 - (hazard(i + 1, x[0])))**(TempTerm2))
-            second.append(sum2)
-            prodlist.append(sum1 * sum2)
+    # def LLF_sym(self, hazard, covariate_data):
+    #     # x = b, b1, b2, b2 = symengine.symbols('b b1 b2 b3')
+    #     x = symengine.symbols(f'x:{self.numCovariates + 1}')
+    #     second = []
+    #     prodlist = []
+    #     for i in range(self.n):
+    #         sum1 = 1
+    #         sum2 = 1
+    #         TempTerm1 = 1
+    #         for j in range(1, self.numCovariates + 1):
+    #             TempTerm1 = TempTerm1 * symengine.exp(covariate_data[j - 1][i] * x[j])
+    #         sum1 = 1 - ((1 - (hazard(i + 1, x[0]))) ** (TempTerm1))
+    #         for k in range(i):
+    #             TempTerm2 = 1
+    #             for j in range(1, self.numCovariates + 1):
+    #                 TempTerm2 = TempTerm2 * symengine.exp(covariate_data[j - 1][k] * x[j])
+    #             sum2 = sum2 * ((1 - (hazard(i + 1, x[0])))**(TempTerm2))
+    #         second.append(sum2)
+    #         prodlist.append(sum1 * sum2)
 
-        firstTerm = -sum(self.failures)  #Verified
-        secondTerm = sum(self.failures) * symengine.log(sum(self.failures) / sum(prodlist))
-        logTerm = []  #Verified
-        for i in range(self.n):
-            logTerm.append(self.failures[i] * symengine.log(prodlist[i]))
-        thirdTerm = sum(logTerm)
-        factTerm = []  #Verified
-        for i in range(self.n):
-            factTerm.append(symengine.log(math.factorial(self.failures[i])))
-        fourthTerm = sum(factTerm)
+    #     firstTerm = -sum(self.failures)  #Verified
+    #     secondTerm = sum(self.failures) * symengine.log(sum(self.failures) / sum(prodlist))
+    #     logTerm = []  #Verified
+    #     for i in range(self.n):
+    #         logTerm.append(self.failures[i] * symengine.log(prodlist[i]))
+    #     thirdTerm = sum(logTerm)
+    #     factTerm = []  #Verified
+    #     for i in range(self.n):
+    #         factTerm.append(symengine.log(math.factorial(self.failures[i])))
+    #     fourthTerm = sum(factTerm)
 
-        f = firstTerm + secondTerm + thirdTerm - fourthTerm
-        return f, x
+    #     f = firstTerm + secondTerm + thirdTerm - fourthTerm
+    #     return f, x
 
     def LLF_sym_new(self, hazard, covariate_data):
         # x = b, b1, b2, b2 = symengine.symbols('b b1 b2 b3')
@@ -508,152 +508,3 @@ class Model(ABC):
     def intensityFit(self, mvf_array):
         difference = [mvf_array[i+1]-mvf_array[i] for i in range(len(mvf_array) - 1)]
         return [mvf_array[0]] + difference
-
-    def prediction(self, failures, covariate_data, effortDict):
-        """
-        effortDict: dictionary containing all prediction effort spin box widgets,
-            indexed by covariate string
-        """
-
-        print(effortDict)
-        total_points = self.n + failures
-
-        # new_array = np.zeros(self.numCovariates)
-        new_array = []
-        i = 0
-        for cov in self.metricNames:
-            value = effortDict[cov].value()
-            new_array.append(np.full(failures, value))
-            i += 1
-        print(new_array)
-
-        if self.numCovariates == 0:
-            combined_array = np.concatenate((covariate_data, np.array(new_array)))
-        else:
-            combined_array = np.concatenate((covariate_data, np.array(new_array)), axis=1)
-
-        print(combined_array)
-
-        newHazard = np.array([self.hazardFunction(i, self.modelParameters) for i in range(self.n, total_points)])  # calculate new values for hazard function
-        # hazard = self.hazard_array + newHazard
-        hazard = np.concatenate((self.hazard_array, newHazard))
-
-
-
-        ## VERIFY OMEGA VALUE, should we continue updating??
-
-        # omega = self.calcOmega(hazard, self.betas, new_covData)
-        omega = self.calcOmega(hazard, self.betas, combined_array)
-
-        # print(omega)
-        # print(self.omega)
-
-
-        mvf_array = np.array([self.MVF(self.mle_array, self.omega, hazard, dataPoints, combined_array) for dataPoints in range(total_points)])
-        # intensity_array = self.intensityFit(mvf_array)
-        x = np.concatenate((self.t, np.arange(self.n + 1, total_points + 1)))
-
-        # add initial point at zero if not present
-        # if self.t[0] != 0:
-        #     mvf_array = np.concatenate((np.zeros(1), mvf_array))
-        #     intensity_array = np.concatenate((np.zeros(1), intensity_array))
-
-        return (x, mvf_array)
-
-    def prediction_intensity(self, intensity, covariate_data, effortDict):
-        # res = scipy.optimize.root_scalar(self.pred_function, x0=self.n+1, x1=self.n+3, args=(intensity, covariate_data))
-        # print(res)
-
-        #########################################
-
-        mvf_list = self.mvf_array.tolist()
-
-        for i in range(1, 100):
-            total_points = self.n + i
-
-            # new_array = np.zeros(self.numCovariates)
-            new_array = []
-            j = 0
-            for cov in self.metricNames:
-                value = effortDict[cov].value()
-                new_array.append(np.full(i, value))
-                j += 1
-            print(new_array)
-
-            if self.numCovariates == 0:
-                combined_array = np.concatenate((covariate_data, np.array(new_array)))
-            else:
-                combined_array = np.concatenate((covariate_data, np.array(new_array)), axis=1)
-
-            print(combined_array)
-
-            newHazard = np.array([self.hazardFunction(j, self.modelParameters) for j in range(self.n, total_points)])  # calculate new values for hazard function
-            # hazard = self.hazard_array + newHazard
-            hazard = np.concatenate((self.hazard_array, newHazard))
-
-
-
-            ## VERIFY OMEGA VALUE, should we continue updating??
-
-            # omega = self.calcOmega(hazard, self.betas, new_covData)
-            omega = self.calcOmega(hazard, self.betas, combined_array)
-
-            # print(omega)
-            # print(self.omega)
-
-
-            #### IGNORE IF 0 !!!!!! ####
-
-            mvf_list.append(self.MVF(self.mle_array, self.omega, hazard, total_points - 1, combined_array))
-            calculated_intensity = mvf_list[-1] - mvf_list[-2]
-            print("calculated intensity:", calculated_intensity)
-            print("desired intensity:", intensity)
-            if calculated_intensity < intensity:
-                print("desired failure intensity reached in {0} intervals".format(i))
-                x = np.concatenate((self.t, np.arange(self.n + 1, len(mvf_list) + 1)))
-                return (x, self.intensityFit(mvf_list), i)
-                print("***** after return????")
-
-        print("desired failure intensity not reached within 100 intervals")
-        return (self.t, self.intensityList, 0)
-
-
-            # mvf_array = np.array([self.MVF(self.mle_array, omega, hazard, dataPoints, combined_array) for dataPoints in range(total_points)])
-            # intensity_array = self.intensityFit(mvf_array)
-            # x = np.arange(1, total_points + 1)
-
-            # add initial point at zero if not present
-            # if self.t[0] != 0:
-            #     mvf_array = np.concatenate((np.zeros(1), mvf_array))
-            #     intensity_array = np.concatenate((np.zeros(1), intensity_array))
-
-
-
-
-    def pred_function(self, n, intensity, covariate_data):
-        print("n =", n)
-        x = int(n)
-        print("x =", x)
-
-        zero_array = np.zeros(x - self.n)    # to append to existing covariate data
-        new_covData = [0 for i in range(self.numCovariates)]
-
-        newHazard = np.array([self.hazardFunction(i, self.modelParameters) for i in range(self.n, x)])  # calculate new values for hazard function
-        # hazard = self.hazard_array + newHazard
-        hazard = np.concatenate((self.hazard_array, newHazard))
-
-        for j in range(self.numCovariates):
-            new_covData[j] = np.append(covariate_data[j], zero_array)
-
-        # print(self.n)
-        # print(len(new_covData))
-        
-        omega1 = self.calcOmega(hazard, self.betas, new_covData)
-        omega2 = self.calcOmega(hazard[:-1], self.betas, new_covData)
-
-        # print(len(hazard), x, len(new_covData[0]))
-        mvf_unknown = self.MVF(self.mle_array, omega1, hazard, x-1, new_covData)
-        mvf_known = self.MVF(self.mle_array, omega2, hazard, x-2, new_covData)
-
-        print(mvf_unknown - mvf_known - intensity)
-        return mvf_unknown - mvf_known - intensity

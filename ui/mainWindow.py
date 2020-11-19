@@ -61,6 +61,7 @@ from core.dataClass import Data
 from core.graphSettings import PlotSettings
 from core.allocation import EffortAllocation
 from core.trendTests import *
+import core.prediction as prediction
 
 
 class MainWindow(QMainWindow):
@@ -613,7 +614,7 @@ class MainWindow(QMainWindow):
 
                 # check if prediction is specified
                 if self._main.tab2.sideMenu.failureSpinBox.value() > 0:
-                    x, mvf_array = self.runPrediction(modelName, self._main.tab2.sideMenu.failureSpinBox.value())
+                    x, mvf_array = self.runPredictionMVF(model, self._main.tab2.sideMenu.failureSpinBox.value())
                     self.plotSettings.addLine(self.ax2, x, mvf_array, modelName)
                 else:
                     self.plotSettings.addLine(self.ax2, model.t, model.mvf_array, modelName)
@@ -652,7 +653,7 @@ class MainWindow(QMainWindow):
 
                 # check if prediction is specified
                 if self._main.tab2.sideMenu.reliabilitySpinBox.value() > 0.0:
-                    x, intensity_array, interval = self.runPrediction2(modelName, self._main.tab2.sideMenu.reliabilitySpinBox.value())
+                    x, intensity_array, interval = self.runPredictionIntensity(model, self._main.tab2.sideMenu.reliabilitySpinBox.value())
                     self.plotSettings.addLine(self.ax2, x, intensity_array, modelName)
                 else:
                     self.plotSettings.addLine(self.ax2, model.t, model.intensityList, modelName)
@@ -936,7 +937,7 @@ class MainWindow(QMainWindow):
         # just add to table 2
         self._main.tab4.addResultsToTable(self.allocationResults, self.data, 2)
 
-    def runPrediction(self, modelName, failures):
+    def runPredictionMVF(self, model, failures):
         """Runs predictions for future points according to model results.
 
         Called when failure spin box value is changed.
@@ -945,17 +946,17 @@ class MainWindow(QMainWindow):
             failures: Number of future failure points to predict (int).
         """
 
-        m = self.estimationResults[modelName]  # model indexed by the name
+        # m = self.estimationResults[modelName]  # model indexed by the name
 
-        x, mvf_array = m.prediction(failures, m.covariateData, self._main.tab2.sideMenu.effortSpinBoxDict)
+        x, mvf_array = prediction.prediction_mvf(model, failures, model.covariateData, self._main.tab2.sideMenu.effortSpinBoxDict)
 
         return x, mvf_array#, intensity_array
 
-    def runPrediction2(self, modelName, intensity):
+    def runPredictionIntensity(self, model, intensity):
 
-        m = self.estimationResults[modelName]  # model indexed by the name
+        # m = self.estimationResults[modelName]  # model indexed by the name
 
-        x, intensity_array, intervals = m.prediction_intensity(intensity, m.covariateData, self._main.tab2.sideMenu.effortSpinBoxDict)
+        x, intensity_array, intervals = prediction.prediction_intensity(model, intensity, model.covariateData, self._main.tab2.sideMenu.effortSpinBoxDict)
 
         return x, intensity_array, intervals
 
