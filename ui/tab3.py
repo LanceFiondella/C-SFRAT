@@ -2,9 +2,9 @@ from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QGridLayout, \
                             QTableWidget, QTableWidgetItem, QAbstractScrollArea, \
                             QSpinBox, QSpacerItem, QSizePolicy, QHeaderView, QVBoxLayout, \
                             QListWidget, QAbstractItemView, QGroupBox, QListWidgetItem, \
-                            QFrame, QTableView, QSlider, QLineEdit, QPushButton
+                            QFrame, QTableView, QSlider, QDoubleSpinBox, QPushButton
 from PyQt5.QtCore import pyqtSignal, QSortFilterProxyModel, Qt
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QIntValidator
 
 import pandas as pd
 
@@ -144,6 +144,7 @@ class SideMenu3(QVBoxLayout):
     # signals
     spinBoxChangedSignal = pyqtSignal()
     modelChangedSignal = pyqtSignal(list)
+    runPSSESignal = pyqtSignal(float)
 
     def __init__(self):
         """Initializes tab 3 side menu UI elements."""
@@ -215,11 +216,23 @@ class SideMenu3(QVBoxLayout):
         psseLayout = QVBoxLayout()
         topLayout = QHBoxLayout()
         self.psseSlider = QSlider(Qt.Horizontal)
-        self.psseLineEdit = QLineEdit()
+        # self.psseLineEdit = QLineEdit()
+        # self.psseLineEdit.setValidator(QIntValidator())
+        # self.psseLineEdit.setMaxLength(2)
+        # self.psseLineEdit.setText("90")
+
+        self.psseSpinBox = QDoubleSpinBox()
+        self.psseSpinBox.setDecimals(2)
+        self.psseSpinBox.setMinimum(0.01)
+        self.psseSpinBox.setMaximum(0.99)
+        self.psseSpinBox.setValue(0.9)
+        self.psseSpinBox.setSingleStep(0.01)
+
         topLayout.addWidget(self.psseSlider, 9)
-        topLayout.addWidget(self.psseLineEdit, 1)
+        topLayout.addWidget(self.psseSpinBox, 1)
 
         self.psseButton = QPushButton("Run PSSE")
+        self.psseButton.clicked.connect(self._emitRunPSSESignal)
 
         psseLayout.addLayout(topLayout)
         psseLayout.addWidget(self.psseButton)
@@ -284,3 +297,6 @@ class SideMenu3(QVBoxLayout):
     def _emitSpinBoxChangedSignal(self):
         """Emits signal if any goodness-of-fit spin box is changed."""
         self.spinBoxChangedSignal.emit()
+
+    def _emitRunPSSESignal(self):
+        self.runPSSESignal.emit(self.psseSpinBox.value())

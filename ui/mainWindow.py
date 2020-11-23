@@ -52,7 +52,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 
 # Local imports
 import models
-from ui.commonWidgets import ComputeWidget, SymbolicThread
+from ui.commonWidgets import ComputeWidget, SymbolicThread, PSSEThread
 from ui.tab1 import Tab1
 from ui.tab2 import Tab2
 from ui.tab3 import Tab3
@@ -61,7 +61,9 @@ from core.dataClass import Data
 from core.graphSettings import PlotSettings
 from core.allocation import EffortAllocation
 from core.trendTests import *
+from core.goodnessOfFit import PSSE
 import core.prediction as prediction
+
 
 
 class MainWindow(QMainWindow):
@@ -173,6 +175,7 @@ class MainWindow(QMainWindow):
         #self._main.tab3.sideMenu.modelChangedSignal.connect(self.updateComparisonTable)
         self._main.tab3.sideMenu.modelChangedSignal.connect(self.changePlot2AndUpdateComparisonTable)
         # self._main.tab3.sideMenu.modelListWidget.itemActivated().connect(self._main.tab3.addRow)
+        self._main.tab3.sideMenu.runPSSESignal.connect(self.runPSSE)
         self._main.tab3.sideMenu.spinBoxChangedSignal.connect(self.runGoodnessOfFit)
         self._main.tab4.sideMenu.runAllocation1Signal.connect(self.runAllocation1)
         self._main.tab4.sideMenu.runAllocation2Signal.connect(self.runAllocation2)
@@ -763,17 +766,6 @@ class MainWindow(QMainWindow):
         self.selectedModelNames = selectedModels_names
         self.updateUI()
 
-
-    def temptemp(self, selectedModels):
-        selectedModels_names = [x.split('. ', 1)[1] for x in selectedModels]
-
-        selectedDict = {}
-        for key, model in self.estimationResults.items():
-            if key in selectModelsNumDic.keys():
-                selectedDict[key] = [model, selectModelsNumDic[key]]
-        self._main.tab3.addResultsToTable(selectedDict)
-
-
     def changePlot2(self, selectedModels):
         """Updates plot 2 to show newly selected models to display.
         Args:
@@ -959,6 +951,61 @@ class MainWindow(QMainWindow):
         x, intensity_array, intervals = prediction.prediction_intensity(model, intensity, model.covariateData, self._main.tab2.sideMenu.effortSpinBoxDict)
 
         return x, intensity_array, intervals
+
+    def runPSSE(self, fraction):
+        # determine subset of data (from UI elements)
+        # minimum of 5 data points, max of n-1
+
+        # perform model fitting on that subset
+        # adapt TaskThread run() method?
+        # pass specified subset of covariate data
+
+        # goodnessOfFit.PSSE()
+
+        """Begins running model fitting for PSSE.
+
+        Args:
+            modelDetails : A dict of models and metrics to use for
+                calculations. List of model names as strings are one dict
+                value, list of metric names as strings are other dict value.
+        """
+        
+        if self.data:
+            # disable PSSE button until model fitting completes
+            self._main.tab3.sideMenu.psseButton.setDisabled(True)
+
+            self.psseComplete = False
+
+            modelsToRun = []
+            metricNames = []
+
+            for key, model in self.estimationResults.items():
+                # need to get model classes, to instantiate new objects
+                if models.modelList[model.__class__.__name__] not in modelsToRun:
+                    modelsToRun.append(models.modelList[model.__class__.__name__])
+                # only want the first instances of metrics, otherwise we'll get duplicates
+                if model.metricNames not in metricNames:
+                    metricNames.append(model.metricNames)
+
+            self.psse_thread = PSSEThread(modelsToRun, metricNames, self.data, fraction, self.config)
+            self.psse_thread.results.connect(self.onPSSEComplete)   # signal emitted when estimation complete
+            self.psse_thread.start()
+
+    def onPSSEComplete(self, results):
+        """
+        Called when PSSE thread is done running
+
+        Args:
+            results: A dict containing model objects of model/metric
+                combinations that estimation run on, indexed by name of
+                combination as a string.
+        """
+        
+        self.psseResults = results
+        self.psseComplete = True
+
+        # re-enable PSSE button
+        self._main.tab3.sideMenu.psseButton.setEnabled(True)
 
     #endregion
 

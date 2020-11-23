@@ -1,6 +1,17 @@
 import numpy as np
 
 
+def PSSE(fitted, actual, intervals):
+    # print(fitted[(self.n - 1) + 1:])
+    # sub = np.subtract(fitted[(self.n - 1) + 1:], actual[(self.n - 1) + 1:])
+    # error = np.sum(np.power(sub, 2))
+    # return error
+
+    sub = np.subtract(fitted[intervals:], actual[intervals:])
+    error = np.sum(np.power(sub, 2))
+    return error
+
+
 class Comparison():
     """
     For comparison of model goodness-of-fit measures

@@ -91,6 +91,7 @@ class Model(ABC):
         # list of arrays or array of arrays?
         self.covariateData = np.array([self.data[name].values for name in self.metricNames])
         self.numCovariates = len(self.covariateData)
+        self.psseVal = None
         # self.maxCovariates = self.data.numCovariates    # total number of covariates from imported data
                                                         # data object not passed, just dataframe (which
                                                         # doesn't have numCovariates as an attribute
@@ -359,7 +360,6 @@ class Model(ABC):
         log.info("Optimization time: %s", optimize_stop - optimize_start)
         log.info("Optimized solution: %s", self.mle_array)
 
-        print(self.mle_array)
         self.modelParameters = self.mle_array[:self.numParameters]
         self.betas = self.mle_array[self.numParameters:]
         print("betas =", self.betas)
@@ -390,9 +390,6 @@ class Model(ABC):
         #     self.converged = False
         #     log.warning(mesg)
 
-
-        print(fd)
-        print(B)
         sol_object = scipy.optimize.root(fd, x0=B)
         solution = sol_object.x
         self.converged = sol_object.success
@@ -421,11 +418,6 @@ class Model(ABC):
 
         self.sseVal = self.SSE(self.mvf_array, self.cumulativeFailures)
         log.info("Calculated SSE: %s", self.sseVal)
-        # print(self.sseVal)
-
-        # self.psseVal = self.PSSE(self.mvf_array, self.cumulativeFailures)
-        # print("psse =", self.psseVal)
-
 
     def calcOmega(self, h, betas, covariate_data):
         # can clean this up to use less loops, probably
@@ -498,12 +490,6 @@ class Model(ABC):
         sub = np.subtract(fitted, actual)
         sseError = np.sum(np.power(sub, 2))
         return sseError
-
-    # def PSSE(self, fitted, actual):
-    #     print(fitted[(self.n - 1) + 1:])
-    #     sub = np.subtract(fitted[(self.n - 1) + 1:], actual[(self.n - 1) + 1:])
-    #     error = np.sum(np.power(sub, 2))
-    #     return error
 
     def intensityFit(self, mvf_array):
         difference = [mvf_array[i+1]-mvf_array[i] for i in range(len(mvf_array) - 1)]

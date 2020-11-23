@@ -17,6 +17,9 @@ from matplotlib.figure import Figure
 
 import logging as log
 
+from core.prediction import prediction_psse
+from core.goodnessOfFit import PSSE
+
 
 class PlotWidget(QWidget):
     """Widget containing a plot and toolbar.
@@ -247,7 +250,8 @@ class TaskThread(QThread):
             modelsToRun: List of Model objects used for estimation calculation.
             metricNames: List of metric names as strings used for estimation
                 calculation.
-            data: Pandas dataframe containing imported data.
+            data: Pandas dataframe containing imported data (getData() method already
+                called prior to being passed)
             config: ConfigParser object containing information about which model
                 functions are implemented. Passed to Model.
         """
@@ -308,8 +312,87 @@ class TaskThread(QThread):
 
                 # combination_index += 1  # update index
 
+        print("******************************************")
         self.taskFinished.emit(result)
 
+
+class PSSEThread(QThread):
+    """Runs estimation calculations on separate thread.
+
+    Attributes:
+        abort: Boolean indicating if the app has been closed. If True, the
+            thread should stop running.
+        modelFinished: pyqtSignal, emits when current model/metric calculation
+            is completed. Tells thread to begin calculation on next
+            combination.
+        taskFinished: pyqtSignal, emits dict containing model objects (with
+            estimation results as properties) as values, indexed by name of
+            model/metric combination.
+        _modelsToRun: List of Model objects used for estimation calculation.
+        _metricNames: List of metric names as strings used for estimation
+            calculation.
+        _data: Pandas dataframe containing imported data.
+        _config: ConfigParser object containing information about which model
+                functions are implemented. Passed to Model.
+    """
+    results = pyqtSignal(dict)
+
+    def __init__(self, modelsToRun, metricNames, data, fraction, config):
+        """Initializes TaskThread class.
+
+        Args:
+            modelsToRun: List of Model objects used for estimation calculation.
+            metricNames: List of metric names as strings used for estimation
+                calculation.
+            data: Pandas dataframe containing imported data (getData() method already
+                called prior to being passed)
+            fraction: fraction of data to use for PSSE
+            config: ConfigParser object containing information about which model
+                functions are implemented. Passed to Model.
+        """
+        super().__init__()
+        self.abort = False  # True when app closed, so thread stops running
+        self._modelsToRun = modelsToRun
+        self._metricNames = metricNames
+        self._data = data
+        self._fraction = fraction
+        self._config = config
+
+    def run(self):
+        """Performs estimation for models/metrics.
+
+        Called when thread is started.
+        """
+
+        result = {}
+        for model in self._modelsToRun:
+            for metricCombination in self._metricNames:
+                # check if application has been closed
+                if self.abort:
+                    return  # get out of run method
+                metricNames = ", ".join(metricCombination)
+                if (metricCombination == ["None"]):
+                    metricCombination = []
+
+                m = model(data=self._data.getDataSubset(self._fraction), metricNames=metricCombination, config=self._config)
+
+                # this is the name used in tab 2 and tab 4 side menus
+                # use shortened name
+                runName = "{0} ({1})".format(m.shortName, metricNames)  # "Model (Metric1, Metric2, ...)"
+
+                ## THIS IS WHERE SUBSETS OF COVARIATE DATA CAN BE PASSED
+                ## for now, just pass all
+                m.runEstimation(m.covariateData)
+                result[runName] = m
+
+                fitted_array = prediction_psse(m, self._data)
+
+                psse_val = PSSE(fitted_array, self._data.getData()['CFC'].values, m.n)
+                
+                print("PSSE value for {0}:".format(runName))
+                print(psse_val)
+
+        self.results.emit(result)
 
 class SymbolicThread(QThread):
     """Runs symbolic computation for newly imported data on its own thread.
