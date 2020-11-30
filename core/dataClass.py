@@ -1,5 +1,6 @@
 import logging as log
 import os.path
+import math
 
 import pandas as pd
 import numpy as np
@@ -71,6 +72,26 @@ class Data:
             # if None type, data hasn't been loaded
             # cannot subscript None type
             return full_dataset
+        return subset
+
+    def getDataSubset(self, fraction):
+        """
+        Returns subset of dataframe corresponding to the currentSheet index
+
+        Args:
+            percentage: float between 0.0 and 1.0 indicating percentage of
+                data to return
+        """
+
+        intervals = math.floor(self.n * fraction)
+
+        # need at least 5 data points
+        if intervals < 5:
+            intervals = 5
+
+        full_dataset = self.dataSet[self.sheetNames[self._currentSheet]]
+        subset = full_dataset[:intervals]
+
         return subset
 
     def getFullData(self):
