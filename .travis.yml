@@ -59,7 +59,7 @@ matrix:
         - pip install -r requirements.txt
         - pip freeze
         - pip install PyQt5
-     '''
+
     - name: "Python 3.6 on macOS"
       os: osx
       language: generic
@@ -77,8 +77,8 @@ matrix:
         - pip install -r requirements.txt
         - pip freeze
         - pip install PyQt5
-        '''
-    '''
+
+
     - name: "Python 3.7 on macOS"
       os: osx
       language: generic       # language: python is an error on Travis CI macOS
@@ -96,7 +96,7 @@ matrix:
         - pip install -r requirements.txt
         - pip freeze
         - pip install PyQt5
-        '''
+        
     - name: "Python 3.6 on Windows"
       # if: branch = master
       os: windows           # Windows 10.0.17134 N/A Build 17134
@@ -106,7 +106,7 @@ matrix:
       env:
         - TOXENV=py36
         - PATH=/c/Python36:/c/Python36/Scripts:$PATH
-      install:                                                                                  #
+      install:
         - python --version
         - python -m pip install --upgrade pip
         - pip install -e .
@@ -123,7 +123,7 @@ matrix:
       env:
         - TOXENV=py37
         - PATH=/c/Python37:/c/Python37/Scripts:$PATH
-      install:                                                                                  #
+      install:
         - python --version
         - python -m pip install --upgrade pip
         - pip install -e .

@@ -20,10 +20,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a6bbf19f-7006-428c-b888-fe7ef84a9c94" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/aws.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/unnamed.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/shelf/unnamed.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Tests/GUI Testing/test_GUI.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Tests/GUI Testing/test_generic.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Tests/Model Testing/test_Dweibull2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/Covariate_Tool.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Covariate_Tool.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.travis.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.travis.yml" afterDir="false" />
     </list>
@@ -151,9 +152,9 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Python.mainWindow" />
       <item itemvalue="Python.main" />
       <item itemvalue="Python.tab4" />
+      <item itemvalue="Python.mainWindow" />
     </list>
     <recent_temporary>
       <list>
@@ -201,6 +202,12 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="LAST_COMMIT_MESSAGE" value="" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="461" y="165" key="SettingsEditor" timestamp="1606750967030">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="461" y="165" key="SettingsEditor/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1606750967030" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
