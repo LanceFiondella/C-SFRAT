@@ -55,7 +55,7 @@ class Tab2(QWidget):
         self.table_model = PandasModel(self.df)
         self.plotAndTable.tableWidget.setModel(self.table_model)
 
-    def updateTable(self, results):
+    def updateTable(self, results, dataViewIndex):
         # list with number of columns equal to number of results selected
         fc_list = []
 
@@ -65,11 +65,21 @@ class Tab2(QWidget):
         if len(results) > 0:
             fc_list.append(list(results.values())[0][0].t)
 
-            # iterate over selected models
-            # store intensity values and names
-            for key, model in results.items():
-                fc_list.append(model[0].intensityList)
-                column_names.append(key)
+            # if MVF view
+            if dataViewIndex == 0:
+                # iterate over selected models
+                # store intensity values and names
+                for key, model in results.items():
+                    fc_list.append(model[0].mvf_array)
+                    column_names.append(key)
+
+            # if intensity view
+            if dataViewIndex == 1:
+                # iterate over selected models
+                # store intensity values and names
+                for key, model in results.items():
+                    fc_list.append(model[0].intensityList)
+                    column_names.append(key)
 
             row_df = pd.DataFrame(fc_list)
 
@@ -81,6 +91,29 @@ class Tab2(QWidget):
             df = pd.DataFrame(columns=["Interval"])
 
         self.column_names = column_names
+        self.table_model.setAllData(df)
+        self.plotAndTable.tableWidget.model().layoutChanged.emit()
+
+    def updateTable_prediction(self, prediction_list, model_names, dataViewIndex):
+        # TEMPORARY, only runs when prediction spinboxes changed
+        # list with number of columns equal to number of results selected
+        # fc_list = []
+
+        # first column is always intervals
+        # get from first value in dictionary, so we don't need to know the key
+
+
+        if len(prediction_list) > 0:
+            row_df = pd.DataFrame(prediction_list)
+
+            # need to transpose dataframe, otherwise rows and columns are swapped
+            df = row_df.transpose()
+            df.columns = model_names
+            
+        else:
+            df = pd.DataFrame(columns=["Interval"])
+
+        self.column_names = model_names
         self.table_model.setAllData(df)
         self.plotAndTable.tableWidget.model().layoutChanged.emit()
 

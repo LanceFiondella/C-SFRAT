@@ -611,17 +611,24 @@ class MainWindow(QMainWindow):
         # tab 1 plot
         self.plotSettings.plotType = "step"
         self.ax = self.plotSettings.generatePlot(self.ax, dataframe['T'], dataframe["CFC"],
-                                                 title="", xLabel="Cumulative time", yLabel="Cumulative failures")
+                                                 title="", xLabel="Intervals", yLabel="Cumulative failures")
 
         # tab 2 plot
         if self.estimationComplete:
             self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe['T'], dataframe["CFC"],
-                                                      title="", xLabel="Cumulative time", yLabel="Cumulative failures")
+                                                      title="", xLabel="Intervals", yLabel="Cumulative failures")
 
             self.plotSettings.plotType = previousPlotType   # want model fits to be plot type specified by user
 
             # add vertical line at last element of original data
             self.ax2.axvline(x=dataframe['T'].iloc[-1], color='red', linestyle='dotted')
+
+
+            # TEMPORARY
+            # for displaying predictions in tab 2 table
+            prediction_list = [0]
+            model_name_list = ["Interval"]
+
 
             # self.plotSettings.plotType = "step"
             # model name and covariate combination
@@ -633,8 +640,18 @@ class MainWindow(QMainWindow):
                 if self._main.tab2.sideMenu.failureSpinBox.value() > 0:
                     x, mvf_array = self.runPredictionMVF(model, self._main.tab2.sideMenu.failureSpinBox.value())
                     self.plotSettings.addLine(self.ax2, x, mvf_array, modelName)
+
+                    # TEMPORARY
+                    prediction_list[0] = x
+                    prediction_list.append(mvf_array)
+                    model_name_list.append(modelName)
                 else:
                     self.plotSettings.addLine(self.ax2, model.t, model.mvf_array, modelName)
+
+            # TEMPORARY
+            # check if prediction is specified
+                if self._main.tab2.sideMenu.failureSpinBox.value() > 0:
+                    self._main.tab2.updateTable_prediction(prediction_list, model_name_list, 0)
 
     def createIntensityPlot(self, dataframe):
         """Creates intensity plots for tabs 1 and 2.
@@ -657,11 +674,18 @@ class MainWindow(QMainWindow):
         # self._main.tab1.sideMenu.confidenceSpinBox.setDisabled(True)
 
         self.ax = self.plotSettings.generatePlot(self.ax, dataframe['T'], dataframe.iloc[:, 1],
-                                                 title="", xLabel="Cumulative time", yLabel="Failures")
+                                                 title="", xLabel="Intervals", yLabel="Failures")
         if self.estimationComplete:
             self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe['T'], dataframe['FC'],
-                                                      title="", xLabel="Cumulative time", yLabel="Failures")
+                                                      title="", xLabel="Intervals", yLabel="Failures")
             self.plotSettings.plotType = previousPlotType
+
+
+            # TEMPORARY
+            # for displaying predictions in tab 2 table
+            prediction_list = [0]
+            model_name_list = ["Interval"]
+
 
             # model name and covariate combination
             for modelName in self.selectedModelNames:
@@ -672,8 +696,18 @@ class MainWindow(QMainWindow):
                 if self._main.tab2.sideMenu.reliabilitySpinBox.value() > 0.0:
                     x, intensity_array, interval = self.runPredictionIntensity(model, self._main.tab2.sideMenu.reliabilitySpinBox.value())
                     self.plotSettings.addLine(self.ax2, x, intensity_array, modelName)
+
+                    # TEMPORARY
+                    prediction_list[0] = x
+                    prediction_list.append(intensity_array)
+                    model_name_list.append(modelName)
                 else:
                     self.plotSettings.addLine(self.ax2, model.t, model.intensityList, modelName)
+
+            # TEMPORARY
+            # check if prediction is specified
+                if self._main.tab2.sideMenu.reliabilitySpinBox.value() > 0.0:
+                    self._main.tab2.updateTable_prediction(prediction_list, model_name_list, 1)
 
     #region plot styles
     def setPlotStyle(self, style='-o'):
@@ -777,7 +811,9 @@ class MainWindow(QMainWindow):
             if key in selectModelsNumDic.keys():
                 selectedDict[key] = [model, selectModelsNumDic[key]]
 
-        self._main.tab2.updateTable(selectedDict)
+        # dataViewIndex == 0 is MVF
+        # dataViewIndex == 1 is intensity
+        self._main.tab2.updateTable(selectedDict, self.dataViewIndex)
 
         self._main.tab3.addResultsToTable(selectedDict)
         self.selectedModelNames = selectedModels_names

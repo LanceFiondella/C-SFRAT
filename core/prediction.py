@@ -7,7 +7,7 @@ def prediction_mvf(model, failures, covariate_data, effortDict):
         indexed by covariate string
     """
 
-    print(effortDict)
+    # print(effortDict)
     total_points = model.n + failures
 
     # new_array = np.zeros(self.numCovariates)
@@ -17,14 +17,14 @@ def prediction_mvf(model, failures, covariate_data, effortDict):
         value = effortDict[cov].value()
         new_array.append(np.full(failures, value))
         # i += 1
-    print(new_array)
+    # print(new_array)
 
     if model.numCovariates == 0:
         combined_array = np.concatenate((covariate_data, np.array(new_array)))
     else:
         combined_array = np.concatenate((covariate_data, np.array(new_array)), axis=1)
 
-    print(combined_array)
+    # print(combined_array)
 
     newHazard = np.array([model.hazardFunction(i, model.modelParameters) for i in range(model.n, total_points)])  # calculate new values for hazard function
     # hazard = self.hazard_array + newHazard
