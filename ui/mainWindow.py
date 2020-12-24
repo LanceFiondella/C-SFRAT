@@ -232,11 +232,16 @@ class MainWindow(QMainWindow):
         openFile.setShortcut("Ctrl+O")
         openFile.setStatusTip("Import Data File")
         openFile.triggered.connect(self.fileOpened)
-        # export table
-        exportTable = QAction("Export Table", self)
-        exportTable.setShortcut("Ctrl+E")
-        exportTable.setStatusTip("Export Tab 3 Table to csv")
-        exportTable.triggered.connect(self.exportTable)
+        # export table (tab 2)
+        exportTable2 = QAction("Export Table (Tab 2)", self)
+        # exportTable.setShortcut("Ctrl+E")
+        exportTable2.setStatusTip("Export Tab 2 Table to csv")
+        exportTable2.triggered.connect(self.exportTable2)
+        # export table (tab 3)
+        exportTable3 = QAction("Export Table (Tab 3)", self)
+        exportTable3.setShortcut("Ctrl+E")
+        exportTable3.setStatusTip("Export Tab 3 Table to csv")
+        exportTable3.triggered.connect(self.exportTable3)
         # exit
         exitApp = QAction("Exit", self)
         exitApp.setShortcut("Ctrl+Q")
@@ -244,7 +249,8 @@ class MainWindow(QMainWindow):
         exitApp.triggered.connect(self.closeEvent)
         # add actions to file menu
         fileMenu.addAction(openFile)
-        fileMenu.addAction(exportTable)
+        fileMenu.addAction(exportTable2)
+        fileMenu.addAction(exportTable3)
         fileMenu.addSeparator()
         fileMenu.addAction(exitApp)
 
@@ -353,7 +359,15 @@ class MainWindow(QMainWindow):
 
         qApp.quit()
 
-    def exportTable(self):
+
+    def exportTable2(self):
+        path = QFileDialog.getSaveFileName( 
+            self, 'Export model results', 'model_results.csv', filter='CSV (*.csv)')
+
+        if path[0]:
+            self._main.tab2.exportTable(path[0])
+
+    def exportTable3(self):
         path = QFileDialog.getSaveFileName( 
             self, 'Export model results', 'model_results.csv', filter='CSV (*.csv)')
 
@@ -762,6 +776,9 @@ class MainWindow(QMainWindow):
         for key, model in self.estimationResults.items():
             if key in selectModelsNumDic.keys():
                 selectedDict[key] = [model, selectModelsNumDic[key]]
+
+        self._main.tab2.updateTable(selectedDict)
+
         self._main.tab3.addResultsToTable(selectedDict)
         self.selectedModelNames = selectedModels_names
         self.updateUI()
@@ -799,8 +816,17 @@ class MainWindow(QMainWindow):
         self._main.tab4.sideMenu.allocation2Button.setDisabled(True)
         modelsToRun = modelDetails["modelsToRun"]
         metricNames = modelDetails["metricNames"]
+
+
+        # ******* NEED TO CLEAR PLOTS AND TABLES *******
+
+
+
         if self.data:
             self.estimationComplete = False # estimation not complete since it just started running
+            # need to block signals so update signal doesn't fire when list widgets are cleared
+            self._main.tab2.sideMenu.modelListWidget.blockSignals(True)
+            self._main.tab3.sideMenu.modelListWidget.blockSignals(True)
             self._main.tab2.sideMenu.modelListWidget.clear()    # clear tab 2 list containing
                                                                 # previously computed models,
                                                                 # only added when calculations complete
@@ -823,6 +849,7 @@ class MainWindow(QMainWindow):
         self.estimationComplete = True
         self.estimationResults = results
         self._main.tab1.sideMenu.runButton.setEnabled(True)  # re-enable button, can run another estimation
+
         self._main.tab4.sideMenu.allocation1Button.setEnabled(True)     # re-enable allocation buttons, can't run
         self._main.tab4.sideMenu.allocation2Button.setEnabled(True)     # if estimation not complete
         # self.setDataView("view", self.dataViewIndex)
@@ -845,6 +872,11 @@ class MainWindow(QMainWindow):
 
         self._main.tab2.sideMenu.addSelectedModels(convergedNames)  # add models to tab 2 list
                                                                     # so they can be selected
+
+        # can re-enable signals for list widgets now
+        # self._main.tab2.sideMenu.modelListWidget.blockSignals(False)
+        # self._main.tab3.sideMenu.modelListWidget.blockSignals(False)
+
         # show which models didn't converge
         # self._main.tab2.sideMenu.addNonConvergedModels(nonConvergedNames)
         self._main.tab3.sideMenu.addSelectedModels(convergedNames)  # add models to tab 3 list
@@ -852,6 +884,9 @@ class MainWindow(QMainWindow):
         # self._main.tab3.addResultsToTable(results)
         self._main.tab4.sideMenu.addSelectedModels(convergedNames)  # add models to tab 4 list so they
                                                                     # can be selected for allocation
+        # can re-enable signals for list widgets now
+        self._main.tab2.sideMenu.modelListWidget.blockSignals(False)
+        self._main.tab3.sideMenu.modelListWidget.blockSignals(False)
         log.debug("Estimation results: %s", results)
         log.info("Estimation complete.")
 

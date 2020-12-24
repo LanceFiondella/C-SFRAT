@@ -9,6 +9,10 @@ from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, \
 from PyQt5.QtCore import pyqtSignal
 
 import pandas as pd
+import numpy as np
+
+# For exporting table to csv
+import csv
 
 # Local imports
 from ui.commonWidgets import PlotAndTable#, PlotWidget
@@ -35,6 +39,7 @@ class Tab2(QWidget):
         # self.plot = PlotWidget()
         # horizontalLayout.addWidget(self.plot, 85)
         self.plotAndTable = PlotAndTable("Plot", "Table")
+        self._setupTable()
         horizontalLayout.addWidget(self.plotAndTable, 85)
         self.setLayout(horizontalLayout)
 
@@ -45,35 +50,66 @@ class Tab2(QWidget):
         # stylesheet = "::section{Background-color:rgb(250,250,250);}"
         # header.setStyleSheet(stylesheet)
         
-        column_names = ["Interval", "FC"]
-        self.df = pd.DataFrame(columns=column_names)
+        self.column_names = ["Interval"]
+        self.df = pd.DataFrame(columns=self.column_names)
         self.table_model = PandasModel(self.df)
         self.plotAndTable.tableWidget.setModel(self.table_model)
 
-        
-
-
     def updateTable(self, results):
-        self.sideMenu.comparison.goodnessOfFit(results, self.sideMenu)
+        # list with number of columns equal to number of results selected
+        fc_list = []
 
-        rows = []
-        row_index = 0
-        for key, model in results.items():
-            row = [model.shortName,
-                   model.metricString,
-                   model.llfVal,
-                   model.aicVal,
-                   model.bicVal,
-                   model.sseVal,
-                   self.sideMenu.comparison.meanOut[row_index],
-                   self.sideMenu.comparison.medianOut[row_index]]
-            rows.append(row)
-            row_index += 1
-        row_df = pd.DataFrame(rows, columns=self.column_names)
+        # first column is always intervals
+        # get from first value in dictionary, so we don't need to know the key
+        column_names = ["Interval"]
+        if len(results) > 0:
+            fc_list.append(list(results.values())[0][0].t)
 
-        self.tableModel.setAllData(row_df)
+            # iterate over selected models
+            # store intensity values and names
+            for key, model in results.items():
+                fc_list.append(model[0].intensityList)
+                column_names.append(key)
 
-        self.table.model().layoutChanged.emit()
+            row_df = pd.DataFrame(fc_list)
+
+            # need to transpose dataframe, otherwise rows and columns are swapped
+            df = row_df.transpose()
+            df.columns = column_names
+            
+        else:
+            df = pd.DataFrame(columns=["Interval"])
+
+        self.column_names = column_names
+        self.table_model.setAllData(df)
+        self.plotAndTable.tableWidget.model().layoutChanged.emit()
+
+    def exportTable(self, path):
+        """
+        Export table to csv
+        """
+        # TODO:
+        # permission error (if file is open, etc.)
+        # export other tables
+        # export to excel?
+        # stream writing vs line by line (?), not sure which is better/faster
+
+        # https://stackoverflow.com/questions/57419547/struggling-to-export-csv-data-from-qtablewidget
+        # https://stackoverflow.com/questions/27353026/qtableview-output-save-as-csv-or-txt
+        with open(path, 'w', newline='') as stream:
+            writer = csv.writer(stream)
+            writer.writerow(self.column_names)
+            for row in range(self.table_model.rowCount()):
+                rowdata = []
+                for column in range(self.table_model.columnCount()):
+                    # print(self.table_model.data(column))
+                    item = self.table_model._data.iloc[row][column]
+                    if item is not None:
+                        # rowdata.append(unicode(item.text()).encode('utf8'))
+                        rowdata.append(str(item))
+                    else:
+                        rowdata.append('')
+                writer.writerow(rowdata)
 
 
 class SideMenu2(QVBoxLayout):
@@ -257,7 +293,6 @@ class SideMenu2(QVBoxLayout):
         that are currently selected.
         """
         selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
-        #log.debug("Selected models: %s", selectedModelNames
         self.modelChangedSignal.emit(selectedModelNames)
 
 
