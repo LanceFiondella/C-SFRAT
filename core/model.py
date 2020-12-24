@@ -311,6 +311,7 @@ class Model(ABC):
 
         second_num = failure_sum
         second_denom = np.sum(product_array)
+
         second_term = failure_sum * np.log(second_num / second_denom)
 
         third_term = np.sum(np.log(product_array) * np.array(self.failures))
@@ -349,9 +350,15 @@ class Model(ABC):
         initial = self.initialEstimates()
 
         log.info("Initial estimates: %s", initial)
-        f, x = self.LLF_sym_new(self.hazardFunction, covariate_data)    # pass hazard rate function
+        f, x = self.LLF_sym_new(self.hazard_symbolic, covariate_data)    # pass hazard rate function
+        # f, x = self.LLF_sym_new(self.hazardFunction, covariate_data)    # pass hazard rate function
+
+        # print(self.convertSym(x, [f], "numpy"))
 
         bh = np.array([symengine.diff(f, x[i]) for i in range(self.numSymbols)])
+
+        # print(bh)
+
         fd = self.convertSym(x, bh, "numpy")
 
         solution_object = scipy.optimize.minimize(self.RLL_minimize, x0=initial, args=(covariate_data,), method='Nelder-Mead')
@@ -362,6 +369,7 @@ class Model(ABC):
 
         self.modelParameters = self.mle_array[:self.numParameters]
         self.betas = self.mle_array[self.numParameters:]
+        print("model parameters =", self.modelParameters)
         print("betas =", self.betas)
 
         hazard = np.array([self.hazardFunction(i + 1, self.modelParameters) for i in range(self.n)])
@@ -390,10 +398,12 @@ class Model(ABC):
         #     self.converged = False
         #     log.warning(mesg)
 
-        sol_object = scipy.optimize.root(fd, x0=B)
+        sol_object = scipy.optimize.root(fd, x0=B)#, options={'maxiter': 3000})
         solution = sol_object.x
         self.converged = sol_object.success
-        print("root solving converged?", sol_object.success)
+        # print(sol_object)
+        # print("root solving converged?", sol_object.success)
+        print("\t" + sol_object.message)
         
         return solution
 
@@ -460,9 +470,11 @@ class Model(ABC):
         return mvf_array
 
     def MVF(self, x, omega, hazard_array, stop, cov_data):
-
         # gives array with dimensions numCovariates x n, just want n
-        exponent_all = np.array([cov_data[i][:stop + 1] * x[i + 1] for i in range(self.numCovariates)])
+        # switched x[i + 1] to x[i + self.numParameters] to account for
+        # more than 1 model parameter
+        # ***** can probably change to just betas
+        exponent_all = np.array([cov_data[i][:stop + 1] * x[i + self.numParameters] for i in range(self.numCovariates)])
 
         # sum over numCovariates axis to get 1 x n array
         exponent_array = np.exp(np.sum(exponent_all, axis=0))

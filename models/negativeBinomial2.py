@@ -19,3 +19,8 @@ class NegativeBinomial2(Model):
         # args is tuple of hazard function parameters
         f = (i * args[0]**2)/(1 + args[0] * (i - 1))
         return f
+
+    def hazard_symbolic(self, i, args):
+        # args is tuple of hazard function parameters
+        f = (i * args[0]**2)/(1 + args[0] * (i - 1))
+        return f

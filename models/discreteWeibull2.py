@@ -18,3 +18,7 @@ class DiscreteWeibull2(Model):
     def hazardFunction(self, i, args):
         f = 1 - args[0]**(i**2 - (i - 1)**2)
         return f
+
+    def hazard_symbolic(self, i, args):
+        f = 1 - args[0]**(i**2 - (i - 1)**2)
+        return f
