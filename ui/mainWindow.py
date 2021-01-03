@@ -860,6 +860,8 @@ class MainWindow(QMainWindow):
 
         if self.data:
             self.estimationComplete = False # estimation not complete since it just started running
+            self.psseComplete = False       # must re-run PSSE after fitting new models
+            self.selectedModelNames = []    # clear selected models, since none are selected when new models are fitted
             # need to block signals so update signal doesn't fire when list widgets are cleared
             self._main.tab2.sideMenu.modelListWidget.blockSignals(True)
             self._main.tab3.sideMenu.modelListWidget.blockSignals(True)

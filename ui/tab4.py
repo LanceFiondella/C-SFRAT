@@ -244,7 +244,7 @@ class SideMenu4(QVBoxLayout):
         group = QGroupBox(label)
         groupLayout = QVBoxLayout()
         # Effort allocation to discover maximum number of faults within given budget 'B'
-        description = QLabel("Maximize fault discovery within\nbudget.")
+        description = QLabel("Maximize defect discovery within\nbudget.")
         # description.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         groupLayout.addWidget(description)
 
@@ -268,14 +268,14 @@ class SideMenu4(QVBoxLayout):
         group = QGroupBox(label)
         groupLayout = QVBoxLayout()
         # Effort allocation to expose 'k' number of additional faults with the smallest budget possible
-        description = QLabel("Minimum budget (B) to discover\nspecified additonal faults")
+        description = QLabel("Minimum budget (B) to discover\nspecified additonal defects")
         # description.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         groupLayout.addWidget(description)
 
         verticalSpacer = QSpacerItem(20, 20, QSizePolicy.Fixed, QSizePolicy.Preferred)
         groupLayout.addItem(verticalSpacer)
 
-        groupLayout.addWidget(QLabel("Enter number of additional failures"))
+        groupLayout.addWidget(QLabel("Enter number of additional defects"))
         self.failureSpinBox = QSpinBox()
         # self.failureSpinBox.setMaximumWidth(200)
         self.failureSpinBox.setRange(1, 999999)
