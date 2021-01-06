@@ -32,7 +32,7 @@ sample_data.importFile("ds1.csv")
 print(ModelDict.values())
 sample_models = []
 for values in ModelDict.values():
-    sample_models.append(values(data=pd.read_excel("model_data.xlsx"), rootAlgoName='bisect'))
+    sample_models.append(values(data=pd.read_csv("ds1.csv"), rootAlgoName='bisect'))
 
 print(sample_models)
 
