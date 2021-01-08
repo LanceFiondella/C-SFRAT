@@ -77,10 +77,55 @@ class Comparison():
 
         self.bestCombinations()
 
+    def criticMethod_model(self, data, sideMenu):
+        """
+        When Pandas dataframe is passed
+        """
+        numRows = len(data)
+
+        # get numpy arrays of Pandas series
+        llf = data['Log-Likelihood'].values
+        aic = data['AIC'].values
+        bic = data['BIC'].values
+        sse = data['SSE'].values
+
+        self._weightSum = self.calcWeightSum(sideMenu)
+
+        llfOut = np.zeros(numRows)    # create np arrays, num of elements = num of converged
+        aicOut = np.zeros(numRows)
+        bicOut = np.zeros(numRows)
+        sseOut = np.zeros(numRows)
+
+        for i in range(numRows):
+            llfOut[i] = self.ahp(llf, i, sideMenu.llfSpinBox, False)
+            aicOut[i] = self.ahp(aic, i, sideMenu.aicSpinBox, False)
+            bicOut[i] = self.ahp(bic, i, sideMenu.bicSpinBox, False)
+            sseOut[i] = self.ahp(sse, i, sideMenu.sseSpinBox, False)
+
+        ahpArray = np.array([llfOut, aicOut, bicOut, sseOut])   # array of goodness of fit arrays
+
+        # raw values: not on a scale strictly from 0.0 to 1.0
+        rawMean = np.mean(ahpArray, axis=0)     # mean of each goodness of fit measure,
+                                                # for each model/metric combination
+        rawMedian = np.median(ahpArray, axis=0)
+        
+        # Exception raised if trying to take max of empty array
+        try:
+            # divide by max value to normalize on scale from 0.0 to 1.0
+            maxMean = np.max(rawMean)
+            maxMeadian = np.max(rawMedian)
+            self.meanOut = np.divide(rawMean, maxMean)
+            self.medianOut = np.divide(rawMedian, maxMeadian)
+        except:
+            pass
+        # self.meanOut = ahp_array_sum
+
+        self.bestCombinations()
+
     def calcWeightSum(self, sideMenu):
         return sideMenu.llfSpinBox.value() + sideMenu.aicSpinBox.value() + sideMenu.bicSpinBox.value() + sideMenu.sseSpinBox.value()
 
-    def ahp(self, measureList, i, spinBox, uniform):
+    def ahp(self, measureArray, i, spinBox, uniform):
         if uniform:
             weight = 1.0/4.0
         else:
@@ -90,19 +135,14 @@ class Comparison():
                 # all spin boxes set to zero, give equal weighting
                 weight = 1.0/4.0
 
-        # try:
-        #     ahp_val = (measureList[i] - max(measureList)) / (min(measureList) - max(measureList)) * weight
-        # except ZeroDivisionError:
-        #     # no difference between min and max of measure list
-        #     # could mean that estimation was only run on one model
-        #     ahp_val = .250
 
-        if len(measureList) > 1:
-            ahp_val = (abs(measureList[i]) - max(np.absolute(measureList))) / (min(np.absolute(measureList)) - max(np.absolute(measureList))) * weight
+        if len(measureArray) > 1:
+            ahp_val = (abs(measureArray[i]) - max(np.absolute(measureArray))) / (min(np.absolute(measureArray)) - max(np.absolute(measureArray))) * weight
         else:
             ahp_val = 1.0/4.0
 
         return ahp_val
+
 
     def bestCombinations(self):
         # store the index of model combinations that have the highest value, will bold these cells

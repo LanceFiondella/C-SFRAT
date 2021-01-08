@@ -328,16 +328,23 @@ class Data:
 
 # need to edit to fit our data
 class PandasModel(QtCore.QAbstractTableModel):
+
+    # IMPORTANT:
+    # Calling values method is very slow. Instead, try to index.
+    # https://stackoverflow.com/questions/53838343/pyqt5-extremely-slow-scrolling-on-qtableview-with-pandas
+
     def __init__(self, data, parent=None):
         QtCore.QAbstractTableModel.__init__(self, parent)
         self._data = data
 
     def rowCount(self, parent=None):
-        return len(self._data.values)
+        return len(self._data.index)
+        # DO NOT use self._data.values
         # could we use self._data.rows.size ?
 
     def columnCount(self, parent=None):
-        return self._data.columns.size
+        return len(self._data.columns)
+        # return self._data.columns.size
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
         if index.isValid():
@@ -355,18 +362,28 @@ class PandasModel(QtCore.QAbstractTableModel):
                     return QtCore.QVariant("%s" % value)
 
                 # Default
-                return QtCore.QVariant(self.round(self._data.values[index.row()][index.column()]))
+                return QtCore.QVariant(self.roundCell(self._data.iloc[index.row()][index.column()]))
+                # NOT QtCore.QVariant(self.roundCell(self._data.values[index.row()][index.column()]))
 
         # Not valid
         return QtCore.QVariant()
 
-    def round(self, value):
+    def setData(self, index, value, role=QtCore.Qt.DisplayRole):
+        if index.isValid():
+            self._data.iat[index.row(), index.column()] = value
+
+            # self.dataChanged.emit(index, index)
+            return True
+
+        return False
+
+    def roundCell(self, value):
         if isinstance(value, np.float):
             return str(round(value, ndigits=6))
         else:
             return str(value)
 
-    def headerData(self, section, QtOrientation, role=QtCore.Qt.DisplayRole):
+    def headerData(self, section, QtOrientation=QtCore.Qt.Horizontal, role=QtCore.Qt.DisplayRole):
         if QtOrientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
             columnNames = list(self._data)
             return QtCore.QVariant(str(columnNames[section]))
@@ -389,3 +406,17 @@ class PandasModel(QtCore.QAbstractTableModel):
         data is Pandas dataframe, replaces self._data
         """
         self._data = new_data
+        # self.dataChanged.emit()
+        self.layoutChanged.emit()
+
+    def getSelected(self, indices):
+        """
+        Return selected rows based on list of indices
+        """
+        return self._data.loc[self._data[''].isin(indices)]
+
+    def changeCell(self, row, column, value):
+        self._data.at[row, column] = value
+
+        # self.dataChanged.emit(row, row, [])
+        self.layoutChanged.emit()

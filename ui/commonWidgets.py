@@ -383,7 +383,7 @@ class PSSEThread(QThread):
                 ## THIS IS WHERE SUBSETS OF COVARIATE DATA CAN BE PASSED
                 ## for now, just pass all
                 m.runEstimation(m.covariateData)
-                result[runName] = m
+                
 
                 fitted_array = prediction_psse(m, self._data)
 
@@ -391,6 +391,8 @@ class PSSEThread(QThread):
                 
                 print("PSSE value for {0}:".format(runName))
                 print(psse_val)
+
+                result[runName] = psse_val
 
         self.results.emit(result)
 

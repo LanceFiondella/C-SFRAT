@@ -33,35 +33,104 @@ class Tab3(QWidget):
         super().__init__()
         self._setupTab3()
 
-    def addResultsToTable(self, results):
-        results_1 = {}
-        for key, model in results.items():
-            results_1[key] = model[0]
+    def updateTableView(self, indices):
+        """
+        Called when model selection changes, or weighting changes.
+        """        
+        self.filterByIndex(indices)
 
-        self.sideMenu.comparison.criticMethod(results_1, self.sideMenu)
+        selected_data = self.tableModel.getSelected(indices)
 
-        rows = []
-        row_index = 0
-        for key, model in results.items():
-            row = [
-               model[1],
-               model[0].shortName,
-               model[0].metricString,
-               model[0].llfVal,
-               model[0].aicVal,
-               model[0].bicVal,
-               model[0].sseVal,
-               self.sideMenu.comparison.meanOut[row_index],
-               self.sideMenu.comparison.medianOut[row_index]]
-            rows.append(row)
-            row_index += 1
-        row_df = pd.DataFrame(rows, columns=self.column_names)
+        self.sideMenu.comparison.criticMethod_model(selected_data, self.sideMenu)
 
-        self.tableModel.setAllData(row_df)
+        index = 0
+
+        # don't want to sort by string, convert to int
+        indices = [int(i) for i in indices]
+        indices.sort()  # need to sort indices
+
+        for i in indices:
+            # get model index
+            # subtract 1 from row index, in table we display numbering starting at 0
+            row = i - 1
+            meanRowIndex = self.tableModel.index(row, self.meanColumnIndex)
+            medianRowIndex = self.tableModel.index(row, self.medianColumnIndex)
+
+            self.tableModel.setData(meanRowIndex, self.sideMenu.comparison.meanOut[index])
+            self.tableModel.setData(medianRowIndex, self.sideMenu.comparison.medianOut[index])
+            index += 1
 
         # causes whole table to be redrawn
         self.table.model().layoutChanged.emit()
 
+    def filterByIndex(self, indices):
+        """
+        Applies filter to table model, showing only selected fitted models.
+        """
+        self.proxyModel.setFilterKeyColumn(0)   # filter the column of indices
+
+        # match exactly indices[0] or indices[1] or ...
+        regex_temp = '$|^'.join(indices)
+        regex = '^' + regex_temp + '$'
+
+        self.proxyModel.setFilterRegExp(regex)
+
+    def updateModel(self, data):
+        """
+        Call whenever model fitting is run
+        Model always contains all result data
+        """
+
+        self.sideMenu.comparison.criticMethod(data, self.sideMenu)
+
+        rows = []
+        row_index = 0
+        for key, model in data.items():
+            row = [
+               row_index + 1,
+               model.shortName,
+               model.metricString,
+               model.llfVal,
+               model.aicVal,
+               model.bicVal,
+               model.sseVal,
+               "N/A",
+               self.sideMenu.comparison.meanOut[row_index],
+               self.sideMenu.comparison.medianOut[row_index]]
+            rows.append(row)
+            row_index += 1
+        self.dataframe = pd.DataFrame(rows, columns=self.column_names)
+        self.tableModel = PandasModel(self.dataframe)
+
+        # get index of columns, used for updating critic values
+        self.meanColumnIndex = self.tableModel._data.columns.get_loc("Critic (Mean)")
+        self.medianColumnIndex = self.tableModel._data.columns.get_loc("Critic (Median)")
+
+
+        self.proxyModel.setSourceModel(self.tableModel)
+
+        # self.tableModel.setAllData(self.proxyModel)
+
+    def addResultsPSSE(self, results):
+        # print(results)
+
+
+        # names = self.dataframe['Model Name']
+        # print(names)
+
+        # psse_values = []
+        # for key, val in results.items():
+        #     if key in names:
+        #         psse_values.append(val)
+
+        # print(self.dataframe)
+        # print(self.dataframe.PSSE)
+
+        # self.dataframe.PSSE = psse_values
+
+        # # causes whole table to be redrawn
+        # self.table.model().layoutChanged.emit()
+        pass
 
     def _setupTab3(self):
         """Creates tab 3 widgets and adds them to layout."""
@@ -76,13 +145,12 @@ class Tab3(QWidget):
 
     def _setupTable(self):
         self.column_names = ["", "Model Name", "Covariates", "Log-Likelihood", "AIC", "BIC",
-                             "SSE", "Critic (Mean)", "Critic (Median)"]
+                             "SSE", "PSSE", "Critic (Mean)", "Critic (Median)"]
         self.dataframe = pd.DataFrame(columns=self.column_names)
         self.tableModel = PandasModel(self.dataframe)
 
         table = QTableView()
-        table.setModel(self.tableModel)
-        # table.setModel(self.tableModel)
+
         table.setEditTriggers(QTableWidget.NoEditTriggers)     # make cells unable to be edited
         table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
                                                                     # column width fit to contents
@@ -92,6 +160,18 @@ class Tab3(QWidget):
         # provides bottom border for header
         stylesheet = "::section{Background-color:rgb(250,250,250);}"
         header.setStyleSheet(stylesheet)
+
+
+
+        self.proxyModel = QSortFilterProxyModel()
+        self.proxyModel.setSourceModel(self.tableModel)
+
+        # table.setModel(self.tableModel)
+        table.setModel(self.proxyModel)
+
+
+
+
         return table
 
     def exportTable(self, path):
@@ -232,6 +312,7 @@ class SideMenu3(QVBoxLayout):
         topLayout.addWidget(self.psseSpinBox, 1)
 
         self.psseButton = QPushButton("Run PSSE")
+        self.psseButton.setDisabled(True)
         self.psseButton.clicked.connect(self._emitRunPSSESignal)
 
         psseLayout.addLayout(topLayout)

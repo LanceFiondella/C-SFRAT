@@ -172,7 +172,6 @@ class MainWindow(QMainWindow):
         self._main.tab2.sideMenu.failureChangedSignal.connect(self.updateUI)
         # self._main.tab2.sideMenu.intensityChangedSignal.connect(self.prediction2)
         self._main.tab2.sideMenu.intensityChangedSignal.connect(self.updateUI)
-        #self._main.tab3.sideMenu.modelChangedSignal.connect(self.updateComparisonTable)
         self._main.tab3.sideMenu.modelChangedSignal.connect(self.changePlot2AndUpdateComparisonTable)
         # self._main.tab3.sideMenu.modelListWidget.itemActivated().connect(self._main.tab3.addRow)
         self._main.tab3.sideMenu.runPSSESignal.connect(self.runPSSE)
@@ -800,24 +799,18 @@ class MainWindow(QMainWindow):
 
         ModelsList2.blockSignals(False)
         ModelsList3.blockSignals(False)
-        selectModelsNumDic = {}
-        for i in selectedModels:
-            selectModelsNumDic[i.split('. ', 1)[1]]=i.split('. ', 1)[0]
 
-        selectedModels_names = [x.split('. ', 1)[1] for x in selectedModels]
+        self.updateComparisonTable(selectedModels)
 
-        selectedDict = {}
-        for key, model in self.estimationResults.items():
-            if key in selectModelsNumDic.keys():
-                selectedDict[key] = [model, selectModelsNumDic[key]]
-
-        # dataViewIndex == 0 is MVF
-        # dataViewIndex == 1 is intensity
-        self._main.tab2.updateTable(selectedDict, self.dataViewIndex)
-
-        self._main.tab3.addResultsToTable(selectedDict)
-        self.selectedModelNames = selectedModels_names
         self.updateUI()
+
+    def updateComparisonTable(self, combinations):
+        selected_nums = [x.split('. ', 1)[0] for x in combinations]
+        selected_names = [x.split('. ', 1)[1] for x in combinations]
+
+        self._main.tab3.updateTableView(selected_nums)
+
+        self.selectedModelNames = selected_names
 
     def changePlot2(self, selectedModels):
         """Updates plot 2 to show newly selected models to display.
@@ -887,7 +880,7 @@ class MainWindow(QMainWindow):
         self.estimationComplete = True
         self.estimationResults = results
         self._main.tab1.sideMenu.runButton.setEnabled(True)  # re-enable button, can run another estimation
-
+        self._main.tab3.sideMenu.psseButton.setEnabled(True)    # enable PSSE button now that we have fitted models
         self._main.tab4.sideMenu.allocation1Button.setEnabled(True)     # re-enable allocation buttons, can't run
         self._main.tab4.sideMenu.allocation2Button.setEnabled(True)     # if estimation not complete
         # self.setDataView("view", self.dataViewIndex)
@@ -917,6 +910,9 @@ class MainWindow(QMainWindow):
 
         # show which models didn't converge
         # self._main.tab2.sideMenu.addNonConvergedModels(nonConvergedNames)
+
+
+        self._main.tab3.updateModel(self.estimationResults)   # add converged results to model containing all result data
         self._main.tab3.sideMenu.addSelectedModels(convergedNames)  # add models to tab 3 list
                                                                     # so they can be selected for comparison
         # self._main.tab3.addResultsToTable(results)
@@ -930,36 +926,10 @@ class MainWindow(QMainWindow):
 
     def runGoodnessOfFit(self):
         """Adds goodness of fit measures from estimation to tab 3 table."""
+
         if self.estimationComplete:
             combinations = [item.text() for item in self._main.tab3.sideMenu.modelListWidget.selectedItems()]
             self.updateComparisonTable(combinations)
-
-    def updateComparisonTable(self, combinations):
-        # if listItem.isSelected():
-        #     self._main.tab3.addRow(self.estimationResults[listItem.text()])
-        # else:
-        #     self._main.tab3.removeRow(self.estimationResults[listItem.text()])
-
-        selectModelsNumDic = {}
-        for i in combinations:
-            selectModelsNumDic[i.split('. ', 1)[1]]=i.split('. ', 1)[0]
-
-        combination_num = [x.split('. ', 1)[0] for x in combinations]
-        combination_names = [x.split('. ', 1)[1] for x in combinations]
-        selectedDict = {}
-        for key, model in self.estimationResults.items():
-            if key in selectModelsNumDic.keys():
-                selectedDict[key] = [model, selectModelsNumDic[key]]
-        self._main.tab3.addResultsToTable(selectedDict)
-
-
-
-
-        # selectedDict = {}
-        # for key, model in self.estimationResults.items():
-        #     if key in combinations:
-        #         selectedDict[key] = [model, combinations[key]]
-        # self._main.tab3.addResultsToTable(selectedDict)
 
     def runAllocation1(self, combinations):
         """Runs effort allocation on selected model/metric combinations.
@@ -1075,6 +1045,7 @@ class MainWindow(QMainWindow):
         """
         
         self.psseResults = results
+        self._main.tab3.addResultsPSSE(self.psseResults)
         self.psseComplete = True
 
         # re-enable PSSE button
