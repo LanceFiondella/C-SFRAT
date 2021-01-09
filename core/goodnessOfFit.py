@@ -25,8 +25,7 @@ class Comparison():
         self.bestMean = None
         self.bestMedian = None
 
-        # self.meanOutUniformDict = {}
-        # self.meanOutDict = {}
+        self.numMeasures = 5
 
     def criticMethod(self, results, sideMenu):
         # numResults = len(results)
@@ -52,10 +51,10 @@ class Comparison():
         sseOut = np.zeros(converged)
 
         for i in range(converged):
-            llfOut[i] = self.ahp(llf, i, sideMenu.llfSpinBox, False)
-            aicOut[i] = self.ahp(aic, i, sideMenu.aicSpinBox, False)
-            bicOut[i] = self.ahp(bic, i, sideMenu.bicSpinBox, False)
-            sseOut[i] = self.ahp(sse, i, sideMenu.sseSpinBox, False)
+            llfOut[i] = self.ahp(llf, i, sideMenu.llfSpinBox)
+            aicOut[i] = self.ahp(aic, i, sideMenu.aicSpinBox)
+            bicOut[i] = self.ahp(bic, i, sideMenu.bicSpinBox)
+            sseOut[i] = self.ahp(sse, i, sideMenu.sseSpinBox)
 
         ahpArray = np.array([llfOut, aicOut, bicOut, sseOut])   # array of goodness of fit arrays
 
@@ -88,6 +87,7 @@ class Comparison():
         aic = data['AIC'].values
         bic = data['BIC'].values
         sse = data['SSE'].values
+        psse = data['PSSE'].values
 
         self._weightSum = self.calcWeightSum(sideMenu)
 
@@ -95,14 +95,22 @@ class Comparison():
         aicOut = np.zeros(numRows)
         bicOut = np.zeros(numRows)
         sseOut = np.zeros(numRows)
+        psseOut = np.zeros(numRows)
 
         for i in range(numRows):
-            llfOut[i] = self.ahp(llf, i, sideMenu.llfSpinBox, False)
-            aicOut[i] = self.ahp(aic, i, sideMenu.aicSpinBox, False)
-            bicOut[i] = self.ahp(bic, i, sideMenu.bicSpinBox, False)
-            sseOut[i] = self.ahp(sse, i, sideMenu.sseSpinBox, False)
+            llfOut[i] = self.ahp(llf, i, sideMenu.llfSpinBox)
+            aicOut[i] = self.ahp(aic, i, sideMenu.aicSpinBox)
+            bicOut[i] = self.ahp(bic, i, sideMenu.bicSpinBox)
+            sseOut[i] = self.ahp(sse, i, sideMenu.sseSpinBox)
+            psseOut[i] = self.ahp(psse, i, sideMenu.psseSpinBox)
 
-        ahpArray = np.array([llfOut, aicOut, bicOut, sseOut])   # array of goodness of fit arrays
+        # # only consider 
+        # if psse.dtype == np.float64 or psse.dtype == np.float32:
+        #     ahpArray = np.array([llfOut, aicOut, bicOut, sseOut, psseOut])   # array of goodness of fit arrays
+        # else:
+        #     ahpArray = np.array([llfOut, aicOut, bicOut, sseOut])   # array of goodness of fit arrays
+
+        ahpArray = np.array([llfOut, aicOut, bicOut, sseOut, psseOut])   # array of goodness of fit arrays
 
         # raw values: not on a scale strictly from 0.0 to 1.0
         rawMean = np.mean(ahpArray, axis=0)     # mean of each goodness of fit measure,
@@ -125,21 +133,24 @@ class Comparison():
     def calcWeightSum(self, sideMenu):
         return sideMenu.llfSpinBox.value() + sideMenu.aicSpinBox.value() + sideMenu.bicSpinBox.value() + sideMenu.sseSpinBox.value()
 
-    def ahp(self, measureArray, i, spinBox, uniform):
-        if uniform:
-            weight = 1.0/4.0
+    def ahp(self, measureArray, i, spinBox):
+        # if spinbox value is 0, that measure is not being considered
+        # don't need to perform any calculations in that case, since we
+        # know the weight will be 0, so the final value will be 0
+        # important for PSSE, allows us to ignore it prior to running PSSE
+        if spinBox.value() == 0:
+            ahp_val = 0.0
         else:
             try:
                 weight = spinBox.value()/self._weightSum
             except ZeroDivisionError:
                 # all spin boxes set to zero, give equal weighting
-                weight = 1.0/4.0
+                weight = 1.0/float(self.numMeasures)
 
-
-        if len(measureArray) > 1:
-            ahp_val = (abs(measureArray[i]) - max(np.absolute(measureArray))) / (min(np.absolute(measureArray)) - max(np.absolute(measureArray))) * weight
-        else:
-            ahp_val = 1.0/4.0
+            if len(measureArray) > 1:
+                ahp_val = (abs(measureArray[i]) - max(np.absolute(measureArray))) / (min(np.absolute(measureArray)) - max(np.absolute(measureArray))) * weight
+            else:
+                ahp_val = 1.0/float(self.numMeasures)
 
         return ahp_val
 

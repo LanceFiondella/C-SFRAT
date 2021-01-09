@@ -163,7 +163,7 @@ class MainWindow(QMainWindow):
         self._main.tab1.sideMenu.sliderSignal.connect(self.subsetData)
         # run models when signal is received
         self._main.tab1.sideMenu.runModelSignal.connect(self.runModels)
-        self._main.tab1.sideMenu.confidenceSignal.connect(self.updateLaplaceConfidencePlot)
+        # self._main.tab1.sideMenu.confidenceSignal.connect(self.updateLaplaceConfidencePlot)
         #self._main.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2)
         self._main.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2AndUpdateComparisonTable)
 
@@ -391,7 +391,7 @@ class MainWindow(QMainWindow):
         if files[0]:
             # self._main.tab1.sideMenu.runButton.setDisabled(True)
 
-            self.symbolicComplete = False   # reset flag, need to run symbolic
+            # self.symbolicComplete = False   # reset flag, need to run symbolic
                                             # functions before estimation
             self.data.importFile(files[0])  # imports loaded file
             self.dataLoaded = True
@@ -418,7 +418,30 @@ class MainWindow(QMainWindow):
         self._main.tab1.sideMenu.sheetSelect.addItems(self.data.sheetNames)
         # add spin boxes to tab 2 for each covariate, used for prediction
         self._main.tab2.sideMenu.updateEffortList(self.data.metricNames)
+        # add spin boxes to tab 4 for covariate costs
+        # to be added...
 
+        # # reset status of tool
+        # self.estimationComplete = False # estimation not complete since it just started running
+        # self.psseComplete = False       # must re-run PSSE after fitting new models
+        # self.selectedModelNames = []    # clear selected models, since none are selected when new models are fitted
+        # # need to block signals so update signal doesn't fire when list widgets are cleared
+        # self._main.tab2.sideMenu.modelListWidget.blockSignals(True)
+        # self._main.tab3.sideMenu.modelListWidget.blockSignals(True)
+        # self._main.tab2.sideMenu.modelListWidget.clear()    # clear tab 2 list containing
+        #                                                     # previously computed models,
+        #                                                     # only added when calculations complete
+        # self._main.tab3.sideMenu.modelListWidget.clear()
+        # self._main.tab4.sideMenu.modelListWidget.clear()
+
+        # # clear tables/dataframes
+        # self._main.tab2.table_model.clear()    # clear tab 2 dataframe
+        # self._main.tab3.tableModel.clear()  # clear tab 3 dataframe
+        # self._main.tab4.table.setRowCount(0)
+
+        # # clear figures
+        # self.ax2.clear()
+        
         # self.setDataView("view", self.dataViewIndex)
 
         self.changeSheet(self.dataViewIndex)
@@ -545,49 +568,49 @@ class MainWindow(QMainWindow):
         self.redrawPlot(1)
         self.redrawPlot(2)
 
-    def setTrendTest(self, index):
-        """Sets the tab 1 plot to specified trend test.
+    # def setTrendTest(self, index):
+    #     """Sets the tab 1 plot to specified trend test.
 
-        Args:
-            index: Which trend test to generate a plot for, where 0 is Laplace
-                and 1 is a running arithmetic average.
-        """
-        trendTest = list(self.trendTests.values())[index]()
-        trendData = trendTest.run(self.data.getData())
-        self.plotSettings.plotType = "step"  # want step plot for trend tests
-        self.ax = self.plotSettings.generatePlot(self.ax, trendData['X'],
-                                                 trendData['Y'],
-                                                 title=trendTest.name,
-                                                 xLabel=trendTest.xAxisLabel,
-                                                 yLabel=trendTest.yAxisLabel)
-        # add additional horizontal lines for confidence levels
-        if self.dataLoaded and trendTest.name == "Laplace Trend Test":
-            # enable spin box
-            self._main.tab1.sideMenu.confidenceSpinBox.setEnabled(True)
+    #     Args:
+    #         index: Which trend test to generate a plot for, where 0 is Laplace
+    #             and 1 is a running arithmetic average.
+    #     """
+    #     trendTest = list(self.trendTests.values())[index]()
+    #     trendData = trendTest.run(self.data.getData())
+    #     self.plotSettings.plotType = "step"  # want step plot for trend tests
+    #     self.ax = self.plotSettings.generatePlot(self.ax, trendData['X'],
+    #                                              trendData['Y'],
+    #                                              title=trendTest.name,
+    #                                              xLabel=trendTest.xAxisLabel,
+    #                                              yLabel=trendTest.yAxisLabel)
+    #     # add additional horizontal lines for confidence levels
+    #     if self.dataLoaded and trendTest.name == "Laplace Trend Test":
+    #         # enable spin box
+    #         self._main.tab1.sideMenu.confidenceSpinBox.setEnabled(True)
 
-            # add dotted lines, these don't change
-            PlotSettings.addLaplaceLines(self.ax, self._main.tab1.sideMenu.confidenceSpinBox.value())
+    #         # add dotted lines, these don't change
+    #         PlotSettings.addLaplaceLines(self.ax, self._main.tab1.sideMenu.confidenceSpinBox.value())
 
-            # add line indicating user-specified confidence level
-            # when Laplace plot first shown, use the current value of spinbox
-            # PlotSettings.addSpecifiedConfidenceLine(self.ax, self._main.tab1.sideMenu.confidenceSpinBox.value())
+    #         # add line indicating user-specified confidence level
+    #         # when Laplace plot first shown, use the current value of spinbox
+    #         # PlotSettings.addSpecifiedConfidenceLine(self.ax, self._main.tab1.sideMenu.confidenceSpinBox.value())
 
-        elif trendTest.name == "Running Arithmetic Average":
-            self._main.tab1.sideMenu.confidenceSpinBox.setDisabled(True)
+    #     elif trendTest.name == "Running Arithmetic Average":
+    #         self._main.tab1.sideMenu.confidenceSpinBox.setDisabled(True)
                                     
-        self.redrawPlot(1)  # need to re-draw figure
+    #     self.redrawPlot(1)  # need to re-draw figure
 
-    def updateLaplaceConfidencePlot(self, confidence):
-        """Updates confidence line on Laplace trend test plot in tab 1.
+    # def updateLaplaceConfidencePlot(self, confidence):
+    #     """Updates confidence line on Laplace trend test plot in tab 1.
 
-        Args:
-            confidence: Confidence level of the Laplace trend test, determines
-                where horizontal line is drawn.
-        """
-        if self.dataLoaded:
-            # update line indicating user-specified confidence level
-            PlotSettings.updateConfidenceLine(self.ax, confidence)
-            self.redrawPlot(1)  # need to re-draw figure
+    #     Args:
+    #         confidence: Confidence level of the Laplace trend test, determines
+    #             where horizontal line is drawn.
+    #     """
+    #     if self.dataLoaded:
+    #         # update line indicating user-specified confidence level
+    #         PlotSettings.updateConfidenceLine(self.ax, confidence)
+    #         self.redrawPlot(1)  # need to re-draw figure
 
     def createMVFPlot(self, dataframe):
         """Creates MVF plots for tabs 1 and 2.
@@ -841,6 +864,7 @@ class MainWindow(QMainWindow):
         """
         # disable buttons until estimation complete
         self._main.tab1.sideMenu.runButton.setDisabled(True)
+        self._main.tab3.sideMenu.psseSpinBox.setDisabled(True)
         self._main.tab4.sideMenu.allocation1Button.setDisabled(True)
         self._main.tab4.sideMenu.allocation2Button.setDisabled(True)
         modelsToRun = modelDetails["modelsToRun"]
@@ -1050,6 +1074,8 @@ class MainWindow(QMainWindow):
 
         # re-enable PSSE button
         self._main.tab3.sideMenu.psseButton.setEnabled(True)
+        # enable PSSE weight spinbox
+        self._main.tab3.sideMenu.psseSpinBox.setEnabled(True)
 
     #endregion
 

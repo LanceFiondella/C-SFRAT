@@ -390,7 +390,11 @@ class PandasModel(QtCore.QAbstractTableModel):
         return QtCore.QVariant()
 
     def sort(self, Ncol, order):
-        """Sort table by given column number."""
+        """
+        Sort table by given column number.
+
+        https://stackoverflow.com/questions/28660287/sort-qtableview-in-pyqt5
+        """
         self.layoutAboutToBeChanged.emit()  # not sure where this conects
         data = self._data
         # self.data = self.data.sort_values(self.headers[Ncol], ascending=order == Qt.AscendingOrder)
@@ -420,3 +424,20 @@ class PandasModel(QtCore.QAbstractTableModel):
 
         # self.dataChanged.emit(row, row, [])
         self.layoutChanged.emit()
+
+    def clear(self):
+        """
+        Clears all data in data frame. Used when importing new data.
+        """
+        self._data = pd.DataFrame()
+
+
+class ProxyModel(QtCore.QSortFilterProxyModel):
+    """
+    Re-implement QSortFilterProxyModel to implement sorting by float/int
+    """
+    def __init__(self, parent=None):
+        QtCore.QSortFilterProxyModel.__init__(self, parent)
+
+    def sort(self, Ncol, order):
+        self.sourceModel().sort(Ncol, order)

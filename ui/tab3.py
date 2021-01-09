@@ -13,7 +13,7 @@ import csv
 
 # Local imports
 from core.goodnessOfFit import Comparison
-from core.dataClass import PandasModel
+from core.dataClass import PandasModel, ProxyModel
 
 
 class Tab3(QWidget):
@@ -53,11 +53,11 @@ class Tab3(QWidget):
             # get model index
             # subtract 1 from row index, in table we display numbering starting at 0
             row = i - 1
-            meanRowIndex = self.tableModel.index(row, self.meanColumnIndex)
-            medianRowIndex = self.tableModel.index(row, self.medianColumnIndex)
+            meanIndex = self.tableModel.index(row, self.meanColumnIndex)
+            medianIndex = self.tableModel.index(row, self.medianColumnIndex)
 
-            self.tableModel.setData(meanRowIndex, self.sideMenu.comparison.meanOut[index])
-            self.tableModel.setData(medianRowIndex, self.sideMenu.comparison.medianOut[index])
+            self.tableModel.setData(meanIndex, self.sideMenu.comparison.meanOut[index])
+            self.tableModel.setData(medianIndex, self.sideMenu.comparison.medianOut[index])
             index += 1
 
         # causes whole table to be redrawn
@@ -112,25 +112,21 @@ class Tab3(QWidget):
         # self.tableModel.setAllData(self.proxyModel)
 
     def addResultsPSSE(self, results):
-        # print(results)
+        psse_values = []
+        for key, val in results.items():
+            psse_values.append(val)
 
+        columnIndex = self.tableModel._data.columns.get_loc("PSSE")
 
-        # names = self.dataframe['Model Name']
-        # print(names)
+        # iterate over all rows
+        for row in range(self.tableModel.rowCount()):
+            # get model index
+            index = self.tableModel.index(row, columnIndex)
 
-        # psse_values = []
-        # for key, val in results.items():
-        #     if key in names:
-        #         psse_values.append(val)
+            self.tableModel.setData(index, psse_values[row])
 
-        # print(self.dataframe)
-        # print(self.dataframe.PSSE)
-
-        # self.dataframe.PSSE = psse_values
-
-        # # causes whole table to be redrawn
-        # self.table.model().layoutChanged.emit()
-        pass
+        # causes whole table to be redrawn
+        self.table.model().layoutChanged.emit()
 
     def _setupTab3(self):
         """Creates tab 3 widgets and adds them to layout."""
@@ -161,16 +157,13 @@ class Tab3(QWidget):
         stylesheet = "::section{Background-color:rgb(250,250,250);}"
         header.setStyleSheet(stylesheet)
 
-
-
-        self.proxyModel = QSortFilterProxyModel()
+        # proxy model used for sorting and filtering rows
+        # self.proxyModel = QSortFilterProxyModel()
+        self.proxyModel = ProxyModel()
         self.proxyModel.setSourceModel(self.tableModel)
 
         # table.setModel(self.tableModel)
         table.setModel(self.proxyModel)
-
-
-
 
         return table
 
@@ -271,14 +264,22 @@ class SideMenu3(QVBoxLayout):
         comparisonLayout = QGridLayout()
         # self._createLabel("Metric", 0, 0, comparisonLayout)
         # self._createLabel("weights (0-10)", 0, 1, comparisonLayout)
+
+        # text, row, column, layout
         self._createLabel("LLF", 0, 0, comparisonLayout)
         self._createLabel("AIC", 1, 0, comparisonLayout)
         self._createLabel("BIC", 2, 0, comparisonLayout)
         self._createLabel("SSE", 3, 0, comparisonLayout)
+        self._createLabel("PSSE", 4, 0, comparisonLayout)
+
+        # minimum value, maximum value, row, column, layout
         self.llfSpinBox = self._createSpinBox(0, 10, 0, 1, comparisonLayout)
         self.aicSpinBox = self._createSpinBox(0, 10, 1, 1, comparisonLayout)
         self.bicSpinBox = self._createSpinBox(0, 10, 2, 1, comparisonLayout)
         self.sseSpinBox = self._createSpinBox(0, 10, 3, 1, comparisonLayout)
+        self.psseSpinBox = self._createSpinBox(0, 10, 4, 1, comparisonLayout)
+        self.psseSpinBox.setValue(0)    # want to start at 0 before PSSE is run
+        self.psseSpinBox.setDisabled(True)  # disable on startup, before PSSE is run
 
         # vertical spacer at bottom of layout, keeps labels/spinboxes together at top
         # vspacer = QSpacerItem(20, 40, QSizePolicy.Maximum, QSizePolicy.Expanding)
@@ -295,21 +296,24 @@ class SideMenu3(QVBoxLayout):
         """
         psseLayout = QVBoxLayout()
         topLayout = QHBoxLayout()
+
+        # !! slider has no function currently
         self.psseSlider = QSlider(Qt.Horizontal)
+        self.psseSlider.setValue(90)
         # self.psseLineEdit = QLineEdit()
         # self.psseLineEdit.setValidator(QIntValidator())
         # self.psseLineEdit.setMaxLength(2)
         # self.psseLineEdit.setText("90")
 
-        self.psseSpinBox = QDoubleSpinBox()
-        self.psseSpinBox.setDecimals(2)
-        self.psseSpinBox.setMinimum(0.01)
-        self.psseSpinBox.setMaximum(0.99)
-        self.psseSpinBox.setValue(0.9)
-        self.psseSpinBox.setSingleStep(0.01)
+        self.psseParameterSpinBox = QDoubleSpinBox()
+        self.psseParameterSpinBox.setDecimals(2)
+        self.psseParameterSpinBox.setMinimum(0.01)
+        self.psseParameterSpinBox.setMaximum(0.99)
+        self.psseParameterSpinBox.setValue(0.9)
+        self.psseParameterSpinBox.setSingleStep(0.01)
 
         topLayout.addWidget(self.psseSlider, 9)
-        topLayout.addWidget(self.psseSpinBox, 1)
+        topLayout.addWidget(self.psseParameterSpinBox, 1)
 
         self.psseButton = QPushButton("Run PSSE")
         self.psseButton.setDisabled(True)
@@ -380,4 +384,4 @@ class SideMenu3(QVBoxLayout):
         self.spinBoxChangedSignal.emit()
 
     def _emitRunPSSESignal(self):
-        self.runPSSESignal.emit(self.psseSpinBox.value())
+        self.runPSSESignal.emit(self.psseParameterSpinBox.value())

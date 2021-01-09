@@ -389,8 +389,8 @@ class PSSEThread(QThread):
 
                 psse_val = PSSE(fitted_array, self._data.getData()['CFC'].values, m.n)
                 
-                print("PSSE value for {0}:".format(runName))
-                print(psse_val)
+                # print("PSSE value for {0}:".format(runName))
+                # print(psse_val)
 
                 result[runName] = psse_val
 
