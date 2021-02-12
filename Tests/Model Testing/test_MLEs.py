@@ -5,6 +5,7 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 from models.discreteWeibull2 import DiscreteWeibull2
 from core.dataClass import Data
+import configparser
 import pandas as pd
 import logging
 
@@ -13,38 +14,43 @@ mylogger = logging.getLogger()
 
 mylogger.info('\n###############\nStarting  Model Testing\n###############')
 
-def setup(Systemdata):
+def DWSetup(Systemdata):
+    MetricCombos = [[],['E'],['F'],['C'],['E','F'],['F','C'],['E','C'],['E','F','C']]
+    DWresults = {}
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    for metricname in MetricCombos:
+        DW = DiscreteWeibull2(data=Systemdata.getFullData(),metricNames=metricname,config=config)
+        DW.runEstimation(DW.covariateData)
+        if (metricname == []):
+            metricname = ['-']
+        DWresults[listToString(metricname)] = {"b":DW.modelParameters[0],"Beta":DW.betas , "Omega": DW.omega,"LL" : DW.llfVal}
+    return DWresults
+
+
+def listToString(s):
+    # initialize an empty string
+    str1 = ""
     
-    DW = DiscreteWeibull2(data=Systemdata.getData(),metricNames=['E'])
-    DW.runEstimation(DW.covariateData)
+    # traverse in the string
+    for ele in s:
+        str1 += ele
+        
+        # return string
+    return str1
 
-    ISS_list = []
-
-    '''for sheet in Systemdata.sheetNames:
-        rawData = Systemdata.dataSet[sheet]
-        try:
-            iss = ISS(data=rawData, rootAlgoName='bisect')
-            iss.findParams(0)
-        except:
-            pass
-        ISS_list.append(iss)
-    return [ISS_list, aMLE, bMLE, cMLE]
-    '''
 
 fname = "ds1.csv"
-Systemdata = Data()
-Systemdata.importFile(fname)
-DATA = setup(Systemdata)
-Results_aMLE = []
-Results_bMLE = []
-Results_cMLE = []
-for i in range(0, len(DATA[0])):
-    try:
-        Results_aMLE.append((DATA[0][i].aMLE, DATA[1][i],Systemdata.sheetNames[i]))
-        Results_bMLE.append((DATA[0][i].bMLE, DATA[2][i]),Systemdata.sheetNames[i])
-        Results_cMLE.append((DATA[0][i].cMLE, DATA[3][i]),Systemdata.sheetNames[i])
-    except:
-        mylogger.info('Error in Sheet number ' + Systemdata.sheetNames[i])
+SystemdataDS1 = Data()
+SystemdataDS1.importFile(fname)
+DWresultsDS1 = DWSetup(SystemdataDS1)
+
+fname = "ds2.csv"
+SystemdataDS2 = Data()
+SystemdataDS2.importFile(fname)
+DWresultsDS2 = DWSetup(SystemdataDS2)
+
+
 
 
 @pytest.mark.parametrize("test_input,expected,SheetName", Results_aMLE)
