@@ -20,10 +20,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a6bbf19f-7006-428c-b888-fe7ef84a9c94" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/Covariate_Tool.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Covariate_Tool.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Tests/Model Testing/test_Dweibull2.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py" beforeDir="false" afterPath="$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py" afterDir="false" />
     </list>
     <ignored path="E:\UmassD\Resarch\Covariate_Tool\.idea\shelf/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -38,8 +35,8 @@
       <file leaf-file-name="test_MLEs.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="405">
-              <caret line="17" column="47" selection-start-line="17" selection-start-column="47" selection-end-line="17" selection-end-column="47" />
+            <state relative-caret-position="545">
+              <caret line="34" column="19" lean-forward="true" selection-start-line="34" selection-start-column="19" selection-end-line="34" selection-end-column="19" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
               </folding>
@@ -47,15 +44,32 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="modelFitting.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/core/modelFitting.py">
-          <provider selected="true" editor-type-id="text-editor" />
+      <file leaf-file-name="test_GUI.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Tests/GUI Testing/test_GUI.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-53">
+              <caret line="23" column="28" lean-forward="true" selection-start-line="23" selection-start-column="28" selection-end-line="23" selection-end-column="28" />
+              <folding>
+                <element signature="e#0#10#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="discreteWeibull2.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/models/discreteWeibull2.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="81">
+              <caret line="3" column="22" selection-start-line="3" selection-start-column="6" selection-end-line="3" selection-end-column="22" />
+            </state>
+          </provider>
         </entry>
       </file>
       <file leaf-file-name="model.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/core/model.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state>
+            <state relative-caret-position="752">
+              <caret line="81" selection-start-line="81" selection-end-line="81" />
               <folding>
                 <element signature="e#0#53#0" expanded="true" />
               </folding>
@@ -63,61 +77,55 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="graphSettings.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/core/graphSettings.py">
+      <file leaf-file-name="commonWidgets.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/ui/commonWidgets.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <folding>
-                <element signature="e#0#31#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="269">
+              <caret line="297" lean-forward="true" selection-start-line="297" selection-end-line="297" />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="goodnessOfFit.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/core/goodnessOfFit.py">
-          <provider selected="true" editor-type-id="text-editor" />
-        </entry>
-      </file>
-      <file leaf-file-name="dataClass.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="dataClass.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/core/dataClass.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-2322">
+            <state relative-caret-position="158">
+              <caret line="67" selection-start-line="67" selection-end-line="67" />
               <folding>
                 <element signature="e#0#21#0" expanded="true" />
+                <element signature="e#6269#7058#0" />
+                <element signature="e#7100#8083#0" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="allocation.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/core/allocation.py">
+      <file leaf-file-name="tab3.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/ui/tab3.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state>
+            <state relative-caret-position="167">
+              <caret line="378" selection-start-line="378" selection-end-line="378" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="main.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/main.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="301">
+              <caret line="45" selection-start-line="45" selection-end-line="45" />
               <folding>
-                <element signature="e#0#31#0" expanded="true" />
+                <element signature="e#763#814#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="optimization.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/core/optimization.py">
-          <provider selected="true" editor-type-id="text-editor" />
-        </entry>
-      </file>
-      <file leaf-file-name="prediction.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/core/prediction.py">
-          <provider selected="true" editor-type-id="text-editor" />
-        </entry>
-      </file>
-      <file leaf-file-name="trendTests.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/core/trendTests.py">
+      <file leaf-file-name="mainWindow.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/ui/mainWindow.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <folding>
-                <element signature="e#0#53#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="167">
+              <caret line="825" selection-start-line="825" selection-end-line="825" />
             </state>
           </provider>
         </entry>
@@ -131,8 +139,26 @@
       </list>
     </option>
   </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>importFile</find>
+      <find>run</find>
+      <find>self._modelsToRun</find>
+      <find>omega</find>
+      <find>importf</find>
+      <find>modelf</find>
+      <find>_config</find>
+    </findStrings>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py" />
+      </list>
+    </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
     <option name="x" value="476" />
@@ -173,6 +199,12 @@
               <item name="main.py" type="b2602c69:ProjectViewProjectNode" />
               <item name="Covariate_Tool" type="462c0819:PsiDirectoryNode" />
               <item name="Tests" type="462c0819:PsiDirectoryNode" />
+              <item name="GUI Testing" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="main.py" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Covariate_Tool" type="462c0819:PsiDirectoryNode" />
+              <item name="Tests" type="462c0819:PsiDirectoryNode" />
               <item name="Model Testing" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
@@ -207,7 +239,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.main">
+  <component name="RunManager" selected="Python.test_MLEs">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python">
       <module name="Covariate_Tool" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -226,18 +258,23 @@
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
     </configuration>
-    <configuration name="Unittests for test_GUI.Covariatetest" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+    <configuration name="test_MLEs" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="Covariate_Tool" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Tests/GUI Testing" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Tests/Model Testing" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test_GUI.Covariatetest&quot;" />
-      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
     </configuration>
     <configuration name="Unittests for test_GUI.Covariatetest.test_defaults" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
       <module name="Covariate_Tool" />
@@ -294,18 +331,18 @@
     <list>
       <item itemvalue="Python.main" />
       <item itemvalue="Python tests.Unittests in test_GUI.py" />
-      <item itemvalue="Python tests.Unittests for test_GUI.Covariatetest" />
       <item itemvalue="Python tests.Unittests for test_GUI.Covariatetest.test_defaults" />
       <item itemvalue="Python tests.Unittests for test_GUI.Covariatetest.test_file" />
       <item itemvalue="Python tests.Unittests for test_GUI.Covariatetest.test_view" />
+      <item itemvalue="Python.test_MLEs" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.test_MLEs" />
         <item itemvalue="Python tests.Unittests for test_GUI.Covariatetest.test_file" />
         <item itemvalue="Python tests.Unittests for test_GUI.Covariatetest.test_view" />
         <item itemvalue="Python tests.Unittests in test_GUI.py" />
         <item itemvalue="Python tests.Unittests for test_GUI.Covariatetest.test_defaults" />
-        <item itemvalue="Python tests.Unittests for test_GUI.Covariatetest" />
       </list>
     </recent_temporary>
   </component>
@@ -333,18 +370,19 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.24973656" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Event Log" side_tool="true" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.30392158" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.32897604" />
-      <window_info anchor="bottom" id="Version Control" />
-      <window_info anchor="bottom" id="Python Console" />
+      <window_info anchor="bottom" id="Version Control" weight="0.32897604" />
+      <window_info anchor="bottom" id="Python Console" weight="0.32897604" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
-      <window_info active="true" anchor="bottom" id="Terminal" visible="true" weight="0.32897604" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info anchor="bottom" id="Terminal" weight="0.36056644" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.39978212" />
       <window_info id="Favorites" side_tool="true" />
-      <window_info anchor="bottom" id="Find" order="1" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -441,7 +479,25 @@
           <line>786</line>
           <option name="timeStamp" value="39" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/ui/commonWidgets.py</url>
+          <line>270</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py</url>
+          <line>20</line>
+          <option name="timeStamp" value="3" />
+        </line-breakpoint>
       </breakpoints>
+      <default-breakpoints>
+        <breakpoint type="python-exception">
+          <properties notifyOnTerminate="true" exception="BaseException">
+            <option name="notifyOnTerminate" value="true" />
+          </properties>
+        </breakpoint>
+      </default-breakpoints>
+      <option name="time" value="5" />
     </breakpoint-manager>
     <watches-manager>
       <configuration name="tests">
@@ -454,33 +510,66 @@
         <watch expression="key" language="Python" />
         <watch expression="model" language="Python" />
         <watch expression="selectedDict" language="Python" />
+        <watch expression="result" language="Python" />
+        <watch expression="self._modelsToRun" language="Python" />
+        <watch expression="self._metricNames" language="Python" />
+        <watch expression="self._data.getData()" language="Python" />
+        <watch expression="self._config" language="Python" />
+        <watch expression="m" language="Python" />
+        <watch expression="runName" language="Python" />
       </configuration>
     </watches-manager>
   </component>
+  <component name="debuggerHistoryManager">
+    <expressions id="watch">
+      <expression>
+        <expression-string>runName</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>m</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>self._config</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>self._data.getData()</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>self._data</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>self._metricNames</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>self._m</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>self._modelsToRun</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>result</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+    </expressions>
+  </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/main.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="301">
-          <caret line="32" lean-forward="true" selection-start-line="32" selection-end-line="32" />
-          <folding>
-            <element signature="e#763#814#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="405">
-          <caret line="17" column="47" selection-start-line="17" selection-start-column="47" selection-end-line="17" selection-end-column="47" />
-          <folding>
-            <element signature="e#0#13#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/core/prediction.py">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
     <entry file="file://$PROJECT_DIR$/core/trendTests.py">
       <provider selected="true" editor-type-id="text-editor">
         <state>
@@ -490,31 +579,10 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/core/prediction.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
     <entry file="file://$PROJECT_DIR$/core/optimization.py">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/core/model.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <folding>
-            <element signature="e#0#53#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/core/graphSettings.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <folding>
-            <element signature="e#0#31#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/core/goodnessOfFit.py">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/core/modelFitting.py">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
     <entry file="file://$PROJECT_DIR$/core/allocation.py">
@@ -526,12 +594,130 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/core/goodnessOfFit.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/core/graphSettings.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <folding>
+            <element signature="e#0#31#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/core/modelFitting.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/models/discreteWeibull.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/models/discreteWeibull_type1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-282" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/models/discreteWeibull_type3.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="555">
+          <caret line="25" column="17" lean-forward="true" selection-start-line="25" selection-start-column="17" selection-end-line="25" selection-end-column="17" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ui/mainWindow.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="167">
+          <caret line="825" selection-start-line="825" selection-end-line="825" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="301">
+          <caret line="45" selection-start-line="45" selection-end-line="45" />
+          <folding>
+            <element signature="e#763#814#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Tests/GUI Testing/test_GUI.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-53">
+          <caret line="23" column="28" lean-forward="true" selection-start-line="23" selection-start-column="28" selection-end-line="23" selection-end-column="28" />
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ui/tab3.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="167">
+          <caret line="378" selection-start-line="378" selection-end-line="378" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_bundle/pydev_monkey_qt.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="27">
+          <caret line="179" selection-start-line="179" selection-end-line="179" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/core/dataClass.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-2322">
+        <state relative-caret-position="158">
+          <caret line="67" selection-start-line="67" selection-end-line="67" />
           <folding>
             <element signature="e#0#21#0" expanded="true" />
+            <element signature="e#6269#7058#0" />
+            <element signature="e#7100#8083#0" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/anaconda3/Lib/codecs.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="167">
+          <caret line="332" selection-start-line="332" selection-end-line="332" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="545">
+          <caret line="34" column="19" lean-forward="true" selection-start-line="34" selection-start-column="19" selection-end-line="34" selection-end-column="19" />
+          <folding>
+            <element signature="e#0#13#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/models/discreteWeibull2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="81">
+          <caret line="3" column="22" selection-start-line="3" selection-start-column="6" selection-end-line="3" selection-end-column="22" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/core/model.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="752">
+          <caret line="81" selection-start-line="81" selection-end-line="81" />
+          <folding>
+            <element signature="e#0#53#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ui/commonWidgets.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="269">
+          <caret line="297" lean-forward="true" selection-start-line="297" selection-end-line="297" />
         </state>
       </provider>
     </entry>

@@ -11,20 +11,16 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 mylogger = logging.getLogger()
 
-mylogger.info('\n###############\nStarting ISS Model Testing\n###############')
+mylogger.info('\n###############\nStarting  Model Testing\n###############')
 
-def setup_iss(Systemdata):
-    fname = "result.xlsx"
-    dataResults = pd.read_excel(fname, sheet_name='Dweibull2')
-
-
-    #aMLE=round(aMLE,1)
-    #bMLE=round(bMLE,1)
-    #cMLE=round(cMLE,1)
+def setup(Systemdata):
+    
+    DW = DiscreteWeibull2(data=Systemdata.getData(),metricNames=['E'])
+    DW.runEstimation(DW.covariateData)
 
     ISS_list = []
 
-    for sheet in Systemdata.sheetNames:
+    '''for sheet in Systemdata.sheetNames:
         rawData = Systemdata.dataSet[sheet]
         try:
             iss = ISS(data=rawData, rootAlgoName='bisect')
@@ -33,11 +29,12 @@ def setup_iss(Systemdata):
             pass
         ISS_list.append(iss)
     return [ISS_list, aMLE, bMLE, cMLE]
+    '''
 
-fname = "model_data.xlsx"
+fname = "ds1.csv"
 Systemdata = Data()
 Systemdata.importFile(fname)
-DATA = setup_iss(Systemdata)
+DATA = setup(Systemdata)
 Results_aMLE = []
 Results_bMLE = []
 Results_cMLE = []
