@@ -237,34 +237,9 @@ class Data:
         Returns:
             data : processed pandas dataframe
         """
-        # print(data)
         cumulative_column = data["FC"].cumsum()  # add column for cumulative failures
         # insert cumulative column in location directly after FC
         data.insert(data.columns.get_loc("FC") + 1, 'CFC', cumulative_column)
-
-        # added for trend tests,
-        # commented out for now
-
-        # FTData = pd.DataFrame()
-        # FT = []
-        # for i, fc in enumerate(data['FC']):
-        #     if fc != 0:
-        #         if i == 0:
-        #             fails = np.array([(j+0.5)*float(data['T'][i]) /
-        #                              float(fc) for j in range(int(fc))])
-        #             for fail in fails:
-        #                 FT.append(fail)
-        #         elif i > 0:
-        #             fails = np.array([(j+0.5)*float(data['T'][i] -
-        #                               data['T'][i-1]) /
-        #                              float(fc) for j in range(int(fc))])
-        #             for fail in fails:
-        #                 FT.append(data['T'][i]+fail)
-        # FTData['FT'] = pd.Series(FT)
-        # data['FT'] = FTData['FT']
-        # data['FN'] = pd.Series([i+1 for i in range(FTData['FT'].size)])
-        # data['IF'] = data['FT'].diff()
-        # data['IF'].iloc[0] = data['FT'].iloc[0]
 
         return data
 
@@ -305,19 +280,10 @@ class Data:
         self.metricNames = names_list
 
     def getMetricNameCombinations(self):
-        # if (self.numCovariates > 1):
-        #     self.metricNameCombinations = self.metricNames
-        #     comb = []
-        #     for i in range(2, self.numCovariates + 1):
-        #         comb.append(list(combinations(self.metricNames,i)))
-        #     print("comb =", comb)
-        #     print(", ".join(comb[0][0]))
-
         self.metricNameCombinations = []
         comb = self.powerset(self.metricNames)
         for c in comb:
             self.metricNameCombinations.append(", ".join(c))
-        # self.metricNameCombinations.remove("")  # remove option for zero metrics, user can select zero by having none selected
         self.metricNameCombinations[0] = "None"
 
     def powerset(self, iterable):

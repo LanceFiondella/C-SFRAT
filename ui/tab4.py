@@ -107,39 +107,10 @@ class Tab4(QWidget):
 
         self.sideMenu = SideMenu4()
         mainLayout.addLayout(self.sideMenu, 15)
-        self.table = self._setupTable()
-
-        ## Adding table should be similar to this. Feel free to add functions
-        # self.table2 = self._setupTable()
-        # self.tabWidget = QTabWidget()
-        # mainLayout.addWidget(self.tabWidget, 85)
 
         self.TableAndTable = TableTabs("Allocation 1", "Allocation 2")
         mainLayout.addWidget(self.TableAndTable, 85)
         self.setLayout(mainLayout)
-
-    def _setupTable(self):
-        """Creates table widget with proper headers.
-
-        Returns:
-            A QTableWidget with specified column headers.
-        """
-        table = QTableWidget()
-        table.setEditTriggers(QTableWidget.NoEditTriggers)  # make cells unable to be edited
-        table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
-                                                            # column width fit to contents
-        table.setRowCount(1)
-        table.setColumnCount(3)
-        table.setHorizontalHeaderLabels(["Model Name", "Covariates", "Est. Defects"])
-
-        header = table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        # provides bottom border for header
-        stylesheet = "::section{Background-color:rgb(250,250,250);}"
-        header.setStyleSheet(stylesheet)
-        table.move(0, 0)
-
-        return table
 
     def _createHeaderLabels(self, metricNames):
         """Creates the header labels for the tab 4 table.
@@ -213,16 +184,12 @@ class SideMenu4(QVBoxLayout):
         """Creates group box widgets and adds them to layout."""
         modelsGroup = QGroupBox("Select Models for Allocation")
         modelsGroup.setLayout(self._setupModelsGroup())
-        # optionsGroup = QGroupBox("Allocation Parameters")
-        # optionsGroup.setLayout(self._setupOptionsGroup())
-        # self.allocation1Button = self._setupAllocationButton("Run Allocation")
         allocation1Group = self._setupAllocation1Group("Allocation 1")
         allocation2Group = self._setupAllocation2Group("Allocation 2")
 
         self.addWidget(modelsGroup, 10)
         self.addWidget(allocation1Group)
         self.addWidget(allocation2Group)
-        # self.addWidget(self.allocation1Button, 1)
 
         self.addStretch(1)
 
@@ -291,7 +258,6 @@ class SideMenu4(QVBoxLayout):
         """Creates the button that begins effort allocation."""
         button = QPushButton(label)
         button.setEnabled(False) # begins disabled since no model has been run yet
-        # self.allocationButton.setMaximumWidth(250)
         button.clicked.connect(slot)
 
         return button
@@ -313,7 +279,6 @@ class SideMenu4(QVBoxLayout):
         print(type(allocation_type))
         selectedCombinationNames = [item.text().split(". ", 1)[1] for item in self.modelListWidget.selectedItems()]
         if selectedCombinationNames:
-            # selectedCombinationNames = [item.text() for item in self.modelListWidget.selectedItems()]
             log.info("Selected for Allocation: %s", selectedCombinationNames)
 
             print(allocation_type)

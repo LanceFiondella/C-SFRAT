@@ -2,11 +2,6 @@ import numpy as np
 
 
 def PSSE(fitted, actual, intervals):
-    # print(fitted[(self.n - 1) + 1:])
-    # sub = np.subtract(fitted[(self.n - 1) + 1:], actual[(self.n - 1) + 1:])
-    # error = np.sum(np.power(sub, 2))
-    # return error
-
     sub = np.subtract(fitted[intervals:], actual[intervals:])
     error = np.sum(np.power(sub, 2))
     return error
@@ -18,10 +13,8 @@ class Comparison():
     """
 
     def __init__(self):
-        # self.meanOutUniform = None
         self.meanOut = None
         self.medianOut = None
-        # self.bestMeanUniform = None
         self.bestMean = None
         self.bestMedian = None
 
@@ -104,12 +97,6 @@ class Comparison():
             sseOut[i] = self.ahp(sse, i, sideMenu.sseSpinBox)
             psseOut[i] = self.ahp(psse, i, sideMenu.psseSpinBox)
 
-        # # only consider 
-        # if psse.dtype == np.float64 or psse.dtype == np.float32:
-        #     ahpArray = np.array([llfOut, aicOut, bicOut, sseOut, psseOut])   # array of goodness of fit arrays
-        # else:
-        #     ahpArray = np.array([llfOut, aicOut, bicOut, sseOut])   # array of goodness of fit arrays
-
         ahpArray = np.array([llfOut, aicOut, bicOut, sseOut, psseOut])   # array of goodness of fit arrays
 
         # raw values: not on a scale strictly from 0.0 to 1.0
@@ -148,7 +135,9 @@ class Comparison():
                 weight = 1.0/float(self.numMeasures)
 
             if len(measureArray) > 1:
+                # make sure this is correct!
                 ahp_val = (abs(measureArray[i]) - max(np.absolute(measureArray))) / (min(np.absolute(measureArray)) - max(np.absolute(measureArray))) * weight
+                # ahp_val = (abs(measureArray[i]) - min(np.absolute(measureArray))) / (max(np.absolute(measureArray)) - min(np.absolute(measureArray))) * weight
             else:
                 ahp_val = 1.0/float(self.numMeasures)
 

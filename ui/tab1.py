@@ -10,7 +10,6 @@ from PyQt5.QtCore import pyqtSignal, Qt
 # Local imports
 import models
 from ui.commonWidgets import PlotAndTable
-from core.trendTests import *
 
 
 class Tab1(QWidget):
@@ -94,17 +93,6 @@ class SideMenu1(QVBoxLayout):
         self.metricListWidget.clearSelection()
         self.metricListWidget.repaint()
 
-    def testChanged(self):
-        """Emits signal indicating that the selected trend test was changed.
-        
-        The emitted signal contains the index of the trend test that was
-        selected (0 for Laplace, 1 for running arithmetic average).
-        """
-        self.testSelect.setEnabled(True)
-        self.confidenceSpinBox.setEnabled(True)
-        # self.viewMode.setEnabled(False)
-        self.viewChangedSignal.emit('trend', self.testSelect.currentIndex())
-
     def updateSlider(self, max_value):
         """
         Called when new data is imported/sheet changed. Updates slider to
@@ -137,8 +125,6 @@ class SideMenu1(QVBoxLayout):
         # signals
         self.sheetSelect.currentIndexChanged.connect(self._emitSheetChangedSignal)   # when sheet selection changed
 
-        # self.testSelect.currentIndexChanged.connect(self.testChanged)   # when trend test selection changed
-
     def _setupDataGroup(self):
         """Creates widgets for sheet selection and trend tests.
         
@@ -168,33 +154,6 @@ class SideMenu1(QVBoxLayout):
         dataGroupLayout.addWidget(self.sheetSelect)
         dataGroupLayout.addWidget(QLabel("Subset Failure Data"))
         dataGroupLayout.addLayout(sliderLayout)
-
-
-        ###############################################
-        # *** TREND TESTS REMOVED FROM UI FOR NOW *** #
-        ###############################################
-
-
-        # self.testSelect = QComboBox()   # select trend test
-
-        # trendTests = {cls.__name__: cls for
-        #               cls in TrendTest.__subclasses__()}
-        # self.testSelect.addItems([test.name for test in
-        #                           trendTests.values()])
-        # self.testSelect.setEnabled(False)   # begin disabled, showing imported
-                                            # data on startup, not trend test
-
-        # self.confidenceSpinBox = QDoubleSpinBox()
-        # self.confidenceSpinBox.setRange(0.0, 1.0)
-        # self.confidenceSpinBox.setSingleStep(0.01)  # step by 0.01
-        # self.confidenceSpinBox.setValue(0.95)  # default value
-        # self.confidenceSpinBox.setDisabled(True)    # disabled on start up
-        # self.confidenceSpinBox.valueChanged.connect(self._emitConfidenceSignal)
-        
-        # dataGroupLayout.addWidget(QLabel("Select Trend Test"))
-        # dataGroupLayout.addWidget(self.testSelect)
-        # dataGroupLayout.addWidget(QLabel("Specify Laplace Confidence Level"))
-        # dataGroupLayout.addWidget(self.confidenceSpinBox)
 
         return dataGroupLayout
 
@@ -249,8 +208,8 @@ class SideMenu1(QVBoxLayout):
         metric is selected.
         """
         log.info("Run button pressed.")
+
         # get model names as strings
-        
         selectedModelNames = [item.text() for item in self.modelListWidget.selectedItems()]
 
         # get model classes from models folder
@@ -262,7 +221,6 @@ class SideMenu1(QVBoxLayout):
 
         # only emit the run signal if at least one model and at least one metric chosen
         if selectedModelNames and selectedMetricNames:
-            # self.runButton.setEnabled(False)    # disable button until estimation complete
             self.runModelSignal.emit({"modelsToRun": modelsToRun,
                                       "metricNames": selectedMetricNames})
 
@@ -293,14 +251,6 @@ class SideMenu1(QVBoxLayout):
     def _emitSheetChangedSignal(self):
         """Emits signal indicating that selected sheet has changed."""
         self.viewChangedSignal.emit("sheet", self.sheetSelect.currentIndex())
-
-    def _emitConfidenceSignal(self):
-        """Emits signal indicating that the Laplace confidence level changed.
-
-        The emitted signal contains the value that the confidence level was
-        changed to, as a float.
-        """
-        self.confidenceSignal.emit(self.confidenceSpinBox.value())
 
     def _emitSliderSignal(self):
         self.sliderLabel.setText(str(self.slider.value()))

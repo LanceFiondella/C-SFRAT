@@ -4,21 +4,15 @@ from core.model import Model
 class Geometric(Model):
     name = "Geometric"
     shortName = "GM"
-    coxParameterEstimateRange = [0.0, 0.1]      # betas
-    shapeParameterEstimateRange = [0.8, 0.99]   # b0
 
-    # b0 = 0.01
+    # initial parameter estimates
     beta0 = 0.01
-
     parameterEstimates = (0.01,)
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-
-    def hazardFunction(self, i, args):
+    def hazardSymbolic(self, i, args):
         f = args[0]
         return f
 
-    def hazard_symbolic(self, i, args):
+    def hazardNumerical(self, i, args):
         f = args[0]
         return f
