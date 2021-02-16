@@ -172,9 +172,9 @@ class Data:
             if self.hasHeader(fname, fileExtenstion):
                 # data has header, can read in normally
                 #   *** don't think it takes into account differences in sheets
-                data = pd.read_excel(fname, sheet_name=None)
+                data = pd.read_excel(fname, sheet_name=None, engine="openpyxl")
             else:
-                data = pd.read_excel(fname, sheet_name=None, header=None)
+                data = pd.read_excel(fname, sheet_name=None, header=None, engine="openpyxl")
         self.sheetNames = list(data.keys())
         self._currentSheet = 0
         self.setData(data)
@@ -199,8 +199,8 @@ class Data:
             df = pd.read_csv(fname, header=None, nrows=rows)
             df_header = pd.read_csv(fname, nrows=rows)
         else:
-            df = pd.read_excel(fname, header=None, nrows=rows)
-            df_header = pd.read_excel(fname, nrows=rows)
+            df = pd.read_excel(fname, header=None, nrows=rows, engine="openpyxl")
+            df_header = pd.read_excel(fname, nrows=rows, engine="openpyxl")
         # has a header if datatypes of loaded dataframes are different 
         header = tuple(df.dtypes) != tuple(df_header.dtypes)
         self.containsHeader = header

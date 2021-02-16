@@ -36,7 +36,7 @@ def main(debug):
     Args
         debug: Boolean indicating if debug mode is active or not
     """
-    log.info("Starting Covariate Tool application.")
+    log.info("Starting C-SFRAT.")
     app = QApplication(sys.argv)
     mainWindow = MainWindow(debug)
     sys.exit(app.exec_())

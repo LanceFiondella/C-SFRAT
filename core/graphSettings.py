@@ -37,7 +37,7 @@ class PlotSettings:
             y = y.to_numpy()
 
             # can only have "post" parameter if using a step function
-            plotMethod(x, y, self.style, linewidth=self.linewidth, color=self.color, markerSize=self.markerSize, where="post")  # ax.step()
+            plotMethod(x, y, self.style, linewidth=self.linewidth, color=self.color, markersize=self.markerSize, where="post")  # ax.step()
         elif self.plotType == "bar":
             # ax.set_xticks(x)
             ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))  
@@ -46,7 +46,7 @@ class PlotSettings:
             # add point at (0, 0) if not there
             x = x.to_numpy()
             y = y.to_numpy()
-            plotMethod(x, y, self.style, markerSize=self.markerSize)    # ax.plot()
+            plotMethod(x, y, self.style, markersize=self.markerSize)    # ax.plot()
         return ax
 
     def setupPlot(self, ax, title="None", xLabel="X", yLabel="Y"):
@@ -61,9 +61,9 @@ class PlotSettings:
         plotMethod = getattr(ax, self.plotType)
 
         if self.plotType == "step":
-            plotMethod(x, y, self.style, markerSize=self.markerSize, where="post", label=label)
+            plotMethod(x, y, self.style, markersize=self.markerSize, where="post", label=label)
         else:
-            plotMethod(x, y, self.style, markerSize=self.markerSize, label=label)
+            plotMethod(x, y, self.style, markersize=self.markerSize, label=label)
         return ax
 
     def addZeroPoint(self, x, y):
