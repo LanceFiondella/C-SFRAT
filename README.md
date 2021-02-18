@@ -53,5 +53,5 @@ This research was supported by (i) the Naval Air Systems Command (NAVAIR) throug
 
 Copyright and License
 ----------------------
-Code release under [MIT LICENSE](https://github.com/LanceFiondella/srt.core/blob/master/LICENSE.md). 
+Code release under [MIT LICENSE](https://github.com/LanceFiondella/C-SFRAT/blob/master/LICENSE). 
 
