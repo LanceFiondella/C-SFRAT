@@ -20,6 +20,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a6bbf19f-7006-428c-b888-fe7ef84a9c94" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/Tests/Model Testing/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Tests/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/Covariate_Tool.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Covariate_Tool.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py" beforeDir="false" afterPath="$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py" afterDir="false" />
     </list>
     <ignored path="E:\UmassD\Resarch\Covariate_Tool\.idea\shelf/" />
@@ -31,15 +35,23 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="FileEditorManager">
-    <leaf>
-      <file leaf-file-name="test_MLEs.py" pinned="false" current-in-tab="true">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file leaf-file-name="test_MLEs.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="213">
-              <caret line="52" lean-forward="true" selection-start-line="52" selection-end-line="52" />
+            <state relative-caret-position="138">
+              <caret line="127" column="16" selection-start-line="127" selection-start-column="16" selection-end-line="127" selection-end-column="16" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="main.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/main.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="222">
+              <caret line="54" column="17" lean-forward="true" selection-start-line="54" selection-start-column="17" selection-end-line="54" selection-end-column="17" />
               <folding>
-                <element signature="e#0#13#0" expanded="true" />
-                <element signature="e#1002#1165#0" />
+                <element signature="e#763#814#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -48,20 +60,8 @@
       <file leaf-file-name="codecs.py" pinned="false" current-in-tab="false">
         <entry file="file://$USER_HOME$/anaconda3/Lib/codecs.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="167">
+            <state relative-caret-position="8316">
               <caret line="309" selection-start-line="309" selection-end-line="309" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="test_GUI.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Tests/GUI Testing/test_GUI.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-53">
-              <caret line="23" column="28" lean-forward="true" selection-start-line="23" selection-start-column="28" selection-end-line="23" selection-end-column="28" />
-              <folding>
-                <element signature="e#0#10#0" expanded="true" />
-              </folding>
             </state>
           </provider>
         </entry>
@@ -70,7 +70,7 @@
         <entry file="file://$PROJECT_DIR$/models/discreteWeibull2.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="513">
-              <caret line="19" column="16" lean-forward="true" selection-start-line="19" selection-start-column="16" selection-end-line="19" selection-end-column="16" />
+              <caret line="19" column="16" selection-start-line="19" selection-start-column="16" selection-end-line="19" selection-end-column="16" />
             </state>
           </provider>
         </entry>
@@ -78,8 +78,8 @@
       <file leaf-file-name="discreteWeibull_type3.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/models/discreteWeibull_type3.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="555">
-              <caret line="25" column="17" lean-forward="true" selection-start-line="25" selection-start-column="17" selection-end-line="25" selection-end-column="17" />
+            <state relative-caret-position="540">
+              <caret line="25" column="17" selection-start-line="25" selection-start-column="17" selection-end-line="25" selection-end-column="17" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -90,7 +90,7 @@
       <file leaf-file-name="model.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/core/model.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="239">
+            <state relative-caret-position="1782">
               <caret line="80" selection-start-line="80" selection-end-line="80" />
               <folding>
                 <element signature="e#0#53#0" expanded="true" />
@@ -102,8 +102,8 @@
       <file leaf-file-name="commonWidgets.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ui/commonWidgets.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="212">
-              <caret line="282" column="30" lean-forward="true" selection-start-line="282" selection-start-column="30" selection-end-line="282" selection-end-column="30" />
+            <state relative-caret-position="7101">
+              <caret line="282" column="30" selection-start-line="282" selection-start-column="30" selection-end-line="282" selection-end-column="30" />
             </state>
           </provider>
         </entry>
@@ -111,30 +111,12 @@
       <file leaf-file-name="dataClass.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/core/dataClass.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="158">
+            <state relative-caret-position="1539">
               <caret line="67" selection-start-line="67" selection-end-line="67" />
               <folding>
                 <element signature="e#0#21#0" expanded="true" />
                 <element signature="e#6269#7058#0" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="frame.py" pinned="false" current-in-tab="false">
-        <entry file="file://$USER_HOME$/anaconda3/Lib/site-packages/pandas/core/frame.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="175">
-              <caret line="2767" selection-start-line="2767" selection-end-line="2767" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="mainWindow.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ui/mainWindow.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="104">
-              <caret line="449" column="69" selection-start-line="449" selection-start-column="55" selection-end-line="449" selection-end-column="69" />
             </state>
           </provider>
         </entry>
@@ -170,14 +152,13 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/ui/mainWindow.py" />
         <option value="$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="72" />
-    <option name="y" value="-23" />
+    <option name="x" value="-55" />
+    <option name="y" value="-17" />
     <option name="width" value="2440" />
     <option name="height" value="1349" />
   </component>
@@ -194,33 +175,6 @@
             <path>
               <item name="main.py" type="b2602c69:ProjectViewProjectNode" />
               <item name="Covariate_Tool" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="main.py" type="b2602c69:ProjectViewProjectNode" />
-              <item name="Covariate_Tool" type="462c0819:PsiDirectoryNode" />
-              <item name="core" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="main.py" type="b2602c69:ProjectViewProjectNode" />
-              <item name="Covariate_Tool" type="462c0819:PsiDirectoryNode" />
-              <item name="models" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="main.py" type="b2602c69:ProjectViewProjectNode" />
-              <item name="Covariate_Tool" type="462c0819:PsiDirectoryNode" />
-              <item name="Tests" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="main.py" type="b2602c69:ProjectViewProjectNode" />
-              <item name="Covariate_Tool" type="462c0819:PsiDirectoryNode" />
-              <item name="Tests" type="462c0819:PsiDirectoryNode" />
-              <item name="GUI Testing" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="main.py" type="b2602c69:ProjectViewProjectNode" />
-              <item name="Covariate_Tool" type="462c0819:PsiDirectoryNode" />
-              <item name="Tests" type="462c0819:PsiDirectoryNode" />
-              <item name="Model Testing" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -254,7 +208,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.test_MLEs">
+  <component name="RunManager" selected="Python.main">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python">
       <module name="Covariate_Tool" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -345,11 +299,11 @@
     </configuration>
     <list>
       <item itemvalue="Python.main" />
+      <item itemvalue="Python.test_MLEs" />
       <item itemvalue="Python tests.Unittests in test_GUI.py" />
       <item itemvalue="Python tests.Unittests for test_GUI.Covariatetest.test_defaults" />
       <item itemvalue="Python tests.Unittests for test_GUI.Covariatetest.test_file" />
       <item itemvalue="Python tests.Unittests for test_GUI.Covariatetest.test_view" />
-      <item itemvalue="Python.test_MLEs" />
     </list>
     <recent_temporary>
       <list>
@@ -389,21 +343,21 @@
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.24973656" />
       <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="bottom" id="Event Log" side_tool="true" />
-      <window_info anchor="bottom" id="Find" order="1" weight="0.30392158" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.32897604" />
-      <window_info anchor="bottom" id="Version Control" weight="0.32897604" />
-      <window_info anchor="bottom" id="Python Console" weight="0.32897604" />
+      <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
+      <window_info anchor="bottom" id="Version Control" order="7" weight="0.32897604" />
+      <window_info anchor="bottom" id="Python Console" order="7" weight="0.32897604" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.32897604" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
-      <window_info anchor="bottom" id="Terminal" weight="0.36056644" />
-      <window_info active="true" anchor="bottom" id="Debug" order="3" visible="true" weight="0.22657952" />
-      <window_info id="Favorites" side_tool="true" />
-      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
-      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="Terminal" order="7" weight="0.2603486" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.45969498" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.30392158" />
     </layout>
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -431,50 +385,58 @@
     <option name="LAST_COMMIT_MESSAGE" value="" />
   </component>
   <component name="WindowStateProjectService">
-    <state width="1899" height="266" key="GridCell.Tab.0.bottom" timestamp="1612551682806">
+    <state width="1899" height="382" key="GridCell.Tab.0.bottom" timestamp="1614026789520">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state width="1899" height="282" key="GridCell.Tab.0.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1609968157245" />
-    <state width="1899" height="266" key="GridCell.Tab.0.bottom/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1612551682806" />
-    <state width="1899" height="266" key="GridCell.Tab.0.center" timestamp="1612551682806">
+    <state width="1899" height="382" key="GridCell.Tab.0.bottom/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614026789520" />
+    <state width="1899" height="382" key="GridCell.Tab.0.center" timestamp="1614026789520">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state width="1899" height="282" key="GridCell.Tab.0.center/0.0.1920.1040@0.0.1920.1040" timestamp="1609968157244" />
-    <state width="1899" height="266" key="GridCell.Tab.0.center/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1612551682806" />
-    <state width="1899" height="266" key="GridCell.Tab.0.left" timestamp="1612551682806">
+    <state width="1899" height="382" key="GridCell.Tab.0.center/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614026789520" />
+    <state width="1899" height="382" key="GridCell.Tab.0.left" timestamp="1614026789520">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state width="1899" height="282" key="GridCell.Tab.0.left/0.0.1920.1040@0.0.1920.1040" timestamp="1609968157244" />
-    <state width="1899" height="266" key="GridCell.Tab.0.left/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1612551682806" />
-    <state width="1899" height="266" key="GridCell.Tab.0.right" timestamp="1612551682806">
+    <state width="1899" height="382" key="GridCell.Tab.0.left/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614026789520" />
+    <state width="1899" height="382" key="GridCell.Tab.0.right" timestamp="1614026789520">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state width="1899" height="282" key="GridCell.Tab.0.right/0.0.1920.1040@0.0.1920.1040" timestamp="1609968157244" />
-    <state width="1899" height="266" key="GridCell.Tab.0.right/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1612551682806" />
-    <state width="1899" height="348" key="GridCell.Tab.1.bottom" timestamp="1609966733950">
+    <state width="1899" height="382" key="GridCell.Tab.0.right/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614026789520" />
+    <state width="1899" height="369" key="GridCell.Tab.1.bottom" timestamp="1614026789513">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state width="1899" height="348" key="GridCell.Tab.1.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1609966733950" />
-    <state width="1899" height="348" key="GridCell.Tab.1.center" timestamp="1609966733950">
+    <state width="1899" height="369" key="GridCell.Tab.1.bottom/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614026789513" />
+    <state width="1899" height="369" key="GridCell.Tab.1.center" timestamp="1614026789513">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state width="1899" height="348" key="GridCell.Tab.1.center/0.0.1920.1040@0.0.1920.1040" timestamp="1609966733950" />
-    <state width="1899" height="348" key="GridCell.Tab.1.left" timestamp="1609966733950">
+    <state width="1899" height="369" key="GridCell.Tab.1.center/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614026789513" />
+    <state width="1899" height="369" key="GridCell.Tab.1.left" timestamp="1614026789513">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state width="1899" height="348" key="GridCell.Tab.1.left/0.0.1920.1040@0.0.1920.1040" timestamp="1609966733950" />
-    <state width="1899" height="348" key="GridCell.Tab.1.right" timestamp="1609966733950">
+    <state width="1899" height="369" key="GridCell.Tab.1.left/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614026789513" />
+    <state width="1899" height="369" key="GridCell.Tab.1.right" timestamp="1614026789513">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state width="1899" height="348" key="GridCell.Tab.1.right/0.0.1920.1040@0.0.1920.1040" timestamp="1609966733950" />
-    <state x="461" y="165" key="SettingsEditor" timestamp="1612545169378">
+    <state width="1899" height="369" key="GridCell.Tab.1.right/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614026789513" />
+    <state x="461" y="165" key="SettingsEditor" timestamp="1614017364089">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="461" y="165" key="SettingsEditor/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1612545169378" />
+    <state x="461" y="165" key="SettingsEditor/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614017364089" />
     <state x="769" y="434" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1609962483294">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="769" y="434" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/0.0.1920.1040@0.0.1920.1040" timestamp="1609962483294" />
+    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup" timestamp="1614018317956">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614018317956" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -502,7 +464,7 @@
           </properties>
         </breakpoint>
       </default-breakpoints>
-      <option name="time" value="24" />
+      <option name="time" value="3" />
     </breakpoint-manager>
     <watches-manager>
       <configuration name="tests">
@@ -526,11 +488,22 @@
         <watch expression="__py_debug_temp_var_641339873" />
         <watch expression="self.data('T')" language="Python" />
         <watch expression="DWresults['']" />
+        <watch expression="DWresultsDS1['E']['Beta'][0]" language="Python" />
       </configuration>
     </watches-manager>
   </component>
   <component name="debuggerHistoryManager">
     <expressions id="watch">
+      <expression>
+        <expression-string>DWresultsDS1['E']['Beta'][0]</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>len(DWresultsDS1['E']['Beta'])</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
       <expression>
         <expression-string>self.data('T')</expression-string>
         <language-id>Python</language-id>
@@ -571,60 +544,157 @@
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
-      <expression>
-        <expression-string>self._config</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>self._data.getData()</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/core/trendTests.py">
+    <entry file="file://$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state>
+        <state relative-caret-position="2160">
+          <caret line="80" selection-start-line="80" selection-end-line="80" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1269">
+          <caret line="47" selection-start-line="47" selection-end-line="47" />
+          <folding>
+            <element signature="e#763#814#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/anaconda3/Lib/codecs.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="8343">
+          <caret line="309" selection-start-line="309" selection-end-line="309" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/models/discreteWeibull2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="513">
+          <caret line="19" column="16" selection-start-line="19" selection-start-column="16" selection-end-line="19" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/models/discreteWeibull_type3.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="540">
+          <caret line="25" column="17" selection-start-line="25" selection-start-column="17" selection-end-line="25" selection-end-column="17" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/core/model.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1782">
+          <caret line="80" selection-start-line="80" selection-end-line="80" />
           <folding>
             <element signature="e#0#53#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/core/prediction.py">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/core/optimization.py">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/core/allocation.py">
+    <entry file="file://$PROJECT_DIR$/ui/commonWidgets.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state>
+        <state relative-caret-position="7101">
+          <caret line="282" column="30" selection-start-line="282" selection-start-column="30" selection-end-line="282" selection-end-column="30" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/core/dataClass.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1539">
+          <caret line="67" selection-start-line="67" selection-end-line="67" />
           <folding>
-            <element signature="e#0#31#0" expanded="true" />
+            <element signature="e#0#21#0" expanded="true" />
+            <element signature="e#6269#7058#0" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/core/goodnessOfFit.py">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/core/graphSettings.py">
+    <entry file="file://$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state>
+        <state relative-caret-position="1377">
+          <caret line="52" lean-forward="true" selection-start-line="52" selection-end-line="52" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/anaconda3/Lib/codecs.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="8343">
+          <caret line="309" selection-start-line="309" selection-end-line="309" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Tests/GUI Testing/test_GUI.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="378">
+          <caret line="23" column="28" lean-forward="true" selection-start-line="23" selection-start-column="28" selection-end-line="23" selection-end-column="28" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/models/discreteWeibull2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="513">
+          <caret line="19" column="16" lean-forward="true" selection-start-line="19" selection-start-column="16" selection-end-line="19" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/models/discreteWeibull_type3.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="540">
+          <caret line="25" column="17" lean-forward="true" selection-start-line="25" selection-start-column="17" selection-end-line="25" selection-end-column="17" />
           <folding>
-            <element signature="e#0#31#0" expanded="true" />
+            <element signature="e#0#11#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/core/modelFitting.py">
-      <provider selected="true" editor-type-id="text-editor" />
+    <entry file="file://$PROJECT_DIR$/core/model.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1782">
+          <caret line="80" selection-start-line="80" selection-end-line="80" />
+          <folding>
+            <element signature="e#0#53#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/models/discreteWeibull.py">
-      <provider selected="true" editor-type-id="text-editor" />
+    <entry file="file://$PROJECT_DIR$/ui/commonWidgets.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="7101">
+          <caret line="282" column="30" lean-forward="true" selection-start-line="282" selection-start-column="30" selection-end-line="282" selection-end-column="30" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/core/dataClass.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1539">
+          <caret line="67" selection-start-line="67" selection-end-line="67" />
+          <folding>
+            <element signature="e#0#21#0" expanded="true" />
+            <element signature="e#6269#7058#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/anaconda3/Lib/site-packages/pandas/core/frame.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="74709">
+          <caret line="2767" selection-start-line="2767" selection-end-line="2767" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ui/mainWindow.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="11529">
+          <caret line="449" column="69" selection-start-line="449" selection-start-column="55" selection-end-line="449" selection-end-column="69" />
+        </state>
+      </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/models/discreteWeibull_type1.py">
       <provider selected="true" editor-type-id="text-editor">
@@ -638,16 +708,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/main.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="301">
-          <caret line="45" selection-start-line="45" selection-end-line="45" />
-          <folding>
-            <element signature="e#763#814#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/ui/tab3.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="167">
@@ -657,31 +717,28 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/ui/mainWindow.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="104">
+        <state relative-caret-position="11529">
           <caret line="449" column="69" selection-start-line="449" selection-start-column="55" selection-end-line="449" selection-end-column="69" />
         </state>
       </provider>
     </entry>
     <entry file="file://$USER_HOME$/anaconda3/Lib/site-packages/pandas/core/frame.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="175">
+        <state relative-caret-position="71523">
           <caret line="2767" selection-start-line="2767" selection-end-line="2767" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Tests/GUI Testing/test_GUI.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-53">
-          <caret line="23" column="28" lean-forward="true" selection-start-line="23" selection-start-column="28" selection-end-line="23" selection-end-column="28" />
-          <folding>
-            <element signature="e#0#10#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="378">
+          <caret line="23" column="28" selection-start-line="23" selection-start-column="28" selection-end-line="23" selection-end-column="28" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/core/model.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="239">
+        <state relative-caret-position="1782">
           <caret line="80" selection-start-line="80" selection-end-line="80" />
           <folding>
             <element signature="e#0#53#0" expanded="true" />
@@ -691,7 +748,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/core/dataClass.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="158">
+        <state relative-caret-position="1539">
           <caret line="67" selection-start-line="67" selection-end-line="67" />
           <folding>
             <element signature="e#0#21#0" expanded="true" />
@@ -702,22 +759,22 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/ui/commonWidgets.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="212">
-          <caret line="282" column="30" lean-forward="true" selection-start-line="282" selection-start-column="30" selection-end-line="282" selection-end-column="30" />
+        <state relative-caret-position="7101">
+          <caret line="282" column="30" selection-start-line="282" selection-start-column="30" selection-end-line="282" selection-end-column="30" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/models/discreteWeibull2.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="513">
-          <caret line="19" column="16" lean-forward="true" selection-start-line="19" selection-start-column="16" selection-end-line="19" selection-end-column="16" />
+          <caret line="19" column="16" selection-start-line="19" selection-start-column="16" selection-end-line="19" selection-end-column="16" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/models/discreteWeibull_type3.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="555">
-          <caret line="25" column="17" lean-forward="true" selection-start-line="25" selection-start-column="17" selection-end-line="25" selection-end-column="17" />
+        <state relative-caret-position="540">
+          <caret line="25" column="17" selection-start-line="25" selection-start-column="17" selection-end-line="25" selection-end-column="17" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>
@@ -726,18 +783,24 @@
     </entry>
     <entry file="file://$USER_HOME$/anaconda3/Lib/codecs.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="167">
+        <state relative-caret-position="8316">
           <caret line="309" selection-start-line="309" selection-end-line="309" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="213">
-          <caret line="52" lean-forward="true" selection-start-line="52" selection-end-line="52" />
+        <state relative-caret-position="138">
+          <caret line="127" column="16" selection-start-line="127" selection-start-column="16" selection-end-line="127" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="222">
+          <caret line="54" column="17" lean-forward="true" selection-start-line="54" selection-start-column="17" selection-end-line="54" selection-end-column="17" />
           <folding>
-            <element signature="e#0#13#0" expanded="true" />
-            <element signature="e#1002#1165#0" />
+            <element signature="e#763#814#0" expanded="true" />
           </folding>
         </state>
       </provider>
