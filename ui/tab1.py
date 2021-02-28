@@ -98,9 +98,12 @@ class SideMenu1(QVBoxLayout):
         Called when new data is imported/sheet changed. Updates slider to
         include all data points.
         """
+        # don't need to emit signal when we update slider manually
+        self.slider.blockSignals(True)
         self.slider.setMaximum(max_value)
         self.slider.setValue(max_value)
         self.sliderLabel.setText(str(max_value))
+        self.slider.blockSignals(False)
 
     def _setupSideMenu(self):
         """Creates group box widgets and adds them to layout."""

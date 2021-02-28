@@ -360,10 +360,10 @@ class MainWindow(QMainWindow):
 
         # # clear figures
         # self.ax2.clear()
-        
+
         # self.setDataView("view", self.dataViewIndex)
 
-        self.changeSheet(self.dataViewIndex)
+        # self.changeSheet(self.dataViewIndex)
 
     def redrawPlot(self, tabNumber):
         """Redraws plot for the provided tab number.
@@ -422,6 +422,7 @@ class MainWindow(QMainWindow):
             index: Index (int) that determines which plot type, trend test, or
                 sheet to display. Dependent on viewType.
         """
+
         # enable/disable confidence level spin box
         if self.data.getData() is not None:
             if viewType == "view":
@@ -469,6 +470,56 @@ class MainWindow(QMainWindow):
         self.redrawPlot(1)
         self.redrawPlot(2)
 
+
+
+
+
+
+
+
+
+
+
+    def create_plots(self):
+        # initial
+
+
+        # after model fitting
+        # create lines for each model
+
+        lines = []
+        for i in range(len(models)):
+            # - create the line -
+            line = x
+            lines.append(line)
+
+
+
+        # when selection changes:
+        ## detect differences
+        # add/remove lines depending on differences
+
+
+
+
+
+        # store matplotlib axes objects for tabs 1 and 2
+        # each is a dictionary, with one value corresponding to
+        # MVF plot, the other the intensity plot
+        self.ax = {}
+        self.ax2 = {}
+
+        # when data is loaded (?)
+        # create and store all plots
+        self.ax['MVF']
+        self.ax['Intensity']
+        self.ax2['MVF']
+        self.ax2['Intensity']
+
+
+
+
+
     def createMVFPlot(self, dataframe):
         """Creates MVF plots for tabs 1 and 2.
 
@@ -482,10 +533,6 @@ class MainWindow(QMainWindow):
 
         # save previous plot type, always want observed data to be step plot
         previousPlotType = self.plotSettings.plotType
-
-        ## disable trend tests when displaying imported data
-        # self._main.tab1.sideMenu.testSelect.setDisabled(True)
-        # self._main.tab1.sideMenu.confidenceSpinBox.setDisabled(True)
 
         # tab 1 plot
         self.plotSettings.plotType = "step"

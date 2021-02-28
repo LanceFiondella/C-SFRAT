@@ -249,7 +249,7 @@ class SideMenu3(QVBoxLayout):
         self.comparisonGroup = QGroupBox("Metric Weights (0-10)")
         self.comparisonGroup.setLayout(self._setupComparisonGroup())
 
-        self.psseGroup = QGroupBox("PSSE Parameters")
+        self.psseGroup = QGroupBox("Specify subset data for PSSE")
         self.psseGroup.setLayout(self._setupPSSEGroup())
 
         self.modelsGroup = QGroupBox("Select Model Results")
