@@ -17,33 +17,34 @@ from matplotlib.figure import Figure
 
 import logging as log
 
+from core.graphing import PlotWidget
 from core.prediction import prediction_psse
 from core.goodnessOfFit import PSSE
 
 
-class PlotWidget(QWidget):
-    """Widget containing a plot and toolbar.
+# class PlotWidget(QWidget):
+#     """Widget containing a plot and toolbar.
 
-    Attributes:
-        figure: Matplotlib Figure object, containing all plot elements.
-        plotFigure: Matplotlib FigureCanvas object containing plot figure and
-            navigation toolbar.
-    """
+#     Attributes:
+#         figure: Matplotlib Figure object, containing all plot elements.
+#         plotFigure: Matplotlib FigureCanvas object containing plot figure and
+#             navigation toolbar.
+#     """
 
-    def __init__(self):
-        """Initializes plot widget"""
-        super().__init__()
-        self.setupPlot()
+#     def __init__(self):
+#         """Initializes plot widget"""
+#         super().__init__()
+#         self.setupPlot()
 
-    def setupPlot(self):
-        """Create canvas containing plot and navigation toolbar."""
-        plotLayout = QVBoxLayout()
-        self.figure = Figure(tight_layout={"pad": 2.0})
-        self.plotFigure = FigureCanvas(self.figure)
-        toolbar = NavigationToolbar(self.plotFigure, self)
-        plotLayout.addWidget(self.plotFigure, 1)
-        plotLayout.addWidget(toolbar)
-        self.setLayout(plotLayout)
+#     def setupPlot(self):
+#         """Create canvas containing plot and navigation toolbar."""
+#         plotLayout = QVBoxLayout()
+#         self.figure = Figure(tight_layout={"pad": 2.0})
+#         self.plotFigure = FigureCanvas(self.figure)
+#         toolbar = NavigationToolbar(self.plotFigure, self)
+#         plotLayout.addWidget(self.plotFigure, 1)
+#         plotLayout.addWidget(toolbar)
+#         self.setLayout(plotLayout)
 
 
 class PlotAndTable(QTabWidget):
@@ -73,7 +74,7 @@ class PlotAndTable(QTabWidget):
             plotTabLabel: Text label (string) for plot tab.
         """
         self.plotWidget = PlotWidget()
-        self.figure = self.plotWidget.figure
+        # self.figure = self.plotWidget.figure
         self.addTab(self.plotWidget, plotTabLabel)
 
     def _setupTableTab(self, tableTabLabel):
