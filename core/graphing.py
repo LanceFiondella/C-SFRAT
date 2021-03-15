@@ -1,4 +1,5 @@
 from PyQt5 import QtGui
+from PyQt5 import QtCore
 
 import pyqtgraph as pg
 import logging as log
@@ -43,6 +44,8 @@ class PlotWidget(pg.PlotWidget):
         self.lineStyle = "both"     # points, line, or both
         self.plotStyle = "smooth"   # smooth or step plot
 
+        self.verticalLine = None
+        self.lastXpoint = 0
 
     def createMvfPlot(self, x, y):
         # should only be called when new data is loaded
@@ -57,6 +60,12 @@ class PlotWidget(pg.PlotWidget):
         self.legend.setParentItem(self.mvfPlotItem)
         self.legend.addItem(self.mvfPlotDataItem, "Imported data")
 
+        # get value of last element in pandas series
+        print(x)
+
+        self.lastXpoint = x.iloc[-1]
+        print(self.lastXpoint)
+
     def createIntensityPlot(self, x, y):
         # should only be called when new data is loaded
         self.intensityPlotItem = pg.PlotItem()
@@ -65,6 +74,16 @@ class PlotWidget(pg.PlotWidget):
         self.mvfPlotItem.setLabel("left", "Failures")
         self.intensityPlotDataItem = pg.BarGraphItem(x=x, height=y, width=0.8, brush=(200, 200, 200))
         self.intensityPlotItem.addItem(self.intensityPlotDataItem)
+
+    def addVerticalLine(self):
+
+        pen = pg.mkPen((255, 0, 0), width=2, style=QtCore.Qt.DashLine)
+
+        self.verticalLine1 = pg.InfiniteLine(pos=self.lastXpoint, angle=90, pen=pen)
+        self.verticalLine2 = pg.InfiniteLine(pos=self.lastXpoint, angle=90, pen=pen)
+
+        self.mvfPlotItem.addItem(self.verticalLine1)
+        self.intensityPlotItem.addItem(self.verticalLine2)
 
     def changePlotType(self, plotViewIndex):
         self.clear()
@@ -135,6 +154,8 @@ class PlotWidget(pg.PlotWidget):
             lines = [x for x in self.currentLines if x not in newLines]
             self.removeLines(lines)
 
+        # resize window size to ensure all lines are visible
+        self.resizePlot()
         self.currentLines = newLines   # lines changed, so current lines updated
 
     def addLines(self, lines):
@@ -206,9 +227,19 @@ class PlotWidget(pg.PlotWidget):
 
         self.plotStyle = "step"
 
-    def predictions(self):
-        # self.mvfLines[line].setData
-        pass
+    # def subsetData
+
+    def updateLineMVF(self, model, x, y):
+        self.mvfLines[model].setData(x, y)
+        self.resizePlot()
+
+    def updateLineIntensity(self, model, x, y):
+        self.intensityLines[model].setData(x, y)
+        self.resizePlot()
+
+    def resizePlot(self):
+        self.mvfPlotItem.autoRange()
+        self.intensityPlotItem.autoRange()
 
 
 class PlotColor:

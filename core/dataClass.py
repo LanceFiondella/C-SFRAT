@@ -89,7 +89,7 @@ class Data:
                 data to return
         """
 
-        intervals = math.floor(self.n() * fraction)
+        intervals = math.floor(self.n * fraction)
 
         # need at least 5 data points
         if intervals < 5:

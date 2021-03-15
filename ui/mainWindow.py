@@ -120,8 +120,8 @@ class MainWindow(QMainWindow):
         self._main.tab1.sideMenu.runModelSignal.connect(self.runModels)
         self._main.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2AndUpdateComparisonTable)
         # connect tab2 list changed to refreshing tab 2 plot
-        # self._main.tab2.sideMenu.failureChangedSignal.connect(self.updateUI)
-        # self._main.tab2.sideMenu.intensityChangedSignal.connect(self.updateUI)
+        self._main.tab2.sideMenu.failureChangedSignal.connect(self.updatePredictionPlotMVF)
+        self._main.tab2.sideMenu.intensityChangedSignal.connect(self.updatePredictionPlotIntensity)
         self._main.tab3.sideMenu.modelChangedSignal.connect(self.changePlot2AndUpdateComparisonTable)
         self._main.tab3.sideMenu.runPSSESignal.connect(self.runPSSE)
         self._main.tab3.sideMenu.spinBoxChangedSignal.connect(self.runGoodnessOfFit)
@@ -369,16 +369,11 @@ class MainWindow(QMainWindow):
         self.data.currentSheet = index      # store
         self.data.max_interval = self.data.n
         print(self.data.n)
-        self._main.tab1.sideMenu.updateSlider(self.data.n)
-        # create plot
-        # self.updateUI()
-        # self.redrawPlot(1)
-        
+        self._main.tab1.sideMenu.updateSlider(self.data.n)        
 
         self.createPlots()
 
-        # display either MVF or intensity plots, depending on what is currently
-        # selected
+        # display either MVF or intensity plots, depending on what is currently selected
         self._main.tab1.plotAndTable.plotWidget.changePlotType(self.plotViewIndex)
         self._main.tab2.plotAndTable.plotWidget.changePlotType(self.plotViewIndex)
 
@@ -396,44 +391,7 @@ class MainWindow(QMainWindow):
         self._main.tab2.plotAndTable.plotWidget.createMvfPlot(self.data.getData()['T'], self.data.getData()['CFC'])
         self._main.tab2.plotAndTable.plotWidget.createIntensityPlot(self.data.getData()['T'], self.data.getData()['FC'])
 
-        # initial
-
-
-        # after model fitting
-        # create lines for each model
-
-        # lines = []
-        # for i in range(len(models)):
-        #     # - create the line -
-        #     line = x
-        #     lines.append(line)
-
-
-
-        # when selection changes:
-        ## detect differences
-        # add/remove lines depending on differences
-
-
-        # store matplotlib axes objects for tabs 1 and 2
-        # each is a dictionary, with one value corresponding to
-        # MVF plot, the other the intensity plot
-
-        # when data is loaded (?)
-        # create and store all plots
-
-        # MVF
-        # self.plotSettings.plotType = "step"
-        # self.ax['MVF'] = self.plotSettings.generatePlot(self.ax, dataframe['T'], dataframe["CFC"],
-        #                                          title="", xLabel="Intervals", yLabel="Cumulative failures")
-        # self.ax2['MVF'] = self.plotSettings.generatePlot(self.ax2, dataframe['T'], dataframe["CFC"],
-        #                                               title="", xLabel="Intervals", yLabel="Cumulative failures")
-
-        # self.plotSettings.plotType = "bar"
-        # self.ax['Intensity'] = self.plotSettings.generatePlot(self.ax, dataframe['T'], dataframe.iloc[:, 1],
-        #                                          title="", xLabel="Intervals", yLabel="Failures")
-        # self.ax2['Intensity'] = self.plotSettings.generatePlot(self.ax2, dataframe['T'], dataframe['FC'],
-        #                                               title="", xLabel="Intervals", yLabel="Failures")
+        self._main.tab2.plotAndTable.plotWidget.addVerticalLine()
 
     def setMetricList(self):
         """Updates tab 1 list widget with metric names on current sheet."""
@@ -449,6 +407,22 @@ class MainWindow(QMainWindow):
         if slider_value < 5:
             self._main.tab1.sideMenu.slider.setValue(5)
         self.data.max_interval = slider_value
+
+        ## new max interval, getData returns subset
+        # mvf plots
+        x = self.data.getData()['T']   # setData does not accept dataframes or np arrays for some reason
+        y = self.data.getData()['CFC']
+        self._main.tab1.plotAndTable.plotWidget.mvfPlotDataItem.setData(x, y)
+        self._main.tab2.plotAndTable.plotWidget.mvfPlotDataItem.setData(x, y)
+
+        # intensity plots
+        x = self.data.getData()['T']
+        y = self.data.getData()['FC']
+        # self._main.tab1.plotAndTable.plotWidget.intensityPlotDataItem.setData(x, y)
+        # self._main.tab2.plotAndTable.plotWidget.intensityPlotDataItem.setData(x, y)
+        self._main.tab1.plotAndTable.plotWidget.intensityPlotDataItem.setOpts(x=x, height=y)
+        self._main.tab2.plotAndTable.plotWidget.intensityPlotDataItem.setOpts(x=x, height=y)
+
         # self.updateUI()
 
 
@@ -548,6 +522,12 @@ class MainWindow(QMainWindow):
             self._main.tab1.plotAndTable.plotWidget.changePlotType(self.plotViewIndex)
             self._main.tab2.plotAndTable.plotWidget.changePlotType(self.plotViewIndex)
 
+        if self.estimationComplete:
+            # disable intensity spin box
+            self._main.tab2.sideMenu.reliabilitySpinBox.setDisabled(True)
+            # enable failure spin box
+            self._main.tab2.sideMenu.failureSpinBox.setEnabled(True)
+
     def setIntensityView(self):
         """Sets all plots to intensity view."""
         self.plotViewIndex = 1
@@ -559,6 +539,11 @@ class MainWindow(QMainWindow):
             self._main.tab1.plotAndTable.plotWidget.changePlotType(self.plotViewIndex)
             self._main.tab2.plotAndTable.plotWidget.changePlotType(self.plotViewIndex)
 
+        if self.estimationComplete:
+            # disable failure spin box
+            self._main.tab2.sideMenu.failureSpinBox.setDisabled(True)
+            # enable intensity spin box
+            self._main.tab2.sideMenu.reliabilitySpinBox.setEnabled(True)
 
     def changePlot2AndUpdateComparisonTable(self, selectedModels):
         # Access Selected Items
@@ -593,12 +578,15 @@ class MainWindow(QMainWindow):
         # self.updateUI()
 
         self._main.tab2.plotAndTable.plotWidget.updateLines(selectedNames)
+        self.selectedModelNames = selectedNames
 
     def updateComparisonTable(self, selectedNums, selectedNames):
 
         self._main.tab3.updateTableView(selectedNums)
 
-        self.selectedModelNames = selectedNums
+        # print(self.selectedModelNames)
+
+        self.selectedModelNums = selectedNums
 
     def changePlot2(self, selectedModels):
         """Updates plot 2 to show newly selected models to display.
@@ -666,6 +654,14 @@ class MainWindow(QMainWindow):
         self._main.tab3.sideMenu.psseButton.setEnabled(True)    # enable PSSE button now that we have fitted models
         self._main.tab4.sideMenu.allocation1Button.setEnabled(True)     # re-enable allocation buttons, can't run
         self._main.tab4.sideMenu.allocation2Button.setEnabled(True)     # if estimation not complete
+
+        if self.plotViewIndex == 0:
+            # enable failure spin box
+            self._main.tab2.sideMenu.failureSpinBox.setEnabled(True)
+        elif self.plotViewIndex == 1:
+            # enable intensity spin box
+            self._main.tab2.sideMenu.reliabilitySpinBox.setEnabled(True)
+
         # self.setDataView("view", self.plotViewIndex)
         # self.updateUI()
         # set initial model selected
@@ -716,7 +712,11 @@ class MainWindow(QMainWindow):
 
         if self.estimationComplete:
             combinations = [item.text() for item in self._main.tab3.sideMenu.modelListWidget.selectedItems()]
-            self.updateComparisonTable(combinations)
+
+            selectedNums = [x.split('. ', 1)[0] for x in combinations]
+            selectedNames = [x.split('. ', 1)[1] for x in combinations]
+
+            self.updateComparisonTable(selectedNums, selectedNames)
 
     def runAllocation1(self, combinations):
         """Runs effort allocation on selected model/metric combinations.
@@ -759,6 +759,60 @@ class MainWindow(QMainWindow):
         # just add to table 2
         self._main.tab4.addResultsToTable(self.allocationResults, self.data, 2)
 
+
+    def updatePredictionPlotMVF(self):
+        if self.estimationComplete:
+            for key, model in self.estimationResults.items():
+                # add line for model if selected
+                # model = self.estimationResults[modelName]
+
+                # check if prediction is specified
+                if self._main.tab2.sideMenu.failureSpinBox.value() > 0:
+                    x, mvf_array = self.runPredictionMVF(model, self._main.tab2.sideMenu.failureSpinBox.value())
+                    # self.plotSettings.addLine(self.ax2, x, mvf_array, modelName)
+                    self._main.tab2.plotAndTable.plotWidget.updateLineMVF(key, x, mvf_array)
+
+
+                    ## TABLE
+                    # TEMPORARY
+                    # prediction_list[0] = x
+                    # prediction_list.append(mvf_array)
+                    # model_name_list.append(modelName)
+                    # self._main.tab2.updateTable_prediction(prediction_list, model_name_list, 0)
+
+
+
+                else:
+                    self._main.tab2.plotAndTable.plotWidget.updateLineMVF(key, model.t, model.mvf_array)
+
+
+
+    def updatePredictionPlotIntensity(self):
+        if self.estimationComplete:
+            for key, model in self.estimationResults.items():
+                # add line for model if selected
+                # model = self.estimationResults[modelName]
+
+                # check if prediction is specified
+                if self._main.tab2.sideMenu.reliabilitySpinBox.value() > 0.0:
+                    x, intensity_array, interval = self.runPredictionIntensity(model, self._main.tab2.sideMenu.reliabilitySpinBox.value())
+                    # self.plotSettings.addLine(self.ax2, x, mvf_array, modelName)
+                    self._main.tab2.plotAndTable.plotWidget.updateLineIntensity(key, x, intensity_array)
+
+
+
+
+                    ## TABLE
+                    # TEMPORARY
+                    # prediction_list[0] = x
+                    # prediction_list.append(intensity_array)
+                    # model_name_list.append(modelName)
+                    # self._main.tab2.updateTable_prediction(prediction_list, model_name_list, 1)
+
+                else:
+                    self._main.tab2.plotAndTable.plotWidget.updateLineIntensity(key, model.t, model.intensityList)
+
+
     def runPredictionMVF(self, model, failures):
         """Runs predictions for future points according to model results.
 
@@ -769,6 +823,8 @@ class MainWindow(QMainWindow):
         """
 
         # m = self.estimationResults[modelName]  # model indexed by the name
+
+        print(model)
 
         x, mvf_array = prediction.prediction_mvf(model, failures, model.covariateData, self._main.tab2.sideMenu.effortSpinBoxDict)
 

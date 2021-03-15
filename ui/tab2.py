@@ -237,6 +237,7 @@ class SideMenu2(QVBoxLayout):
         self.failureSpinBox = QSpinBox()
         self.failureSpinBox.setMinimum(0)
         self.failureSpinBox.setValue(0)
+        self.failureSpinBox.setDisabled(True)   # initialize disabled, only allow changes after model fitting
         self.failureSpinBox.valueChanged.connect(self._emitFailureChangedSignal)
         predictionGroupLayout.addWidget(QLabel("Number of Intervals to Predict"))
         predictionGroupLayout.addWidget(self.failureSpinBox)
@@ -246,6 +247,7 @@ class SideMenu2(QVBoxLayout):
         self.reliabilitySpinBox.setMinimum(0.0)
         self.reliabilitySpinBox.setValue(0.0)
         self.reliabilitySpinBox.setSingleStep(0.1)
+        self.reliabilitySpinBox.setDisabled(True)   # initialize disabled, only allow changes after model fitting
         self.reliabilitySpinBox.valueChanged.connect(self._emitIntensityChangedSignal)
         predictionGroupLayout.addWidget(QLabel("Failure Intensity Target"))
         predictionGroupLayout.addWidget(self.reliabilitySpinBox)
