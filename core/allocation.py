@@ -1,3 +1,6 @@
+# For handling debug output
+import logging as log
+
 from scipy.optimize import shgo
 import numpy as np
 
@@ -87,5 +90,14 @@ class EffortAllocation:
     #     # we want to minimize, SHGO uses minimization
     #     return self.model.MVF(self.model.mle_array, omega, self.hazard_array, new_cov_data.shape[1] - 1, new_cov_data)
 
-    def organizeResults(self, results, budget):
-        return np.multiply(np.divide(results, budget), 100)
+    def organizeResults(self, results, effort):
+        # check to ensure that no NAN values are displayed
+
+        if effort > 0.0:
+            # return percentage
+            return np.multiply(np.divide(results, effort), 100)
+        else:
+            # avoid divide by 0
+            log.warning("Budget of 0.0 calculated for allocation")
+            print("hey")
+            return [0.0 for i in range(len(results))]

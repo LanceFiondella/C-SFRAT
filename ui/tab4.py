@@ -221,7 +221,7 @@ class SideMenu4(QVBoxLayout):
         groupLayout.addWidget(QLabel("Enter budget"))
         self.budgetSpinBox = QDoubleSpinBox()
         # self.budgetSpinBox.setMaximumWidth(200)
-        self.budgetSpinBox.setRange(0.0, 999999.0)
+        self.budgetSpinBox.setRange(0.1, 999999.0)
         self.budgetSpinBox.setValue(20)
         groupLayout.addWidget(self.budgetSpinBox)
         self.allocation1Button = self._setupAllocationButton("Run Allocation 1", self._button1Pressed)

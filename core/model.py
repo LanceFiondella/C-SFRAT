@@ -91,6 +91,10 @@ class Model(ABC):
         log.debug("Total failures: %d", self.totalFailures)
         log.info("Number of covariates: %d", self.numCovariates)
 
+    def __str__(self):
+        modelString = "{0} model with {1} covariates".format(self.name, self.metricString)
+        return modelString
+
     ################################################
     # Properties/Members all models must implement #
     ################################################
@@ -147,7 +151,8 @@ class Model(ABC):
             self.metricString = "None"
         else:
             self.metricString = ", ".join(self.metricNames)
-        self.combinationName = f"{self.shortName} ({self.metricString})"
+        # self.combinationName = f"{self.shortName} ({self.metricString})"
+        self.combinationName = "{0} ({1})".format(self.shortName, self.metricString)
 
     def LLF_sym(self, hazard, covariate_data):
         # x = b, b1, b2, b2 = symengine.symbols('b b1 b2 b3')

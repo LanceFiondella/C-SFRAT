@@ -20,13 +20,12 @@ class PlotWidget(pg.PlotWidget):
         self.setBackground(self.color)
         # self.showGrid(x=True, y=True)
 
-        pen = pg.mkPen(color=(0, 0, 0), width=1.0)
-        brush = pg.mkBrush(color=(255, 255, 255))
-        self.legend = pg.LegendItem(offset=(60, 10), verSpacing=-0.5, pen=pen, brush=brush, frame=True)#, colCount=2)
-        self.legend.setLabelTextColor((0, 0, 0))    # black text
-        # legend.setParentItem(plotItem)
+        self.legendMVF = self.createLegend()
+        self.legendIntensity = self.createLegend()
 
-        # self.pen = pg.mkPen(color=(0, 0, 0), width=2.5)
+        # store pen used for vertical line so we don't need to make it every time
+        self.penVerticalLine = pg.mkPen((255, 0, 0), width=2, style=QtCore.Qt.DashLine)
+
         self.plotColor = PlotColor()
 
         # PlotItem.plot()
@@ -44,8 +43,34 @@ class PlotWidget(pg.PlotWidget):
         self.lineStyle = "both"     # points, line, or both
         self.plotStyle = "smooth"   # smooth or step plot
 
-        self.verticalLine = None
+        # self.verticalLine = None
         self.lastXpoint = 0
+
+        self.createVerticalLine()
+
+    def createLegend(self):
+        pen = pg.mkPen(color=(0, 0, 0), width=1.0)
+        brush = pg.mkBrush(color=(255, 255, 255))
+        legend = pg.LegendItem(offset=(60, 10), verSpacing=-0.5, pen=pen, brush=brush, frame=True)#, colCount=2)
+        legend.setLabelTextColor((0, 0, 0))    # black text
+        # legend.setParentItem(plotItem)
+
+        return legend
+
+    def createPlots(self, x, y_mvf, y_intensity):
+        """
+        Called when importing data
+        """
+        self.legendMVF.clear()
+        self.legendIntensity.clear()
+
+        # get value of last element in pandas series
+        self.lastXpoint = x.iloc[-1]
+
+        self.createMvfPlot(x, y_mvf)
+        self.createIntensityPlot(x, y_intensity)
+
+        self.addVerticalLine()
 
     def createMvfPlot(self, x, y):
         # should only be called when new data is loaded
@@ -57,14 +82,12 @@ class PlotWidget(pg.PlotWidget):
         self.mvfPlotDataItem = pg.PlotDataItem(x, y, pen=pen, stepMode='right')
         self.mvfPlotItem.addItem(self.mvfPlotDataItem)
 
-        self.legend.setParentItem(self.mvfPlotItem)
-        self.legend.addItem(self.mvfPlotDataItem, "Imported data")
+        self.legendMVF.setParentItem(self.mvfPlotItem)
+        self.legendMVF.addItem(self.mvfPlotDataItem, "Imported data")
 
-        # get value of last element in pandas series
-        print(x)
-
-        self.lastXpoint = x.iloc[-1]
-        print(self.lastXpoint)
+        # # get value of last element in pandas series
+        # self.lastXpoint = x.iloc[-1]
+        # print(self.lastXpoint)
 
     def createIntensityPlot(self, x, y):
         # should only be called when new data is loaded
@@ -75,15 +98,47 @@ class PlotWidget(pg.PlotWidget):
         self.intensityPlotDataItem = pg.BarGraphItem(x=x, height=y, width=0.8, brush=(200, 200, 200))
         self.intensityPlotItem.addItem(self.intensityPlotDataItem)
 
+        self.legendIntensity.setParentItem(self.intensityPlotItem)
+        self.legendIntensity.addItem(self.intensityPlotDataItem, "Imported data")
+
     def addVerticalLine(self):
+        # can't remove item before it is added
+        # only an issue the first time model fitting is run
+        try:
+            self.mvfPlotItem.removeItem(self.verticalLine1)
+            self.intensityPlotItem.removeItem(self.verticalLine2)
+        except:
+            pass
 
         pen = pg.mkPen((255, 0, 0), width=2, style=QtCore.Qt.DashLine)
+
+        # self.verticalLine1.setPen(self.penVerticalLine)
+        # self.verticalLine2.setPen(self.penVerticalLine)
+
+        
+
+        # self.mvfPlotItem.addItem(self.verticalLine1)
+        # self.intensityPlotItem.addItem(self.verticalLine2)
 
         self.verticalLine1 = pg.InfiniteLine(pos=self.lastXpoint, angle=90, pen=pen)
         self.verticalLine2 = pg.InfiniteLine(pos=self.lastXpoint, angle=90, pen=pen)
 
+        self.verticalLine1.setPos(self.lastXpoint)
+        self.verticalLine2.setPos(self.lastXpoint)
+
         self.mvfPlotItem.addItem(self.verticalLine1)
         self.intensityPlotItem.addItem(self.verticalLine2)
+
+        # self.setPos(self.lastXpoint)
+
+    def createVerticalLine(self):
+        pen = pg.mkPen((255, 0, 0), width=0, style=QtCore.Qt.DashLine)
+
+        self.verticalLine1 = pg.InfiniteLine(pos=self.lastXpoint, angle=90, pen=pen)
+        self.verticalLine2 = pg.InfiniteLine(pos=self.lastXpoint, angle=90, pen=pen)
+
+        # self.mvfPlotItem.addItem(self.verticalLine1)
+        # self.intensityPlotItem.addItem(self.verticalLine2)
 
     def changePlotType(self, plotViewIndex):
         self.clear()
@@ -103,8 +158,16 @@ class PlotWidget(pg.PlotWidget):
     ## for tab 2 plot
 
     def createLines(self, results):
-        # called when estimation is complete
-        # creates line objects for all models, for mvf and intensity plots
+        """
+        called when estimation is complete
+        creates line objects for all models, for mvf and intensity plots
+        """
+
+        self.plotColor.index = 0
+
+        # clear plots (by removing fitted lines)
+        # needed when model fitting is run while previous results are displayed on tab 2 plots
+        self.removeLines(self.currentLines)
 
         # clear dictionaries so they do not continue to grow as different
         # model combinations are run
@@ -163,7 +226,8 @@ class PlotWidget(pg.PlotWidget):
             self.mvfPlotItem.addItem(self.mvfLines[line])
             self.intensityPlotItem.addItem(self.intensityLines[line])
 
-            self.legend.addItem(self.mvfLines[line], line)
+            self.legendMVF.addItem(self.mvfLines[line], line)
+            self.legendIntensity.addItem(self.intensityLines[line], line)
             # self.legend.setColumnCount(2)
 
     def removeLines(self, lines):
@@ -171,7 +235,8 @@ class PlotWidget(pg.PlotWidget):
             self.mvfPlotItem.removeItem(self.mvfLines[line])
             self.intensityPlotItem.removeItem(self.intensityLines[line])
 
-            self.legend.removeItem(self.mvfLines[line])
+            self.legendMVF.removeItem(self.mvfLines[line])
+            self.legendIntensity.removeItem(self.intensityLines[line])
 
     def setPointsView(self):
         for line in self.mvfLines:
@@ -227,7 +292,17 @@ class PlotWidget(pg.PlotWidget):
 
         self.plotStyle = "step"
 
-    # def subsetData
+    def subsetPlots(self, x, y_mvf, y_intensity):
+        ## new max interval, getData returns subset
+        # mvf plot
+        self.mvfPlotDataItem.setData(x, y_mvf)
+
+        # intensity plot
+        self.intensityPlotDataItem.setOpts(x=x, height=y_intensity)
+
+        self.lastXpoint = x.iloc[-1]
+
+        self.addVerticalLine()
 
     def updateLineMVF(self, model, x, y):
         self.mvfLines[model].setData(x, y)

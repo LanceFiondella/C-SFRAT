@@ -55,14 +55,14 @@ class Tab2(QWidget):
         # get from first value in dictionary, so we don't need to know the key
         column_names = ["Interval"]
         if len(results) > 0:
-            fc_list.append(list(results.values())[0][0].t)
+            fc_list.append(list(results.values())[0].t)
 
             # if MVF view
             if dataViewIndex == 0:
                 # iterate over selected models
                 # store intensity values and names
                 for key, model in results.items():
-                    fc_list.append(model[0].mvf_array)
+                    fc_list.append(model.mvf_array)
                     column_names.append(key)
 
             # if intensity view
@@ -70,7 +70,7 @@ class Tab2(QWidget):
                 # iterate over selected models
                 # store intensity values and names
                 for key, model in results.items():
-                    fc_list.append(model[0].intensityList)
+                    fc_list.append(model.intensityList)
                     column_names.append(key)
 
             row_df = pd.DataFrame(fc_list)

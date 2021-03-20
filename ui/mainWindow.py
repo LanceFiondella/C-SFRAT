@@ -368,7 +368,6 @@ class MainWindow(QMainWindow):
         """
         self.data.currentSheet = index      # store
         self.data.max_interval = self.data.n
-        print(self.data.n)
         self._main.tab1.sideMenu.updateSlider(self.data.n)        
 
         self.createPlots()
@@ -385,13 +384,21 @@ class MainWindow(QMainWindow):
         """
 
         # tab 1 plots
-        self._main.tab1.plotAndTable.plotWidget.createMvfPlot(self.data.getData()['T'], self.data.getData()['CFC'])
-        self._main.tab1.plotAndTable.plotWidget.createIntensityPlot(self.data.getData()['T'], self.data.getData()['FC'])
-        # tab 2 plots
-        self._main.tab2.plotAndTable.plotWidget.createMvfPlot(self.data.getData()['T'], self.data.getData()['CFC'])
-        self._main.tab2.plotAndTable.plotWidget.createIntensityPlot(self.data.getData()['T'], self.data.getData()['FC'])
+        # self._main.tab1.plotAndTable.plotWidget.createMvfPlot(self.data.getData()['T'], self.data.getData()['CFC'])
+        # self._main.tab1.plotAndTable.plotWidget.createIntensityPlot(self.data.getData()['T'], self.data.getData()['FC'])
+        x = self.data.getData()['T']    # time vector
+        cfc = self.data.getData()['CFC']    # cumulative failure count vector
+        fc = self.data.getData()['FC']  # failure count vector
 
-        self._main.tab2.plotAndTable.plotWidget.addVerticalLine()
+        self._main.tab1.plotAndTable.plotWidget.createPlots(x, cfc, fc)
+
+        # tab 2 plots
+        # self._main.tab2.plotAndTable.plotWidget.createMvfPlot(self.data.getData()['T'], self.data.getData()['CFC'])
+        # self._main.tab2.plotAndTable.plotWidget.createIntensityPlot(self.data.getData()['T'], self.data.getData()['FC'])
+
+        self._main.tab2.plotAndTable.plotWidget.createPlots(x, cfc, fc)
+
+        # self._main.tab2.plotAndTable.plotWidget.addVerticalLine()
 
     def setMetricList(self):
         """Updates tab 1 list widget with metric names on current sheet."""
@@ -409,19 +416,25 @@ class MainWindow(QMainWindow):
         self.data.max_interval = slider_value
 
         ## new max interval, getData returns subset
-        # mvf plots
+        ## mvf plots
         x = self.data.getData()['T']   # setData does not accept dataframes or np arrays for some reason
-        y = self.data.getData()['CFC']
-        self._main.tab1.plotAndTable.plotWidget.mvfPlotDataItem.setData(x, y)
-        self._main.tab2.plotAndTable.plotWidget.mvfPlotDataItem.setData(x, y)
+        y_mvf = self.data.getData()['CFC']
+        y_intensity = self.data.getData()['FC']
+        # self._main.tab1.plotAndTable.plotWidget.mvfPlotDataItem.setData(x, y)
+        # self._main.tab2.plotAndTable.plotWidget.mvfPlotDataItem.setData(x, y)
 
-        # intensity plots
-        x = self.data.getData()['T']
-        y = self.data.getData()['FC']
+        self._main.tab1.plotAndTable.plotWidget.subsetPlots(x, y_mvf, y_intensity)
+        self._main.tab2.plotAndTable.plotWidget.subsetPlots(x, y_mvf, y_intensity)
+
+        ## intensity plots
+        # x = self.data.getData()['T']
+        # y = self.data.getData()['FC']
         # self._main.tab1.plotAndTable.plotWidget.intensityPlotDataItem.setData(x, y)
         # self._main.tab2.plotAndTable.plotWidget.intensityPlotDataItem.setData(x, y)
-        self._main.tab1.plotAndTable.plotWidget.intensityPlotDataItem.setOpts(x=x, height=y)
-        self._main.tab2.plotAndTable.plotWidget.intensityPlotDataItem.setOpts(x=x, height=y)
+        # self._main.tab1.plotAndTable.plotWidget.intensityPlotDataItem.setOpts(x=x, height=y)
+        # self._main.tab2.plotAndTable.plotWidget.intensityPlotDataItem.setOpts(x=x, height=y)
+
+
 
         # self.updateUI()
 
@@ -578,6 +591,8 @@ class MainWindow(QMainWindow):
         # self.updateUI()
 
         self._main.tab2.plotAndTable.plotWidget.updateLines(selectedNames)
+        self._main.tab2.updateTable(self.estimationResults, self.plotViewIndex)
+
         self.selectedModelNames = selectedNames
 
     def updateComparisonTable(self, selectedNums, selectedNames):
@@ -762,6 +777,14 @@ class MainWindow(QMainWindow):
 
     def updatePredictionPlotMVF(self):
         if self.estimationComplete:
+
+
+            # TEMPORARY
+            # for displaying predictions in tab 2 table
+            prediction_list = [0]
+            model_name_list = ["Interval"]
+
+
             for key, model in self.estimationResults.items():
                 # add line for model if selected
                 # model = self.estimationResults[modelName]
@@ -775,10 +798,10 @@ class MainWindow(QMainWindow):
 
                     ## TABLE
                     # TEMPORARY
-                    # prediction_list[0] = x
-                    # prediction_list.append(mvf_array)
-                    # model_name_list.append(modelName)
-                    # self._main.tab2.updateTable_prediction(prediction_list, model_name_list, 0)
+                    prediction_list[0] = x
+                    prediction_list.append(mvf_array)
+                    model_name_list.append(model.combinationName)
+                    self._main.tab2.updateTable_prediction(prediction_list, model_name_list, 0)
 
 
 
@@ -789,6 +812,14 @@ class MainWindow(QMainWindow):
 
     def updatePredictionPlotIntensity(self):
         if self.estimationComplete:
+
+
+            # TEMPORARY
+            # for displaying predictions in tab 2 table
+            prediction_list = [0]
+            model_name_list = ["Interval"]
+
+
             for key, model in self.estimationResults.items():
                 # add line for model if selected
                 # model = self.estimationResults[modelName]
@@ -804,10 +835,10 @@ class MainWindow(QMainWindow):
 
                     ## TABLE
                     # TEMPORARY
-                    # prediction_list[0] = x
-                    # prediction_list.append(intensity_array)
-                    # model_name_list.append(modelName)
-                    # self._main.tab2.updateTable_prediction(prediction_list, model_name_list, 1)
+                    prediction_list[0] = x
+                    prediction_list.append(intensity_array)
+                    model_name_list.append(model.combinationName)
+                    self._main.tab2.updateTable_prediction(prediction_list, model_name_list, 1)
 
                 else:
                     self._main.tab2.plotAndTable.plotWidget.updateLineIntensity(key, model.t, model.intensityList)
@@ -823,8 +854,6 @@ class MainWindow(QMainWindow):
         """
 
         # m = self.estimationResults[modelName]  # model indexed by the name
-
-        print(model)
 
         x, mvf_array = prediction.prediction_mvf(model, failures, model.covariateData, self._main.tab2.sideMenu.effortSpinBoxDict)
 
