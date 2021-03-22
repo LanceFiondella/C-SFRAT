@@ -5,19 +5,12 @@ import logging as log
 import time   # for testing
 
 import numpy as np
-# import sympy as sym
-# from sympy import symbols, diff, exp, lambdify, DeferredVector, factorial, Symbol, Idx, IndexedBase
 import scipy.optimize
 from scipy.special import factorial as npfactorial
 
 import symengine
 
 import math
-
-# import models   # maybe??
-
-# from core.bat import search
-# from core.optimization import PSO, PSO_main
 
 
 class Model(ABC):
@@ -56,18 +49,15 @@ class Model(ABC):
         llfVal: Log-likelihood value (float), used as goodness-of-fit measure.
         aicVal: Akaike information criterion value (float), used as
             goodness-of-fit measure.
-        bicVal: Bayesian information criterion value (float, used as
+        bicVal: Bayesian information criterion value (float), used as
             goodness-of-fit measure.
         sseVal: Sum of sqaures error (float), used as goodness-of-fit measure.
         mvfList: List of results from the mean value function (float). Values
             that the model fit to the cumulative data.
         intensityList: List of values (float) that the model fit to the
             intensity data.
-        config: ConfigParser object containing information about which model
-            functions are implemented.
     """
 
-    # lambdaFunctionAll = None
     maxCovariates = None
 
     def __init__(self, *args, **kwargs):
@@ -79,22 +69,14 @@ class Model(ABC):
         """
         self.data = kwargs["data"]                  # dataframe
         self.metricNames = kwargs["metricNames"]    # selected metric names (strings)
-        self.config = kwargs['config']
-        # self.covariate_indices = kwargs['indices']
-        # self.t = self.data.iloc[:, 0].values            # failure times, from first column of dataframe
-        # self.failures = self.data.iloc[:, 1].values     # number of failures, from second column of dataframe
         self.t = self.data["T"].values     # failure times
         self.failures = self.data["FC"].values     # number of failures
         self.n = len(self.failures)                     # number of discrete time segments
         self.cumulativeFailures = self.data["CFC"].values
         self.totalFailures = self.cumulativeFailures[-1]
-        # list of arrays or array of arrays?
         self.covariateData = np.array([self.data[name].values for name in self.metricNames])
         self.numCovariates = len(self.covariateData)
         self.psseVal = None
-        # self.maxCovariates = self.data.numCovariates    # total number of covariates from imported data
-                                                        # data object not passed, just dataframe (which
-                                                        # doesn't have numCovariates as an attribute
         self.numParameters = len(self.parameterEstimates)
         self.numSymbols = self.numCovariates + self.numParameters
         self.converged = False
@@ -130,51 +112,33 @@ class Model(ABC):
 
     @property
     @abstractmethod
-    def coxParameterEstimateRange(self):
+    def beta0(self):
         """
         Define Cox parameter estimate range for root finding initial values
         """
-        return [0.0, 0.01]
+        return 0.01
 
     @property
     @abstractmethod
-    def shapeParameterEstimateRange(self):
+    def parameterEstimates(self):
         """
         Define shape parameter estimate range for root finding initial values
         """
-        return [0.0, 0.1]
-
-    # @property
-    # @abstractmethod
-    # def LFFspecified(self):
-    #     """
-        
-    #     """
-    #     return False
-
-    # @property
-    # @abstractmethod
-    # def dLFFspecified(self):
-    #     """
-        
-    #     """
-    #     return False
-
-    # @property
-    # @abstractmethod
-    # def symbolicDifferentiation(self):
-    #     """
-    #     Set False if manually implementing log-likelihood function and its derivative
-    #     """
-    #     return True
+        return (0.1,)
 
     ##################################################
     # Methods that must be implemented by all models #
     ##################################################
 
     @abstractmethod
-    def hazardFunction(self):
+    def hazardSymbolic(self):
         pass
+
+    @abstractmethod
+    def hazardNumerical(self):
+        pass
+
+    ##################################################
 
     def setupMetricString(self):
         """Creates string of metric names separated by commas"""
@@ -185,63 +149,7 @@ class Model(ABC):
             self.metricString = ", ".join(self.metricNames)
         self.combinationName = f"{self.shortName} ({self.metricString})"
 
-    def symAll(self):
-        """Creates symbolic LLF for model with all metrics, and differentiates
-
-        Called from MainWindow, when new file is imported.
-
-        Returns:
-            Lambda function implementation of the differentiated log-likelihood
-            function.
-        """
-        t1_start = time.process_time()
-        Model.maxCovariates = self.numCovariates
-        f, x = self.LLF_sym(self.hazardFunction)    # pass hazard rate function
-        # bh = np.array([diff(f, x[i]) for i in range(self.numCovariates + 1)])
-
-        bh = np.array([symengine.diff(f, x[i]) for i in range(self.numSymbols)])
-
-        f = self.convertSym(x, bh, "numpy")
-        t1_stop = time.process_time()
-        log.info("time to convert symbolic function: %s", t1_stop - t1_start)
-
-        return f
-
-    # def LLF_sym(self, hazard, covariate_data):
-    #     # x = b, b1, b2, b2 = symengine.symbols('b b1 b2 b3')
-    #     x = symengine.symbols(f'x:{self.numCovariates + 1}')
-    #     second = []
-    #     prodlist = []
-    #     for i in range(self.n):
-    #         sum1 = 1
-    #         sum2 = 1
-    #         TempTerm1 = 1
-    #         for j in range(1, self.numCovariates + 1):
-    #             TempTerm1 = TempTerm1 * symengine.exp(covariate_data[j - 1][i] * x[j])
-    #         sum1 = 1 - ((1 - (hazard(i + 1, x[0]))) ** (TempTerm1))
-    #         for k in range(i):
-    #             TempTerm2 = 1
-    #             for j in range(1, self.numCovariates + 1):
-    #                 TempTerm2 = TempTerm2 * symengine.exp(covariate_data[j - 1][k] * x[j])
-    #             sum2 = sum2 * ((1 - (hazard(i + 1, x[0])))**(TempTerm2))
-    #         second.append(sum2)
-    #         prodlist.append(sum1 * sum2)
-
-    #     firstTerm = -sum(self.failures)  #Verified
-    #     secondTerm = sum(self.failures) * symengine.log(sum(self.failures) / sum(prodlist))
-    #     logTerm = []  #Verified
-    #     for i in range(self.n):
-    #         logTerm.append(self.failures[i] * symengine.log(prodlist[i]))
-    #     thirdTerm = sum(logTerm)
-    #     factTerm = []  #Verified
-    #     for i in range(self.n):
-    #         factTerm.append(symengine.log(math.factorial(self.failures[i])))
-    #     fourthTerm = sum(factTerm)
-
-    #     f = firstTerm + secondTerm + thirdTerm - fourthTerm
-    #     return f, x
-
-    def LLF_sym_new(self, hazard, covariate_data):
+    def LLF_sym(self, hazard, covariate_data):
         # x = b, b1, b2, b2 = symengine.symbols('b b1 b2 b3')
 
         x = symengine.symbols(f'x:{self.numSymbols}')
@@ -278,7 +186,6 @@ class Model(ABC):
 
     def RLL(self, x, covariate_data):
         # want everything to be array of length n
-
         cov_data = np.array(covariate_data)
 
         # gives array with dimensions numCovariates x n, just want n
@@ -287,7 +194,7 @@ class Model(ABC):
         # sum over numCovariates axis to get 1 x n array
         exponent_array = np.exp(np.sum(exponent_all, axis=0))
 
-        h = np.array([self.hazardFunction(i + 1, x[:self.numParameters]) for i in range(self.n)])
+        h = np.array([self.hazardNumerical(i + 1, x[:self.numParameters]) for i in range(self.n)])
 
         one_minus_hazard = (1 - h)
         one_minus_h_i = np.power(one_minus_hazard, exponent_array)
@@ -332,7 +239,6 @@ class Model(ABC):
         Returns:
 
         """
-        # return lambdify(x, bh, target)
         return symengine.lambdify(x, bh, backend='lambda')
 
     def runEstimation(self, covariate_data):
@@ -350,14 +256,9 @@ class Model(ABC):
         initial = self.initialEstimates()
 
         log.info("Initial estimates: %s", initial)
-        f, x = self.LLF_sym_new(self.hazard_symbolic, covariate_data)    # pass hazard rate function
-        # f, x = self.LLF_sym_new(self.hazardFunction, covariate_data)    # pass hazard rate function
-
-        # print(self.convertSym(x, [f], "numpy"))
+        f, x = self.LLF_sym(self.hazardSymbolic, covariate_data)    # pass hazard rate function
 
         bh = np.array([symengine.diff(f, x[i]) for i in range(self.numSymbols)])
-
-        # print(bh)
 
         fd = self.convertSym(x, bh, "numpy")
 
@@ -372,7 +273,7 @@ class Model(ABC):
         print("model parameters =", self.modelParameters)
         print("betas =", self.betas)
 
-        hazard = np.array([self.hazardFunction(i + 1, self.modelParameters) for i in range(self.n)])
+        hazard = np.array([self.hazardNumerical(i + 1, self.modelParameters) for i in range(self.n)])
         self.hazard_array = hazard    # for MVF prediction, don't want to calculate again
         self.modelFitting(hazard, self.mle_array, covariate_data)
         self.goodnessOfFit(self.mle_array, covariate_data)
@@ -386,23 +287,9 @@ class Model(ABC):
     def optimizeSolution(self, fd, B):
         log.info("Solving for MLEs...")
 
-        # solution, infodict, convergence, mesg = scipy.optimize.fsolve(fd, x0=B, maxfev=1000, full_output=True)
-
-        # convergence is integer flag indicating if a solution was found
-        # solution found if flag == 1
-
-        # if convergence == 1:
-        #     self.converged = True
-        #     log.info("MLEs solved.")
-        # else:
-        #     self.converged = False
-        #     log.warning(mesg)
-
-        sol_object = scipy.optimize.root(fd, x0=B)#, options={'maxiter': 3000})
+        sol_object = scipy.optimize.root(fd, x0=B)
         solution = sol_object.x
         self.converged = sol_object.success
-        # print(sol_object)
-        # print("root solving converged?", sol_object.success)
         print("\t" + sol_object.message)
         
         return solution
@@ -432,9 +319,6 @@ class Model(ABC):
     def calcOmega(self, h, betas, covariate_data):
         # can clean this up to use less loops, probably
         prodlist = []
-        # for i in range(self.n):
-        # print(self.n)
-        # print(len(h))
         for i in range(self.n):
             sum1 = 1
             sum2 = 1
@@ -479,7 +363,6 @@ class Model(ABC):
         # sum over numCovariates axis to get 1 x n array
         exponent_array = np.exp(np.sum(exponent_all, axis=0))
 
-        # h = np.array([self.hazardFunction(i + 1, x[0]) for i in range(stop + 1)])
         h = hazard_array[:stop + 1]
 
         one_minus_hazard = (1 - h)

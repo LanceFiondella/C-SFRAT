@@ -86,19 +86,20 @@ class Tab3(QWidget):
         rows = []
         row_index = 0
         for key, model in data.items():
-            row = [
-               row_index + 1,
-               model.shortName,
-               model.metricString,
-               model.llfVal,
-               model.aicVal,
-               model.bicVal,
-               model.sseVal,
-               "N/A",
-               self.sideMenu.comparison.meanOut[row_index],
-               self.sideMenu.comparison.medianOut[row_index]]
-            rows.append(row)
-            row_index += 1
+            if model.converged:
+                row = [
+                   row_index + 1,
+                   model.shortName,
+                   model.metricString,
+                   model.llfVal,
+                   model.aicVal,
+                   model.bicVal,
+                   model.sseVal,
+                   "",
+                   self.sideMenu.comparison.meanOut[row_index],
+                   self.sideMenu.comparison.medianOut[row_index]]
+                rows.append(row)
+                row_index += 1
         self.dataframe = pd.DataFrame(rows, columns=self.column_names)
         self.tableModel = PandasModel(self.dataframe)
 
@@ -158,7 +159,6 @@ class Tab3(QWidget):
         header.setStyleSheet(stylesheet)
 
         # proxy model used for sorting and filtering rows
-        # self.proxyModel = QSortFilterProxyModel()
         self.proxyModel = ProxyModel()
         self.proxyModel.setSourceModel(self.tableModel)
 
@@ -172,27 +172,36 @@ class Tab3(QWidget):
         Export table to csv
         """
         # TODO:
-        # permission error (if file is open, etc.)
-        # export other tables
         # export to excel?
-        # stream writing vs line by line (?), not sure which is better/faster
+        # stream writing vs line by line (?), unsure which is better/faster
 
         # https://stackoverflow.com/questions/57419547/struggling-to-export-csv-data-from-qtablewidget
         # https://stackoverflow.com/questions/27353026/qtableview-output-save-as-csv-or-txt
-        with open(path, 'w', newline='') as stream:
-            writer = csv.writer(stream)
-            writer.writerow(self.column_names)
-            for row in range(self.tableModel.rowCount()):
-                rowdata = []
-                for column in range(self.tableModel.columnCount()):
-                    # print(self.tableModel.data(column))
-                    item = self.tableModel._data.iloc[row][column]
-                    if item is not None:
-                        # rowdata.append(unicode(item.text()).encode('utf8'))
-                        rowdata.append(str(item))
-                    else:
-                        rowdata.append('')
-                writer.writerow(rowdata)
+
+        try:
+            with open(path, 'w', newline='') as stream:
+                writer = csv.writer(stream)
+                writer.writerow(self.column_names)
+                for row in range(self.tableModel.rowCount()):
+                    rowdata = []
+                    for column in range(self.tableModel.columnCount()):
+                        # print(self.tableModel.data(column))
+                        item = self.tableModel._data.iloc[row][column]
+                        if item is not None:
+                            # rowdata.append(unicode(item.text()).encode('utf8'))
+                            rowdata.append(str(item))
+                        else:
+                            rowdata.append('')
+                    writer.writerow(rowdata)
+
+        except PermissionError:
+            log.warning("File permission denied.")
+            msgBox = QMessageBox()
+            msgBox.setIcon(QMessageBox.Warning)
+            msgBox.setText("File permission denied")
+            msgBox.setInformativeText("If there is a file with the same name ensure that it is closed.")
+            msgBox.setWindowTitle("Warning")
+            msgBox.exec_()
 
 
 class SideMenu3(QVBoxLayout):
@@ -240,7 +249,7 @@ class SideMenu3(QVBoxLayout):
         self.comparisonGroup = QGroupBox("Metric Weights (0-10)")
         self.comparisonGroup.setLayout(self._setupComparisonGroup())
 
-        self.psseGroup = QGroupBox("PSSE Parameters")
+        self.psseGroup = QGroupBox("Specify subset data for PSSE")
         self.psseGroup.setLayout(self._setupPSSEGroup())
 
         self.modelsGroup = QGroupBox("Select Model Results")
@@ -262,8 +271,6 @@ class SideMenu3(QVBoxLayout):
             corresponding labels.
         """
         comparisonLayout = QGridLayout()
-        # self._createLabel("Metric", 0, 0, comparisonLayout)
-        # self._createLabel("weights (0-10)", 0, 1, comparisonLayout)
 
         # text, row, column, layout
         self._createLabel("LLF", 0, 0, comparisonLayout)
@@ -281,9 +288,6 @@ class SideMenu3(QVBoxLayout):
         self.psseSpinBox.setValue(0)    # want to start at 0 before PSSE is run
         self.psseSpinBox.setDisabled(True)  # disable on startup, before PSSE is run
 
-        # vertical spacer at bottom of layout, keeps labels/spinboxes together at top
-        # vspacer = QSpacerItem(20, 40, QSizePolicy.Maximum, QSizePolicy.Expanding)
-        # comparisonLayout.addItem(vspacer, 5, 0, 1, -1)
         comparisonLayout.setColumnStretch(1, 1)
 
         return comparisonLayout
@@ -297,13 +301,13 @@ class SideMenu3(QVBoxLayout):
         psseLayout = QVBoxLayout()
         topLayout = QHBoxLayout()
 
-        # !! slider has no function currently
-        self.psseSlider = QSlider(Qt.Horizontal)
-        self.psseSlider.setValue(90)
-        # self.psseLineEdit = QLineEdit()
-        # self.psseLineEdit.setValidator(QIntValidator())
-        # self.psseLineEdit.setMaxLength(2)
-        # self.psseLineEdit.setText("90")
+        # # !! slider has no function currently
+        # self.psseSlider = QSlider(Qt.Horizontal)
+        # self.psseSlider.setValue(90)
+        # # self.psseLineEdit = QLineEdit()
+        # # self.psseLineEdit.setValidator(QIntValidator())
+        # # self.psseLineEdit.setMaxLength(2)
+        # # self.psseLineEdit.setText("90")
 
         self.psseParameterSpinBox = QDoubleSpinBox()
         self.psseParameterSpinBox.setDecimals(2)
@@ -312,10 +316,10 @@ class SideMenu3(QVBoxLayout):
         self.psseParameterSpinBox.setValue(0.9)
         self.psseParameterSpinBox.setSingleStep(0.01)
 
-        topLayout.addWidget(self.psseSlider, 9)
+        # topLayout.addWidget(self.psseSlider, 9)
         topLayout.addWidget(self.psseParameterSpinBox, 1)
 
-        self.psseButton = QPushButton("Run PSSE")
+        self.psseButton = QPushButton("Run")
         self.psseButton.setDisabled(True)
         self.psseButton.clicked.connect(self._emitRunPSSESignal)
 

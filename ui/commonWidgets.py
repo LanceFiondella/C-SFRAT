@@ -164,7 +164,7 @@ class ComputeWidget(QWidget):
     """
     results = pyqtSignal(dict)
 
-    def __init__(self, modelsToRun, metricNames, data, config, parent=None):
+    def __init__(self, modelsToRun, metricNames, data, parent=None):
         """Initializes ComputeWidget class.
 
         Args:
@@ -172,8 +172,6 @@ class ComputeWidget(QWidget):
             metricNames: List of metric names as strings used for estimation
                 calculation.
             data: Pandas dataframe containing imported data.
-            config: ConfigParser object containing information about which model
-                functions are implemented. Passed to Model.
             parent:
         """
         super(ComputeWidget, self).__init__(parent)
@@ -194,7 +192,7 @@ class ComputeWidget(QWidget):
         layout.setAlignment(Qt.AlignVCenter)
         self.setWindowTitle("Processing...")
 
-        self.computeTask = TaskThread(modelsToRun, metricNames, data, config)
+        self.computeTask = TaskThread(modelsToRun, metricNames, data)
         self.computeTask.nextCalculation.connect(self._showCurrentCalculation)
         self.computeTask.modelFinished.connect(self._modelFinished)
         self.computeTask.taskFinished.connect(self._onFinished)
@@ -236,14 +234,12 @@ class TaskThread(QThread):
         _metricNames: List of metric names as strings used for estimation
             calculation.
         _data: Pandas dataframe containing imported data.
-        _config: ConfigParser object containing information about which model
-                functions are implemented. Passed to Model.
     """
     taskFinished = pyqtSignal(dict)
     modelFinished = pyqtSignal()
     nextCalculation = pyqtSignal(str)
 
-    def __init__(self, modelsToRun, metricNames, data, config):
+    def __init__(self, modelsToRun, metricNames, data):
         """Initializes TaskThread class.
 
         Args:
@@ -252,31 +248,19 @@ class TaskThread(QThread):
                 calculation.
             data: Pandas dataframe containing imported data (getData() method already
                 called prior to being passed)
-            config: ConfigParser object containing information about which model
-                functions are implemented. Passed to Model.
         """
         super().__init__()
         self.abort = False  # True when app closed, so thread stops running
         self._modelsToRun = modelsToRun
         self._metricNames = metricNames
         self._data = data
-        self._config = config
 
     def run(self):
         """Performs estimation for models/metrics.
 
         Called when thread is started.
         """
-        # window says that symbolic equations are being calculated
-        self.nextCalculation.emit("Symbolic equations")
-        while(not SymbolicThread.complete):
-            # check if application has been closed
-            if self.abort:
-                return  # get out of run method
-            # wait until symbolic equations are calculated, do nothing until then
-            pass
         result = {}
-        combination_index = 1   # for adding integer index to combinations
         for model in self._modelsToRun:
             for metricCombination in self._metricNames:
                 # check if application has been closed
@@ -286,22 +270,11 @@ class TaskThread(QThread):
                 if (metricCombination == ["None"]):
                     metricCombination = []
 
-                # # record indices of covariates, relative to stored data
-                # print(self._data.metricNames)
-                # print(metricCombination)
-                # indices = []
-                # for cov in metricCombination:
-                #     print(self._data.metricNames.index(cov))
-                #     indices.append(self._data.metricNames.index(cov))
-
-                m = model(data=self._data.getData(), metricNames=metricCombination, config=self._config)
+                m = model(data=self._data.getData(), metricNames=metricCombination)
 
                 # this is the name used in tab 2 and tab 4 side menus
                 # use shortened name
-                # runName = "{0}. {1} ({2})".format(combination_index, m.shortName, metricNames)
                 runName = "{0} ({1})".format(m.shortName, metricNames)  # "Model (Metric1, Metric2, ...)"
-                # runName = m.shortName + " (" + metricNames + ")"  # "Model (Metric1, Metric2, ...)"
-                # self.nextCalculation.emit(runName.split(". ", 1)[1])
                 self.nextCalculation.emit(runName)
 
                 ## THIS IS WHERE SUBSETS OF COVARIATE DATA CAN BE PASSED
@@ -310,9 +283,6 @@ class TaskThread(QThread):
                 result[runName] = m
                 self.modelFinished.emit()
 
-                # combination_index += 1  # update index
-
-        print("******************************************")
         self.taskFinished.emit(result)
 
 
@@ -332,12 +302,10 @@ class PSSEThread(QThread):
         _metricNames: List of metric names as strings used for estimation
             calculation.
         _data: Pandas dataframe containing imported data.
-        _config: ConfigParser object containing information about which model
-                functions are implemented. Passed to Model.
     """
     results = pyqtSignal(dict)
 
-    def __init__(self, modelsToRun, metricNames, data, fraction, config):
+    def __init__(self, modelsToRun, metricNames, data, fraction):
         """Initializes TaskThread class.
 
         Args:
@@ -347,8 +315,6 @@ class PSSEThread(QThread):
             data: Pandas dataframe containing imported data (getData() method already
                 called prior to being passed)
             fraction: fraction of data to use for PSSE
-            config: ConfigParser object containing information about which model
-                functions are implemented. Passed to Model.
         """
         super().__init__()
         self.abort = False  # True when app closed, so thread stops running
@@ -356,7 +322,6 @@ class PSSEThread(QThread):
         self._metricNames = metricNames
         self._data = data
         self._fraction = fraction
-        self._config = config
 
     def run(self):
         """Performs estimation for models/metrics.
@@ -374,7 +339,7 @@ class PSSEThread(QThread):
                 if (metricCombination == ["None"]):
                     metricCombination = []
 
-                m = model(data=self._data.getDataSubset(self._fraction), metricNames=metricCombination, config=self._config)
+                m = model(data=self._data.getDataSubset(self._fraction), metricNames=metricCombination)
 
                 # this is the name used in tab 2 and tab 4 side menus
                 # use shortened name
@@ -383,92 +348,11 @@ class PSSEThread(QThread):
                 ## THIS IS WHERE SUBSETS OF COVARIATE DATA CAN BE PASSED
                 ## for now, just pass all
                 m.runEstimation(m.covariateData)
-                
 
                 fitted_array = prediction_psse(m, self._data)
 
                 psse_val = PSSE(fitted_array, self._data.getData()['CFC'].values, m.n)
-                
-                # print("PSSE value for {0}:".format(runName))
-                # print(psse_val)
 
                 result[runName] = psse_val
 
         self.results.emit(result)
-
-class SymbolicThread(QThread):
-    """Runs symbolic computation for newly imported data on its own thread.
-
-    Attributes:
-        abort: Boolean indicating if the app has been closed. If True, the
-            thread should stop running.
-        taskFinished: pyqtSignal, emits dict containing model objects (with
-            estimation results as properties) as values, indexed by name of
-            model/metric combination.
-        _modelsToRun: List of Model objects used for estimation calculation.
-        _metricNames: List of metric names as strings used for estimation
-            calculation.
-        _data: Pandas dataframe containing imported data.
-        _modelFinished: pyqtSignal, emits when current model/metric calculation
-            is completed. Tells thread to begin calculation on next
-            combination.
-        _nextCalculation: pyqtSignal, emits string containing the model/metric
-            combination name currently being calculated. Displayed on progress
-            window.
-        _config: ConfigParser object containing information about which model
-                functions are implemented. Passed to Model.
-    """
-
-    symbolicSignal = pyqtSignal()
-
-    ## TEMPORARY
-    ## set complete to True, since symbolic calculations are not run
-    complete = True    # if symbolic calculations are complete = True
-
-    def __init__(self, modelList, data, config):
-        """Initializes TaskThread class.
-
-        Args:
-            modelList: List of Model objects used for symbolic calculations.
-            data: Pandas dataframe containing imported data.
-            config: ConfigParser object containing information about which model
-                functions are implemented. Passed to Model.
-        """
-        super().__init__()
-        self.abort = False  # True when app closed, so thread stops running
-        self._modelList = modelList
-        self._data = data
-        self._config = config
-
-    def run(self):
-        """Performs symbolic calculations for models.
-
-        Called when thread is started.
-        """
-        # log.info(f"modelList = {models.modelList}")
-        # SymbolicThread.complete = False # set flag to False when starting calculations
-        log.info("RUNNING SYMBOLIC THREAD")
-        for model in self._modelList.values():
-            # check if application has been closed
-            if self.abort:
-                return  # get out of run method
-
-            # if not model.dLLF:
-            if self._config[model.__name__]['dLLF'].lower() != 'yes':
-                # need to initialize models so they have the imported data
-                instantiatedModel = model(data=self._data.getData(),
-                    metricNames=self._data.metricNames, config=self._config)
-            
-
-                # # only run symbolic calculation if no LLF implemented by user
-                # if not instantiatedModel.LLFspecified:
-                #     pass
-                # # or if LLF not created for all covariates
-                # elif instantiatedModel.LLFspecified:
-                #     if len(instantiatedModel.LLF_array) <= instantiatedModel.maxCovariates or None in instantiatedModel.LLF_array:
-
-
-                model.lambdaFunctionAll = instantiatedModel.symAll()    # saved as class variable for each model
-                log.info("Lambda function created for %s model", model.name)
-        SymbolicThread.complete = True  # calculations complete, set flag to True
-        self.symbolicSignal.emit()

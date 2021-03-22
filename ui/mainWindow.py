@@ -1,49 +1,11 @@
-"""Contains all UI elements, provides signal connections.
-
+"""
 Contains highest level UI elements. Connects all core modules and functions to
 the UI elements. Able to reference all elements and the signals they emit.
-
 """
 
-###############################################################################
-# TODO:
-# make sure everything that needs to be is a np array, not list
-# MSE vs SSE?
-# checking on other datasets
-# making UI easier to use for someone who doesn't understand the math
-# options selected from menubar like in SFRAT
-# protection levels, access modifiers, public/private variables, properties
-# fewer classes?
-#   example: self._main.tab1.sideMenu.sheetSelect.addItems(self.data.sheetNames)
-# dialog asking if you want to quit?
-# pay attention to how scaling/strecting works, minimum sizes for UI elements
-# use logging object, removes matplotlib debug messages in debug mode
-# naming "hazard functions" instead of models
-# self.viewType is never updated
-# sometimes metric list doesn't load until interacted with
-# bar chart isn't ideal for large datasets
-# clean up prediction plot
-# tool tips?
-# don't recreate plots, just add/remove lines
-# clear plot 2 when new data is loaded (at least fitted models)
-# ** Plot axes values!
-# handle exceptions in data set (if key not found in column)
-#   currently just crashes
-# default fitted data to smooth plot instead of step plot
-# remove zero point added on plots
-# In tables: integers should not have decimal points
-# plot 2 should have label with just covariate data, when no other models selected
-# menu bar naming
-# optimize prediction: don't calculate all points ever time; wasteful and slow
-# make covariateData a numpy array instead of list (then, can update first couple
-#   lines of RLL non-symbolic)
-###############################################################################
 
 # For handling debug output
 import logging as log
-
-# For reading configuration (.ini) file
-import configparser
 
 # PyQt5 imports for UI elements
 from PyQt5.QtWidgets import QMainWindow, qApp, QWidget, QTabWidget, \
@@ -52,7 +14,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 
 # Local imports
 import models
-from ui.commonWidgets import ComputeWidget, SymbolicThread, PSSEThread
+from ui.commonWidgets import ComputeWidget, PSSEThread
 from ui.tab1 import Tab1
 from ui.tab2 import Tab2
 from ui.tab3 import Tab3
@@ -60,10 +22,8 @@ from ui.tab4 import Tab4
 from core.dataClass import Data
 from core.graphSettings import PlotSettings
 from core.allocation import EffortAllocation
-from core.trendTests import *
 from core.goodnessOfFit import PSSE
 import core.prediction as prediction
-
 
 
 class MainWindow(QMainWindow):
@@ -91,9 +51,6 @@ class MainWindow(QMainWindow):
             (one for each model/metric combination) selected for estimation.
             The dict is indexed by the name of the model/metric combination
             as a string. The variable is set after estimation is complete.
-        symbolicComplete: Boolean flag indicating if the symbolic computation
-            has been completed. Symbolic computations begin when a data file
-            is loaded.
         ax: A matplotlib axes object, handles tab 1 plot.
         ax2: A matplotlib axes object, handles tab 2 plot.
         importFileSignal: Signal that is emitted when a file containing data
@@ -117,15 +74,18 @@ class MainWindow(QMainWindow):
         allocationResults: A dict containing the results of the effort
             allocation, indexed by the name of the model/metric combination
             as a string.
-        config: ConfigParser object containing information about which model
-            functions are implemented.
     """
 
     # signals
     importFileSignal = pyqtSignal()
 
     def __init__(self, debug=False):
-        """Inits MainWindow, not in debug mode by default."""
+        """
+        Initializes MainWindow, not in debug mode by default.
+
+        Args
+            debug: Boolean indicating if debug mode is activated
+        """
         super().__init__()
 
         self._main = MainWidget()
@@ -134,23 +94,14 @@ class MainWindow(QMainWindow):
         # set debug mode
         self.debug = debug
 
-        # read configuration file
-        self.config = configparser.ConfigParser()
-        self.config.read('config.ini')
-
         # set data
         self.data = Data()
-        self.trendTests = {cls.__name__: cls for
-                           cls in TrendTest.__subclasses__()}
         self.plotSettings = PlotSettings()
         self.selectedModelNames = []
-
-        # self.estimationResults
 
         # flags
         self.dataLoaded = False
         self.estimationComplete = False
-        self.symbolicComplete = False
 
         # tab 1 plot and table
         self.ax = self._main.tab1.plotAndTable.figure.add_subplot(111)
@@ -163,22 +114,15 @@ class MainWindow(QMainWindow):
         self._main.tab1.sideMenu.sliderSignal.connect(self.subsetData)
         # run models when signal is received
         self._main.tab1.sideMenu.runModelSignal.connect(self.runModels)
-        # self._main.tab1.sideMenu.confidenceSignal.connect(self.updateLaplaceConfidencePlot)
-        #self._main.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2)
         self._main.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2AndUpdateComparisonTable)
-
         # connect tab2 list changed to refreshing tab 2 plot
-        # self._main.tab2.sideMenu.failureChangedSignal.connect(self.runPrediction)
         self._main.tab2.sideMenu.failureChangedSignal.connect(self.updateUI)
-        # self._main.tab2.sideMenu.intensityChangedSignal.connect(self.prediction2)
         self._main.tab2.sideMenu.intensityChangedSignal.connect(self.updateUI)
         self._main.tab3.sideMenu.modelChangedSignal.connect(self.changePlot2AndUpdateComparisonTable)
-        # self._main.tab3.sideMenu.modelListWidget.itemActivated().connect(self._main.tab3.addRow)
         self._main.tab3.sideMenu.runPSSESignal.connect(self.runPSSE)
         self._main.tab3.sideMenu.spinBoxChangedSignal.connect(self.runGoodnessOfFit)
         self._main.tab4.sideMenu.runAllocation1Signal.connect(self.runAllocation1)
         self._main.tab4.sideMenu.runAllocation2Signal.connect(self.runAllocation2)
-
 
         self._initUI()
         log.info("UI loaded.")
@@ -199,15 +143,9 @@ class MainWindow(QMainWindow):
         self.setGeometry(left, top, width, height)
         self.setMinimumSize(minWidth, minHeight)
         self.statusBar().showMessage("")
-        # self.viewType = "view"
         self.dataViewIndex = 0
 
-        # setup font
-        # self.setStyleSheet("QLabel {font: 12pt Segoe}")
-        # self.setStyleSheet("QGroupBox {font: 12pt Segoe}")
-        # self.setStyleSheet("QTabWidget {font: 12pt Segoe}")
-        # self.setStyleSheet("QListItem {font: 12pt Segoe}")
-        # self.setStyleSheet("QPushButton {font: 12pt Segoe}")
+        # setup font for entire application
         self.setStyleSheet("QWidget {font: 12pt Segoe}")
 
         self.show()
@@ -229,25 +167,30 @@ class MainWindow(QMainWindow):
         # open
         openFile = QAction("Open", self)
         openFile.setShortcut("Ctrl+O")
-        openFile.setStatusTip("Import Data File")
+        openFile.setStatusTip("Import data file")
         openFile.triggered.connect(self.fileOpened)
+
         # export table (tab 2)
         exportTable2 = QAction("Export Table (Tab 2)", self)
         # exportTable.setShortcut("Ctrl+E")
-        exportTable2.setStatusTip("Export Tab 2 Table to csv")
+        exportTable2.setStatusTip("Export tab 2 table to csv")
         exportTable2.triggered.connect(self.exportTable2)
+
         # export table (tab 3)
         exportTable3 = QAction("Export Table (Tab 3)", self)
-        exportTable3.setShortcut("Ctrl+E")
-        exportTable3.setStatusTip("Export Tab 3 Table to csv")
+        # exportTable3.setShortcut("Ctrl+E")
+        exportTable3.setStatusTip("Export tab 3 table to csv")
         exportTable3.triggered.connect(self.exportTable3)
+
         # exit
         exitApp = QAction("Exit", self)
         exitApp.setShortcut("Ctrl+Q")
         exitApp.setStatusTip("Close application")
         exitApp.triggered.connect(self.closeEvent)
+
         # add actions to file menu
         fileMenu.addAction(openFile)
+        fileMenu.addSeparator()
         fileMenu.addAction(exportTable2)
         fileMenu.addAction(exportTable3)
         fileMenu.addSeparator()
@@ -258,18 +201,21 @@ class MainWindow(QMainWindow):
         # -- plotting style
         # submenu
         viewStyle = QActionGroup(viewMenu)
+
         # points
         viewPoints = QAction("Show Points", self, checkable=True)
         viewPoints.setShortcut("Ctrl+P")
         viewPoints.setStatusTip("Data shown as points on graphs")
         viewPoints.triggered.connect(self.setPointsView)
         viewStyle.addAction(viewPoints)
+
         # lines
         viewLines = QAction("Show Lines", self, checkable=True)
         viewLines.setShortcut("Ctrl+L")
         viewLines.setStatusTip("Data shown as lines on graphs")
         viewLines.triggered.connect(self.setLineView)
         viewStyle.addAction(viewLines)
+
         # points and lines
         viewBoth = QAction("Show Points and Lines", self, checkable=True)
         viewBoth.setShortcut("Ctrl+B")
@@ -277,24 +223,28 @@ class MainWindow(QMainWindow):
         viewBoth.setChecked(True)
         viewBoth.triggered.connect(self.setLineAndPointsView)
         viewStyle.addAction(viewBoth)
+
         # add actions to view menu
         viewMenu.addActions(viewStyle.actions())
 
         # -- line style (step vs smooth)
         lineStyle = QActionGroup(viewMenu)
+
+        # smooth
+        smooth = QAction("Smooth Plot (Fitted Models)", self, checkable=True)
+        smooth.setShortcut("Ctrl+F")
+        smooth.setStatusTip("Fitted model plot shows smooth curves")
+        smooth.triggered.connect(self.setSmoothLine)
+        lineStyle.addAction(smooth)
+
         # step
-        step = QAction("Step Plot", self, checkable=True)
+        step = QAction("Step Plot (Fitted Models)", self, checkable=True)
         step.setShortcut("Ctrl+D")
-        step.setStatusTip("Step curve for MVF lines")
+        step.setStatusTip("Fitted model plot shown as step")
         step.setChecked(True)
         step.triggered.connect(self.setStepLine)
         lineStyle.addAction(step)
-        # smooth
-        smooth = QAction("Smooth Plot", self, checkable=True)
-        smooth.setShortcut("Ctrl+F")
-        smooth.setStatusTip("Step curve for MVF lines")
-        smooth.triggered.connect(self.setSmoothLine)
-        lineStyle.addAction(smooth)
+
         # add actions to view menu
         viewMenu.addSeparator()
         viewMenu.addActions(lineStyle.actions())
@@ -315,20 +265,13 @@ class MainWindow(QMainWindow):
         self.intensity.triggered.connect(self.setIntensityView)
         graphStyle.addAction(self.intensity)
 
-        ## REMOVED FOR NOW ##
-        ## trend test
-        # viewTest = QAction("View Trend", self, checkable=True)
-        # viewTest.setShortcut('Ctrl+T')
-        # viewTest.setStatusTip('View Trend Test')
-        # viewTest.triggered.connect(self._main.tab1.sideMenu.testChanged)
-        # graphStyle.addAction(viewTest)
-
         # add actions to view menu
         viewMenu.addSeparator()
         viewMenu.addActions(graphStyle.actions())
 
     def closeEvent(self, event):
-        """Quits all threads, and shuts down app.
+        """
+        Quits all threads, and shuts down app.
 
         Called when application is closed by user. Waits to abort symbolic and
         estimation threads safely if they are still running when application
@@ -337,15 +280,6 @@ class MainWindow(QMainWindow):
         log.info("Covariate Tool application closed.")
 
         # --- stop running threads ---
-        # stop symbolic thread
-        try:
-            # self.symbolicThread.quit()
-            self.symbolicThread.abort = True
-            self.symbolicThread.wait()
-        except (AttributeError, RuntimeError):
-            # should do something with RuntimeError
-            pass
-
         # stop model estimation thread
         try:
             # self.computeWidget.computeTask.quit()
@@ -358,17 +292,16 @@ class MainWindow(QMainWindow):
 
         qApp.quit()
 
-
     def exportTable2(self):
-        path = QFileDialog.getSaveFileName( 
-            self, 'Export model results', 'model_results.csv', filter='CSV (*.csv)')
+        path = QFileDialog.getSaveFileName(self,
+            'Export model results', 'model_results.csv', filter='CSV (*.csv)')
 
         if path[0]:
             self._main.tab2.exportTable(path[0])
 
     def exportTable3(self):
-        path = QFileDialog.getSaveFileName( 
-            self, 'Export model results', 'model_results.csv', filter='CSV (*.csv)')
+        path = QFileDialog.getSaveFileName(self,
+            'Export model results', 'model_results.csv', filter='CSV (*.csv)')
 
         if path[0]:
             self._main.tab3.exportTable(path[0])
@@ -379,32 +312,18 @@ class MainWindow(QMainWindow):
 
         Action is only taken if a file is selected and opened using the file
         dialog. The importFile method is run, and the dataLoaded flag is set to
-        True afterwards.The run estimation button on tab 1 is disabled, later
-        enabled in a separate function when symbolic calculations are complete.
-        The symbolicComplete flag is set to false before running the symbolic
-        calculations.
+        True afterwards.
         """
         # default location is datasets directory
         files = QFileDialog.getOpenFileName(self, "Open profile", "datasets",
                                             filter=("Data Files (*.csv *.xls *.xlsx)"))
         # if a file was loaded
         if files[0]:
-            # self._main.tab1.sideMenu.runButton.setDisabled(True)
-
-            # self.symbolicComplete = False   # reset flag, need to run symbolic
-                                            # functions before estimation
             self.data.importFile(files[0])  # imports loaded file
             self.dataLoaded = True
             log.info("Data loaded from %s", files[0])
             self.importFileSignal.emit()    # emits signal that file was
                                             # imported successfully
-
-            ## NO LONGER RUN SYMBOLIC AS SOON AS DATA IS IMPORTED
-            ## CAN ADD THIS FUNCTIONALITY BACK LATER IF NECESSARY
-
-            # self.runSymbolic()
-            self.symbolicComplete = True    # temporary, while initial symbolic functions
-                                            # are not run
 
     def importFile(self):
         """Sets UI elements with imported data.
@@ -441,28 +360,10 @@ class MainWindow(QMainWindow):
 
         # # clear figures
         # self.ax2.clear()
-        
+
         # self.setDataView("view", self.dataViewIndex)
 
-        self.changeSheet(self.dataViewIndex)
-
-    def runSymbolic(self):
-        """Initiates symbolic calculations that run on SymbolicThread.
-
-        Called when data imported. Symbolic calculations performed for all
-        models. Creates lambda function for LLF for combination of all
-        covariates.
-        """
-        self.symbolicThread = SymbolicThread(models.modelList, self.data, self.config)
-        self.symbolicThread.symbolicSignal.connect(self.onSymbolicComplete)
-        self.symbolicThread.start()
-
-    def onSymbolicComplete(self):
-        """Sets symbolicComplete flag, emables tab 1 run estimation button."""
-        log.info("ENTERING runSymbolic FUNCTION")
-        self.symbolicComplete = True
-        log.info("Symbolic calculations completed.")
-        self._main.tab1.sideMenu.runButton.setEnabled(True)
+        # self.changeSheet(self.dataViewIndex)
 
     def redrawPlot(self, tabNumber):
         """Redraws plot for the provided tab number.
@@ -521,6 +422,7 @@ class MainWindow(QMainWindow):
             index: Index (int) that determines which plot type, trend test, or
                 sheet to display. Dependent on viewType.
         """
+
         # enable/disable confidence level spin box
         if self.data.getData() is not None:
             if viewType == "view":
@@ -568,49 +470,55 @@ class MainWindow(QMainWindow):
         self.redrawPlot(1)
         self.redrawPlot(2)
 
-    # def setTrendTest(self, index):
-    #     """Sets the tab 1 plot to specified trend test.
 
-    #     Args:
-    #         index: Which trend test to generate a plot for, where 0 is Laplace
-    #             and 1 is a running arithmetic average.
-    #     """
-    #     trendTest = list(self.trendTests.values())[index]()
-    #     trendData = trendTest.run(self.data.getData())
-    #     self.plotSettings.plotType = "step"  # want step plot for trend tests
-    #     self.ax = self.plotSettings.generatePlot(self.ax, trendData['X'],
-    #                                              trendData['Y'],
-    #                                              title=trendTest.name,
-    #                                              xLabel=trendTest.xAxisLabel,
-    #                                              yLabel=trendTest.yAxisLabel)
-    #     # add additional horizontal lines for confidence levels
-    #     if self.dataLoaded and trendTest.name == "Laplace Trend Test":
-    #         # enable spin box
-    #         self._main.tab1.sideMenu.confidenceSpinBox.setEnabled(True)
 
-    #         # add dotted lines, these don't change
-    #         PlotSettings.addLaplaceLines(self.ax, self._main.tab1.sideMenu.confidenceSpinBox.value())
 
-    #         # add line indicating user-specified confidence level
-    #         # when Laplace plot first shown, use the current value of spinbox
-    #         # PlotSettings.addSpecifiedConfidenceLine(self.ax, self._main.tab1.sideMenu.confidenceSpinBox.value())
 
-    #     elif trendTest.name == "Running Arithmetic Average":
-    #         self._main.tab1.sideMenu.confidenceSpinBox.setDisabled(True)
-                                    
-    #     self.redrawPlot(1)  # need to re-draw figure
 
-    # def updateLaplaceConfidencePlot(self, confidence):
-    #     """Updates confidence line on Laplace trend test plot in tab 1.
 
-    #     Args:
-    #         confidence: Confidence level of the Laplace trend test, determines
-    #             where horizontal line is drawn.
-    #     """
-    #     if self.dataLoaded:
-    #         # update line indicating user-specified confidence level
-    #         PlotSettings.updateConfidenceLine(self.ax, confidence)
-    #         self.redrawPlot(1)  # need to re-draw figure
+
+
+
+
+    def create_plots(self):
+        # initial
+
+
+        # after model fitting
+        # create lines for each model
+
+        lines = []
+        for i in range(len(models)):
+            # - create the line -
+            line = x
+            lines.append(line)
+
+
+
+        # when selection changes:
+        ## detect differences
+        # add/remove lines depending on differences
+
+
+
+
+
+        # store matplotlib axes objects for tabs 1 and 2
+        # each is a dictionary, with one value corresponding to
+        # MVF plot, the other the intensity plot
+        self.ax = {}
+        self.ax2 = {}
+
+        # when data is loaded (?)
+        # create and store all plots
+        self.ax['MVF']
+        self.ax['Intensity']
+        self.ax2['MVF']
+        self.ax2['Intensity']
+
+
+
+
 
     def createMVFPlot(self, dataframe):
         """Creates MVF plots for tabs 1 and 2.
@@ -625,10 +533,6 @@ class MainWindow(QMainWindow):
 
         # save previous plot type, always want observed data to be step plot
         previousPlotType = self.plotSettings.plotType
-
-        ## disable trend tests when displaying imported data
-        # self._main.tab1.sideMenu.testSelect.setDisabled(True)
-        # self._main.tab1.sideMenu.confidenceSpinBox.setDisabled(True)
 
         # tab 1 plot
         self.plotSettings.plotType = "step"
@@ -887,7 +791,7 @@ class MainWindow(QMainWindow):
                                                                 # only added when calculations complete
             self._main.tab3.sideMenu.modelListWidget.clear()
             self._main.tab4.sideMenu.modelListWidget.clear()
-            self.computeWidget = ComputeWidget(modelsToRun, metricNames, self.data, self.config)
+            self.computeWidget = ComputeWidget(modelsToRun, metricNames, self.data)
             # DON'T WANT TO DISPLAY RESULTS IN ANOTHER WINDOW
             # WANT TO DISPLAY ON TAB 2/3
             self.computeWidget.results.connect(self.onEstimationComplete)   # signal emitted when estimation complete
@@ -1054,7 +958,7 @@ class MainWindow(QMainWindow):
                 if model.metricNames not in metricNames:
                     metricNames.append(model.metricNames)
 
-            self.psse_thread = PSSEThread(modelsToRun, metricNames, self.data, fraction, self.config)
+            self.psse_thread = PSSEThread(modelsToRun, metricNames, self.data, fraction)
             self.psse_thread.results.connect(self.onPSSEComplete)   # signal emitted when estimation complete
             self.psse_thread.start()
 

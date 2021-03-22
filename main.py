@@ -25,11 +25,8 @@ import logging as log  # to handle debug output
 import sys
 
 from PyQt5.QtWidgets import QApplication  # for UI
-# from PyQt5.QtCore import Qt  # for UI
 
 from ui.mainWindow import MainWindow
-
-# log = log.getLogger("ui.mainWindow")
 
 
 def main(debug):
@@ -38,9 +35,8 @@ def main(debug):
 
     Args
         debug: Boolean indicating if debug mode is active or not
-
     """
-    log.info("Starting Covariate Tool application.")
+    log.info("Starting C-SFRAT.")
     app = QApplication(sys.argv)
     mainWindow = MainWindow(debug)
     sys.exit(app.exec_())

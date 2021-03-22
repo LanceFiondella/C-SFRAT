@@ -5,7 +5,7 @@ import logging as log
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, \
                             QGroupBox, QListWidget, QAbstractItemView, \
                             QSpinBox, QDoubleSpinBox, QScrollArea, QLabel, \
-                            QFormLayout, QHeaderView
+                            QFormLayout, QHeaderView, QMessageBox
 from PyQt5.QtCore import pyqtSignal
 
 import pandas as pd
@@ -15,7 +15,7 @@ import numpy as np
 import csv
 
 # Local imports
-from ui.commonWidgets import PlotAndTable#, PlotWidget
+from ui.commonWidgets import PlotAndTable
 from ui.tab3 import Tab3, SideMenu3
 from core.dataClass import PandasModel
 
@@ -36,20 +36,12 @@ class Tab2(QWidget):
         horizontalLayout = QHBoxLayout()       # main layout
         self.sideMenu = SideMenu2()
         horizontalLayout.addLayout(self.sideMenu, 15)
-        # self.plot = PlotWidget()
-        # horizontalLayout.addWidget(self.plot, 85)
         self.plotAndTable = PlotAndTable("Plot", "Table")
         self._setupTable()
         horizontalLayout.addWidget(self.plotAndTable, 85)
         self.setLayout(horizontalLayout)
 
-    def _setupTable(self):
-        # header = self.plotAndTable.tableWidget.horizontalHeader()
-        # header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        # # provides bottom border for header
-        # stylesheet = "::section{Background-color:rgb(250,250,250);}"
-        # header.setStyleSheet(stylesheet)
-        
+    def _setupTable(self):        
         self.column_names = ["Interval"]
         self.df = pd.DataFrame(columns=self.column_names)
         self.table_model = PandasModel(self.df)
@@ -122,27 +114,36 @@ class Tab2(QWidget):
         Export table to csv
         """
         # TODO:
-        # permission error (if file is open, etc.)
-        # export other tables
         # export to excel?
-        # stream writing vs line by line (?), not sure which is better/faster
+        # stream writing vs line by line (?), unsure which is better/faster
 
         # https://stackoverflow.com/questions/57419547/struggling-to-export-csv-data-from-qtablewidget
         # https://stackoverflow.com/questions/27353026/qtableview-output-save-as-csv-or-txt
-        with open(path, 'w', newline='') as stream:
-            writer = csv.writer(stream)
-            writer.writerow(self.column_names)
-            for row in range(self.table_model.rowCount()):
-                rowdata = []
-                for column in range(self.table_model.columnCount()):
-                    # print(self.table_model.data(column))
-                    item = self.table_model._data.iloc[row][column]
-                    if item is not None:
-                        # rowdata.append(unicode(item.text()).encode('utf8'))
-                        rowdata.append(str(item))
-                    else:
-                        rowdata.append('')
-                writer.writerow(rowdata)
+
+        try:
+            with open(path, 'w', newline='') as stream:
+                writer = csv.writer(stream)
+                writer.writerow(self.column_names)
+                for row in range(self.table_model.rowCount()):
+                    rowdata = []
+                    for column in range(self.table_model.columnCount()):
+                        # print(self.table_model.data(column))
+                        item = self.table_model._data.iloc[row][column]
+                        if item is not None:
+                            # rowdata.append(unicode(item.text()).encode('utf8'))
+                            rowdata.append(str(item))
+                        else:
+                            rowdata.append('')
+                    writer.writerow(rowdata)
+
+        except PermissionError:
+            log.warning("File permission denied.")
+            msgBox = QMessageBox()
+            msgBox.setIcon(QMessageBox.Warning)
+            msgBox.setText("File permission denied")
+            msgBox.setInformativeText("If there is a file with the same name ensure that it is closed.")
+            msgBox.setWindowTitle("Warning")
+            msgBox.exec_()
 
 
 class SideMenu2(QVBoxLayout):
@@ -225,7 +226,6 @@ class SideMenu2(QVBoxLayout):
 
         self.effortScrollArea = QScrollArea()
         self.effortScrollArea.setWidgetResizable(True)
-        # self.effortScrollArea.resize(300, 300)
         self.effortScrollArea.setWidget(self.scrollWidget)
 
         self.effortSpinBoxDict = {}
@@ -293,31 +293,6 @@ class SideMenu2(QVBoxLayout):
                 if child.widget():
                     # delete widget
                     child.widget().deleteLater()
-
-        # for i in reversed(range(layout.count())):
-        #     print(i)
-        #     layout.itemAt(i).widget().setParent(None)
-
-        # if layout is not None:
-        #     while layout.count():
-        #         item = layout.takeAt(0)
-        #         widget = item.widget()
-        #         if widget is not None:
-        #             widget.deleteLater()
-        #         else:
-        #             self.clearLayout(item.layout())
-
-    # def setupEffortList(self, covariates):
-    #     """
-    #     covariates is list of covariate names
-    #     """
-    #     num_cov = len(covariates)
-    #     # self.effortScrollArea.clear()
-    #     self.effortSpinBoxList.clear()
-    #     for i in range(num_cov):
-    #         effortSpinBox = QDoubleSpinBox()
-    #         self.effortSpinBoxList.append(effortSpinBox)
-    #         self.effortScrollArea.add(effortSpinBox)
 
     def _emitModelChangedSignal(self):
         """Emits signal when model list widget selection changed.
