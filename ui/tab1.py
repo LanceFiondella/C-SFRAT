@@ -10,6 +10,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 # Local imports
 import models
 from ui.commonWidgets import PlotAndTable
+from core.dataClass import PandasModel
 
 
 class Tab1(QWidget):
@@ -37,6 +38,10 @@ class Tab1(QWidget):
         horizontalLayout.addWidget(self.plotAndTable, 85)
 
         self.setLayout(horizontalLayout)
+
+    def updateTable(self, data):
+        model = PandasModel(data)
+        self.plotAndTable.tableWidget.setModel(model)
 
 
 class SideMenu1(QVBoxLayout):

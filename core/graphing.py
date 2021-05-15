@@ -2,7 +2,7 @@ from PyQt5 import QtGui
 from PyQt5 import QtCore
 
 import pyqtgraph as pg
-import logging as log
+#import logging as log
 
 
 class PlotWidget(pg.PlotWidget):

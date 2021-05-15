@@ -368,9 +368,11 @@ class MainWindow(QMainWindow):
         """
         self.data.currentSheet = index      # store
         self.data.max_interval = self.data.n
-        self._main.tab1.sideMenu.updateSlider(self.data.n)        
+        self._main.tab1.sideMenu.updateSlider(self.data.n)
 
         self.createPlots()
+
+        self._main.tab1.updateTable(self.data.getData())
 
         # display either MVF or intensity plots, depending on what is currently selected
         self._main.tab1.plotAndTable.plotWidget.changePlotType(self.plotViewIndex)
@@ -541,6 +543,9 @@ class MainWindow(QMainWindow):
             # enable failure spin box
             self._main.tab2.sideMenu.failureSpinBox.setEnabled(True)
 
+            # tab 2 table shows MVF
+            self._main.tab2.setTableModel(0)
+
     def setIntensityView(self):
         """Sets all plots to intensity view."""
         self.plotViewIndex = 1
@@ -557,6 +562,9 @@ class MainWindow(QMainWindow):
             self._main.tab2.sideMenu.failureSpinBox.setDisabled(True)
             # enable intensity spin box
             self._main.tab2.sideMenu.reliabilitySpinBox.setEnabled(True)
+
+            # tab 2 table shows intensity
+            self._main.tab2.setTableModel(1)
 
     def changePlot2AndUpdateComparisonTable(self, selectedModels):
         # Access Selected Items
@@ -588,10 +596,11 @@ class MainWindow(QMainWindow):
 
         self.updateComparisonTable(selectedNums, selectedNames)
 
-        # self.updateUI()
-
         self._main.tab2.plotAndTable.plotWidget.updateLines(selectedNames)
-        self._main.tab2.updateTable(self.estimationResults, self.plotViewIndex)
+
+        # pass selected nums to tab 2 tableView
+        # this way, we can show/hide columns depending on what is selected
+        self._main.tab2.updateTableView(selectedNums)
 
         self.selectedModelNames = selectedNames
 
@@ -709,6 +718,7 @@ class MainWindow(QMainWindow):
         # show which models didn't converge
         # self._main.tab2.sideMenu.addNonConvergedModels(nonConvergedNames)
 
+        self._main.tab2.updateModel(self.estimationResults)
 
         self._main.tab3.updateModel(self.estimationResults)   # add converged results to model containing all result data
         self._main.tab3.sideMenu.addSelectedModels(convergedNames)  # add models to tab 3 list
@@ -777,20 +787,19 @@ class MainWindow(QMainWindow):
 
     def updatePredictionPlotMVF(self):
         if self.estimationComplete:
-
-
             # TEMPORARY
             # for displaying predictions in tab 2 table
             prediction_list = [0]
             model_name_list = ["Interval"]
 
 
-            for key, model in self.estimationResults.items():
-                # add line for model if selected
-                # model = self.estimationResults[modelName]
+            # check if prediction is specified
+            if self._main.tab2.sideMenu.failureSpinBox.value() > 0:
 
-                # check if prediction is specified
-                if self._main.tab2.sideMenu.failureSpinBox.value() > 0:
+                for key, model in self.estimationResults.items():
+                    # add line for model if selected
+                    # model = self.estimationResults[modelName]
+                
                     x, mvf_array = self.runPredictionMVF(model, self._main.tab2.sideMenu.failureSpinBox.value())
                     # self.plotSettings.addLine(self.ax2, x, mvf_array, modelName)
                     self._main.tab2.plotAndTable.plotWidget.updateLineMVF(key, x, mvf_array)
@@ -801,47 +810,63 @@ class MainWindow(QMainWindow):
                     prediction_list[0] = x
                     prediction_list.append(mvf_array)
                     model_name_list.append(model.combinationName)
-                    self._main.tab2.updateTable_prediction(prediction_list, model_name_list, 0)
-
-
-
-                else:
+                    
+            else:
+                # set plot and table back to model with no predictions
+                for key, model in self.estimationResults.items():
                     self._main.tab2.plotAndTable.plotWidget.updateLineMVF(key, model.t, model.mvf_array)
 
+                    prediction_list[0] = model.t
+                    prediction_list.append(model.mvf_array)
+                    model_name_list.append(model.combinationName)
+
+            # 0 indicates MVF
+            self._main.tab2.updateTable_prediction(prediction_list, model_name_list, 0)
 
 
     def updatePredictionPlotIntensity(self):
         if self.estimationComplete:
-
-
             # TEMPORARY
             # for displaying predictions in tab 2 table
             prediction_list = [0]
             model_name_list = ["Interval"]
+            max_x = 0
 
+            # check if prediction is specified
+            if self._main.tab2.sideMenu.reliabilitySpinBox.value() > 0.0:
 
-            for key, model in self.estimationResults.items():
-                # add line for model if selected
-                # model = self.estimationResults[modelName]
-
-                # check if prediction is specified
-                if self._main.tab2.sideMenu.reliabilitySpinBox.value() > 0.0:
+                for key, model in self.estimationResults.items():
+                    # add line for model if selected
+                    # model = self.estimationResults[modelName]
+                
                     x, intensity_array, interval = self.runPredictionIntensity(model, self._main.tab2.sideMenu.reliabilitySpinBox.value())
                     # self.plotSettings.addLine(self.ax2, x, mvf_array, modelName)
                     self._main.tab2.plotAndTable.plotWidget.updateLineIntensity(key, x, intensity_array)
 
 
-
-
                     ## TABLE
-                    # TEMPORARY
-                    prediction_list[0] = x
+                    # make sure we don't get NaN for interval column
+                    # otherwise, if the last combination does not have the most intervals,
+                    # then the remaining values of the interval column will be NaN since
+                    # they were not defined
+                    if len(x) > max_x:
+                        prediction_list[0] = x
+                        max_x = len(x)
+
                     prediction_list.append(intensity_array)
                     model_name_list.append(model.combinationName)
-                    self._main.tab2.updateTable_prediction(prediction_list, model_name_list, 1)
-
-                else:
+                    
+            else:
+                for key, model in self.estimationResults.items():
                     self._main.tab2.plotAndTable.plotWidget.updateLineIntensity(key, model.t, model.intensityList)
+
+                    prediction_list[0] = model.t
+                    prediction_list.append(model.intensityList)
+                    model_name_list.append(model.combinationName)
+
+
+            # 1 indicates intensity
+            self._main.tab2.updateTable_prediction(prediction_list, model_name_list, 1)
 
 
     def runPredictionMVF(self, model, failures):

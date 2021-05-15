@@ -413,3 +413,26 @@ class ProxyModel(QtCore.QSortFilterProxyModel):
 
     def sort(self, Ncol, order):
         self.sourceModel().sort(Ncol, order)
+
+class ProxyModel2(QtCore.QSortFilterProxyModel):
+    """
+    Tab 2 table, need to filter columns
+    Re-implement QSortFilterProxyModel to implement sorting by float/int
+    """
+    def __init__(self, parent=None):
+        QtCore.QSortFilterProxyModel.__init__(self, parent)
+
+    def sort(self, Ncol, order):
+        self.sourceModel().sort(Ncol, order)
+
+    def filterAcceptsColumn(self, source_column, source_parent):
+        """
+        source_column: int representing column index
+        source_parent:
+        """
+        # print(self.sourceModel()._data.columns[0])
+
+        if self.sourceModel()._data.columns[source_column]:
+            return True
+        else:
+            return False

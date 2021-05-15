@@ -17,7 +17,7 @@ import csv
 # Local imports
 from ui.commonWidgets import PlotAndTable
 from ui.tab3 import Tab3, SideMenu3
-from core.dataClass import PandasModel
+from core.dataClass import PandasModel, ProxyModel2
 
 
 class Tab2(QWidget):
@@ -38,52 +38,103 @@ class Tab2(QWidget):
         horizontalLayout.addLayout(self.sideMenu, 15)
         self.plotAndTable = PlotAndTable("Plot", "Table")
         self._setupTable()
+        # self.font = QFont()     # allows table cells to be bold
+        # self.font.setBold(True)
         horizontalLayout.addWidget(self.plotAndTable, 85)
         self.setLayout(horizontalLayout)
 
-    def _setupTable(self):        
-        self.column_names = ["Interval"]
-        self.df = pd.DataFrame(columns=self.column_names)
-        self.table_model = PandasModel(self.df)
-        self.plotAndTable.tableWidget.setModel(self.table_model)
+    #####################
 
-    def updateTable(self, results, dataViewIndex):
-        # list with number of columns equal to number of results selected
-        fc_list = []
+    def _setupTable(self):
+        self.column_names = ["Interval"]
+
+        # need separate dataframes for MVF and intensity values
+        self.dataframeMVF = pd.DataFrame(columns=self.column_names)
+        self.dataframeIntensity = pd.DataFrame(columns=self.column_names)
+
+        # need separate models for MVF and intensity values
+        self.modelMVF = PandasModel(self.dataframeMVF)
+        self.modelIntensity = PandasModel(self.dataframeIntensity)
+
+        # tableWidget is a table view
+        self.plotAndTable.tableWidget.setSortingEnabled(True)
+        header = self.plotAndTable.tableWidget.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        # provides bottom border for header
+        stylesheet = "::section{Background-color:rgb(250,250,250);}"
+        header.setStyleSheet(stylesheet)
+
+        # proxy model used for sorting and filtering rows
+        self.proxyModel = ProxyModel2()
+        self.proxyModel.setSourceModel(self.modelMVF)
+
+        # self.plotAndTable.tableWidget.setModel(self.tableModel)
+        self.plotAndTable.tableWidget.setModel(self.proxyModel)
+
+    def updateTableView(self, comboNums):
+        """
+        Called when model selection changes, or weighting changes.
+        """
+
+        self.filterByIndex(comboNums)
+        self.plotAndTable.tableWidget.model().layoutChanged.emit()
+
+    def filterByIndex(self, comboNums):
+        """
+        Applies filter to table model, showing only selected fitted models.
+        """
+        # skip 0, always want intervals column
+        for i in range(1, self.proxyModel.columnCount()):
+            if str(i) in comboNums:
+                # model/metric combo selected, show the column
+                self.plotAndTable.tableWidget.setColumnHidden(i, False)
+            else:
+                # not selected, hide column
+                self.plotAndTable.tableWidget.setColumnHidden(i, True)
+
+    def updateModel(self, results):
+        """
+        Call whenever model fitting is run
+        Model always contains all result data
+        """
+
+        # lists with number of columns equal to number of combinations in results
+        mvf_list = []
+        intensity_list = []
 
         # first column is always intervals
         # get from first value in dictionary, so we don't need to know the key
         column_names = ["Interval"]
-        if len(results) > 0:
-            fc_list.append(list(results.values())[0].t)
+        mvf_list.append(list(results.values())[0].t)
+        intensity_list.append(list(results.values())[0].t)
 
-            # if MVF view
-            if dataViewIndex == 0:
-                # iterate over selected models
-                # store intensity values and names
-                for key, model in results.items():
-                    fc_list.append(model.mvf_array)
-                    column_names.append(key)
+        # temp data frame, need to transpose afterward
 
-            # if intensity view
-            if dataViewIndex == 1:
-                # iterate over selected models
-                # store intensity values and names
-                for key, model in results.items():
-                    fc_list.append(model.intensityList)
-                    column_names.append(key)
 
-            row_df = pd.DataFrame(fc_list)
+        ## MVF
+        # iterate over selected models
+        # store intensity values and names
+        for key, model in results.items():
+            mvf_list.append(model.mvf_array)
+            intensity_list.append(model.intensityList)
+            column_names.append(key)
 
-            # need to transpose dataframe, otherwise rows and columns are swapped
-            df = row_df.transpose()
-            df.columns = column_names
-            
-        else:
-            df = pd.DataFrame(columns=["Interval"])
+        temp_df = pd.DataFrame(mvf_list)
+        self.dataframeMVF = temp_df.transpose()
+        self.dataframeMVF.columns = column_names
+        self.modelMVF.setAllData(self.dataframeMVF)
+
+        temp_df = pd.DataFrame(intensity_list)
+        self.dataframeIntensity = temp_df.transpose()
+        self.dataframeIntensity.columns = column_names
+        self.modelIntensity.setAllData(self.dataframeIntensity)
+
+        # need to transpose dataframe, otherwise rows and columns are swapped
+        # df = row_df.transpose()
+        # df.columns = column_names
 
         self.column_names = column_names
-        self.table_model.setAllData(df)
+
         self.plotAndTable.tableWidget.model().layoutChanged.emit()
 
     def updateTable_prediction(self, prediction_list, model_names, dataViewIndex):
@@ -106,7 +157,31 @@ class Tab2(QWidget):
             df = pd.DataFrame(columns=["Interval"])
 
         self.column_names = model_names
-        self.table_model.setAllData(df)
+
+        # remove NaN values from dataframe
+        df.fillna("-", inplace=True)
+
+        # MVF view
+        if dataViewIndex == 0:
+            self.modelMVF.setAllData(df)
+        # intensity view
+        if dataViewIndex == 1:
+            self.modelIntensity.setAllData(df)
+
+        self.plotAndTable.tableWidget.model().layoutChanged.emit()
+
+    def setTableModel(self, dataViewIndex):
+        """
+        Changes table view current model
+
+        dataViewIndex: 0 is MVF, 1 is intensity
+        """
+
+        if dataViewIndex == 0:
+            self.proxyModel.setSourceModel(self.modelMVF)
+        elif dataViewIndex == 1:
+            self.proxyModel.setSourceModel(self.modelIntensity)
+
         self.plotAndTable.tableWidget.model().layoutChanged.emit()
 
     def exportTable(self, path):
@@ -124,11 +199,11 @@ class Tab2(QWidget):
             with open(path, 'w', newline='') as stream:
                 writer = csv.writer(stream)
                 writer.writerow(self.column_names)
-                for row in range(self.table_model.rowCount()):
+                for row in range(self.tableModel.rowCount()):
                     rowdata = []
-                    for column in range(self.table_model.columnCount()):
-                        # print(self.table_model.data(column))
-                        item = self.table_model._data.iloc[row][column]
+                    for column in range(self.tableModel.columnCount()):
+                        # print(self.tableModel.data(column))
+                        item = self.tableModel._data.iloc[row][column]
                         if item is not None:
                             # rowdata.append(unicode(item.text()).encode('utf8'))
                             rowdata.append(str(item))
