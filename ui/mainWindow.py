@@ -644,7 +644,6 @@ class MainWindow(QMainWindow):
         # ******* NEED TO CLEAR PLOTS AND TABLES *******
 
 
-
         if self.data:
             self.estimationComplete = False # estimation not complete since it just started running
             self.psseComplete = False       # must re-run PSSE after fitting new models
@@ -674,8 +673,11 @@ class MainWindow(QMainWindow):
         self.estimationComplete = True
         self.estimationResults = results
 
+        # run PSSE on data along with model fitting
+        self.runPSSE(self._main.tab3.sideMenu.psseParameterSpinBox.value())
+
         self._main.tab1.sideMenu.runButton.setEnabled(True)  # re-enable button, can run another estimation
-        self._main.tab3.sideMenu.psseButton.setEnabled(True)    # enable PSSE button now that we have fitted models
+        # self._main.tab3.sideMenu.psseButton.setEnabled(True)    # enable PSSE button now that we have fitted models
         self._main.tab4.sideMenu.allocation1Button.setEnabled(True)     # re-enable allocation buttons, can't run
         self._main.tab4.sideMenu.allocation2Button.setEnabled(True)     # if estimation not complete
 

@@ -159,7 +159,7 @@ class Tab2(QWidget):
         self.column_names = model_names
 
         # remove NaN values from dataframe
-        df.fillna("-", inplace=True)
+        df.fillna("", inplace=True)
 
         # MVF view
         if dataViewIndex == 0:
