@@ -301,14 +301,6 @@ class SideMenu3(QVBoxLayout):
         psseLayout = QVBoxLayout()
         topLayout = QHBoxLayout()
 
-        # # !! slider has no function currently
-        # self.psseSlider = QSlider(Qt.Horizontal)
-        # self.psseSlider.setValue(90)
-        # # self.psseLineEdit = QLineEdit()
-        # # self.psseLineEdit.setValidator(QIntValidator())
-        # # self.psseLineEdit.setMaxLength(2)
-        # # self.psseLineEdit.setText("90")
-
         self.psseParameterSpinBox = QDoubleSpinBox()
         self.psseParameterSpinBox.setDecimals(2)
         self.psseParameterSpinBox.setMinimum(0.01)
@@ -316,7 +308,6 @@ class SideMenu3(QVBoxLayout):
         self.psseParameterSpinBox.setValue(0.9)
         self.psseParameterSpinBox.setSingleStep(0.01)
 
-        # topLayout.addWidget(self.psseSlider, 9)
         topLayout.addWidget(self.psseParameterSpinBox, 1)
 
         self.psseButton = QPushButton("Run")

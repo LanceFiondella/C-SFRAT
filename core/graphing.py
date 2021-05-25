@@ -112,14 +112,6 @@ class PlotWidget(pg.PlotWidget):
 
         pen = pg.mkPen((255, 0, 0), width=2, style=QtCore.Qt.DashLine)
 
-        # self.verticalLine1.setPen(self.penVerticalLine)
-        # self.verticalLine2.setPen(self.penVerticalLine)
-
-        
-
-        # self.mvfPlotItem.addItem(self.verticalLine1)
-        # self.intensityPlotItem.addItem(self.verticalLine2)
-
         self.verticalLine1 = pg.InfiniteLine(pos=self.lastXpoint, angle=90, pen=pen)
         self.verticalLine2 = pg.InfiniteLine(pos=self.lastXpoint, angle=90, pen=pen)
 
@@ -129,33 +121,22 @@ class PlotWidget(pg.PlotWidget):
         self.mvfPlotItem.addItem(self.verticalLine1)
         self.intensityPlotItem.addItem(self.verticalLine2)
 
-        # self.setPos(self.lastXpoint)
-
     def createVerticalLine(self):
         pen = pg.mkPen((255, 0, 0), width=0, style=QtCore.Qt.DashLine)
 
         self.verticalLine1 = pg.InfiniteLine(pos=self.lastXpoint, angle=90, pen=pen)
         self.verticalLine2 = pg.InfiniteLine(pos=self.lastXpoint, angle=90, pen=pen)
 
-        # self.mvfPlotItem.addItem(self.verticalLine1)
-        # self.intensityPlotItem.addItem(self.verticalLine2)
-
     def changePlotType(self, plotViewIndex):
         self.clear()
         # MVF
         if plotViewIndex == 0:
-            # self.plotViewIndex = 0
-            # self.addItem(self.mvfPlotDataItem)
             self.plotItem = self.mvfPlotItem
             self.setCentralItem(self.plotItem)
         # intensity
         elif plotViewIndex == 1:
-            # self.plotViewIndex = 1
-            # self.addItem(self.intensityPlotDataItem)
             self.plotItem = self.intensityPlotItem
             self.setCentralItem(self.plotItem)
-
-    ## for tab 2 plot
 
     def createLines(self, results):
         """
@@ -176,7 +157,6 @@ class PlotWidget(pg.PlotWidget):
         self.currentLines.clear()
 
         for key, model in results.items():
-            # self.pen.setColor(self.plotColor.nextColor())
             color = self.plotColor.nextColor()
             pen = pg.mkPen(color, width=3)
             symbolBrush = pg.mkBrush(color)
@@ -342,7 +322,7 @@ class PlotColor:
     @index.setter
     def index(self, i):
         self._index = i % len(PlotColor.colors)
-    
+
     def nextColor(self):
         color = PlotColor.colors[self.index]
         self.index += 1

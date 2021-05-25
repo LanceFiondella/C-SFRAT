@@ -322,7 +322,7 @@ class Model(ABC):
         log.info("Calculated SSE: %s", self.sseVal)
 
     def calcOmega(self, h, betas, covariate_data):
-        # can clean this up to use less loops, probably
+        # can likely use fewer loops
         prodlist = []
         for i in range(self.n):
             sum1 = 1

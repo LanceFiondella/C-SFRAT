@@ -15,36 +15,9 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas, \
                                     NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
-import logging as log
-
 from core.graphing import PlotWidget
 from core.prediction import prediction_psse
 from core.goodnessOfFit import PSSE
-
-
-# class PlotWidget(QWidget):
-#     """Widget containing a plot and toolbar.
-
-#     Attributes:
-#         figure: Matplotlib Figure object, containing all plot elements.
-#         plotFigure: Matplotlib FigureCanvas object containing plot figure and
-#             navigation toolbar.
-#     """
-
-#     def __init__(self):
-#         """Initializes plot widget"""
-#         super().__init__()
-#         self.setupPlot()
-
-#     def setupPlot(self):
-#         """Create canvas containing plot and navigation toolbar."""
-#         plotLayout = QVBoxLayout()
-#         self.figure = Figure(tight_layout={"pad": 2.0})
-#         self.plotFigure = FigureCanvas(self.figure)
-#         toolbar = NavigationToolbar(self.plotFigure, self)
-#         plotLayout.addWidget(self.plotFigure, 1)
-#         plotLayout.addWidget(toolbar)
-#         self.setLayout(plotLayout)
 
 
 class PlotAndTable(QTabWidget):
@@ -88,13 +61,11 @@ class PlotAndTable(QTabWidget):
         self.tableWidget.setEditTriggers(QTableWidget.NoEditTriggers)     # make cells unable to be edited
         self.tableWidget.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
                                                                     # column width fit to contents
-        # self.tableWidget.setSortingEnabled(True)
 
         self.addTab(self.tableWidget, tableTabLabel)
 
 #Temporary Test
 ###########################################################
-
 
 class TableTabs(QTabWidget):
 
@@ -140,8 +111,6 @@ class TableTabs(QTabWidget):
         self.addTab(self.failureTab, table2Label)
 
 #############################################################
-
-
 
 class ComputeWidget(QWidget):
     """Handles running estimation, showing progress on separate window.
@@ -278,8 +247,8 @@ class TaskThread(QThread):
                 runName = "{0} ({1})".format(m.shortName, metricNames)  # "Model (Metric1, Metric2, ...)"
                 self.nextCalculation.emit(runName)
 
-                ## THIS IS WHERE SUBSETS OF COVARIATE DATA CAN BE PASSED
-                ## for now, just pass all
+                # THIS IS WHERE SUBSETS OF COVARIATE DATA CAN BE PASSED
+                # for now, just pass all
                 m.runEstimation(m.covariateData)
                 result[runName] = m
                 self.modelFinished.emit()
@@ -329,7 +298,6 @@ class PSSEThread(QThread):
 
         Called when thread is started.
         """
-
         result = {}
         for model in self._modelsToRun:
             for metricCombination in self._metricNames:
@@ -346,14 +314,12 @@ class PSSEThread(QThread):
                 # use shortened name
                 runName = "{0} ({1})".format(m.shortName, metricNames)  # "Model (Metric1, Metric2, ...)"
 
-                ## THIS IS WHERE SUBSETS OF COVARIATE DATA CAN BE PASSED
-                ## for now, just pass all
+                # THIS IS WHERE SUBSETS OF COVARIATE DATA CAN BE PASSED
+                # for now, just pass all
                 m.runEstimation(m.covariateData)
 
                 fitted_array = prediction_psse(m, self._data)
-
                 psse_val = PSSE(fitted_array, self._data.getData()['CFC'].values, m.n)
-
                 result[runName] = psse_val
 
         self.results.emit(result)

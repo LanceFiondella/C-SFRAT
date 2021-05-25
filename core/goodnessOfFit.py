@@ -11,7 +11,6 @@ class Comparison():
     """
     For comparison of model goodness-of-fit measures
     """
-
     def __init__(self):
         self.meanOut = None
         self.medianOut = None

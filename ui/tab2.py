@@ -9,7 +9,6 @@ from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, \
 from PyQt5.QtCore import pyqtSignal
 
 import pandas as pd
-import numpy as np
 
 # For exporting table to csv
 import csv
@@ -38,12 +37,8 @@ class Tab2(QWidget):
         horizontalLayout.addLayout(self.sideMenu, 15)
         self.plotAndTable = PlotAndTable("Plot", "Table")
         self._setupTable()
-        # self.font = QFont()     # allows table cells to be bold
-        # self.font.setBold(True)
         horizontalLayout.addWidget(self.plotAndTable, 85)
         self.setLayout(horizontalLayout)
-
-    #####################
 
     def _setupTable(self):
         self.column_names = ["Interval"]
@@ -75,7 +70,6 @@ class Tab2(QWidget):
         """
         Called when model selection changes, or weighting changes.
         """
-
         self.filterByIndex(comboNums)
         self.plotAndTable.tableWidget.model().layoutChanged.emit()
 
@@ -110,7 +104,6 @@ class Tab2(QWidget):
 
         # temp data frame, need to transpose afterward
 
-
         ## MVF
         # iterate over selected models
         # store intensity values and names
@@ -128,10 +121,6 @@ class Tab2(QWidget):
         self.dataframeIntensity = temp_df.transpose()
         self.dataframeIntensity.columns = column_names
         self.modelIntensity.setAllData(self.dataframeIntensity)
-
-        # need to transpose dataframe, otherwise rows and columns are swapped
-        # df = row_df.transpose()
-        # df.columns = column_names
 
         self.column_names = column_names
 
@@ -152,7 +141,7 @@ class Tab2(QWidget):
             # need to transpose dataframe, otherwise rows and columns are swapped
             df = row_df.transpose()
             df.columns = model_names
-            
+
         else:
             df = pd.DataFrame(columns=["Interval"])
 

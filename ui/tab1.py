@@ -245,7 +245,6 @@ class SideMenu1(QVBoxLayout):
 
         # if no models selected and/or no metrics selected, create message box
         # to display this warning
-
         elif self.modelListWidget.count() > 0 and self.metricListWidget.count() > 0:
             # data loaded but not selected
             log.warning("Must select at least one model.")

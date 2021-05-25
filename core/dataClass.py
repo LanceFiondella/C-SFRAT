@@ -54,7 +54,6 @@ class Data:
     def n(self):
         self._n = self.dataSet[self.sheetNames[self._currentSheet]]['FC'].size
         return self._n
-    
 
     @property
     def max_interval(self):
@@ -88,7 +87,6 @@ class Data:
             percentage: float between 0.0 and 1.0 indicating percentage of
                 data to return
         """
-
         intervals = math.floor(self.n * fraction)
 
         # need at least 5 data points

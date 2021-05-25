@@ -20,7 +20,6 @@ def prediction_mvf(model, failures, covariate_data, effortDict):
         combined_array = np.concatenate((covariate_data, np.array(new_array)), axis=1)
 
     newHazard = np.array([model.hazardNumerical(i, model.modelParameters) for i in range(model.n, total_points)])  # calculate new values for hazard function
-    # hazard = self.hazard_array + newHazard
     hazard = np.concatenate((model.hazard_array, newHazard))
 
 
@@ -39,22 +38,16 @@ def prediction_psse(model, data):
     """
 
     total_points = data.max_interval
-
     full_data = data.getData()
-
     covariateData = np.array([full_data[name] for name in model.metricNames])
-
     newHazard = np.array([model.hazardNumerical(i, model.modelParameters) for i in range(model.n, total_points)])  # calculate new values for hazard function
-    # hazard = self.hazard_array + newHazard
     hazard = np.concatenate((model.hazard_array, newHazard))
 
 
     ## VERIFY OMEGA VALUE, should we continue updating?
 
     omega = model.calcOmega(hazard, model.betas, covariateData)
-
     mvf_array = np.array([model.MVF(model.mle_array, omega, hazard, dataPoints, covariateData) for dataPoints in range(total_points)])
-
     return mvf_array
 
 def prediction_intensity(model, intensity, covariate_data, effortDict):
@@ -69,17 +62,13 @@ def prediction_intensity(model, intensity, covariate_data, effortDict):
             value = effortDict[cov].value()
             new_array.append(np.full(i, value))
             j += 1
-        print(new_array)
 
         if model.numCovariates == 0:
             combined_array = np.concatenate((covariate_data, np.array(new_array)))
         else:
             combined_array = np.concatenate((covariate_data, np.array(new_array)), axis=1)
 
-        print(combined_array)
-
         newHazard = np.array([model.hazardNumerical(j, model.modelParameters) for j in range(model.n, total_points)])  # calculate new values for hazard function
-        # hazard = self.hazard_array + newHazard
         hazard = np.concatenate((model.hazard_array, newHazard))
 
         ## VERIFY OMEGA VALUE, should we continue updating?
