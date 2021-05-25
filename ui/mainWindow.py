@@ -20,7 +20,6 @@ from ui.tab2 import Tab2
 from ui.tab3 import Tab3
 from ui.tab4 import Tab4
 from core.dataClass import Data
-from core.graphSettings import PlotSettings
 from core.allocation import EffortAllocation
 from core.goodnessOfFit import PSSE
 import core.prediction as prediction
@@ -37,9 +36,6 @@ class MainWindow(QMainWindow):
         _main: Instance of MainWidget class, contains widgets.
         debug: Boolean indicating if debug mode is active or not.
         data: Pandas dataframe containing imported data.
-        trendTests: A dict of trend test classes, indexed by class name as
-            string.
-        plotSettings: Instance of PlotSettings class, handles plotting.
         selectedModelNames: A list of selected model/metric combinations in
             tab 2 list widget.
         dataLoaded: Boolean flag indicating if data has been fully loaded from
@@ -96,28 +92,22 @@ class MainWindow(QMainWindow):
 
         # set data
         self.data = Data()
-        self.plotSettings = PlotSettings()
         self.selectedModelNames = []
 
         # flags
         self.dataLoaded = False
         self.estimationComplete = False
 
-        # tab 1 plot and table
-        self.ax = self._main.tab1.plotAndTable.figure.add_subplot(111)
-        # tab 2 plot and table
-        self.ax2 = self._main.tab2.plotAndTable.figure.add_subplot(111)
-
         # SIGNAL CONNECTIONS
         self.importFileSignal.connect(self.importFile)
-        self._main.tab1.sideMenu.viewChangedSignal.connect(self.setDataView)
+        self._main.tab1.sideMenu.sheetChangedSignal.connect(self.changeSheet)
         self._main.tab1.sideMenu.sliderSignal.connect(self.subsetData)
         # run models when signal is received
         self._main.tab1.sideMenu.runModelSignal.connect(self.runModels)
         self._main.tab2.sideMenu.modelChangedSignal.connect(self.changePlot2AndUpdateComparisonTable)
         # connect tab2 list changed to refreshing tab 2 plot
-        self._main.tab2.sideMenu.failureChangedSignal.connect(self.updateUI)
-        self._main.tab2.sideMenu.intensityChangedSignal.connect(self.updateUI)
+        self._main.tab2.sideMenu.failureChangedSignal.connect(self.updatePredictionPlotMVF)
+        self._main.tab2.sideMenu.intensityChangedSignal.connect(self.updatePredictionPlotIntensity)
         self._main.tab3.sideMenu.modelChangedSignal.connect(self.changePlot2AndUpdateComparisonTable)
         self._main.tab3.sideMenu.runPSSESignal.connect(self.runPSSE)
         self._main.tab3.sideMenu.spinBoxChangedSignal.connect(self.runGoodnessOfFit)
@@ -143,7 +133,9 @@ class MainWindow(QMainWindow):
         self.setGeometry(left, top, width, height)
         self.setMinimumSize(minWidth, minHeight)
         self.statusBar().showMessage("")
-        self.dataViewIndex = 0
+
+        # 0 indicates MVF plot, 1 indicates intensity plot
+        self.plotViewIndex = 0
 
         # setup font for entire application
         self.setStyleSheet("QWidget {font: 12pt Segoe}")
@@ -234,15 +226,15 @@ class MainWindow(QMainWindow):
         smooth = QAction("Smooth Plot (Fitted Models)", self, checkable=True)
         smooth.setShortcut("Ctrl+F")
         smooth.setStatusTip("Fitted model plot shows smooth curves")
-        smooth.triggered.connect(self.setSmoothLine)
+        smooth.setChecked(True)
+        smooth.triggered.connect(self.setSmoothPlot)
         lineStyle.addAction(smooth)
 
         # step
         step = QAction("Step Plot (Fitted Models)", self, checkable=True)
         step.setShortcut("Ctrl+D")
         step.setStatusTip("Fitted model plot shown as step")
-        step.setChecked(True)
-        step.triggered.connect(self.setStepLine)
+        step.triggered.connect(self.setStepPlot)
         lineStyle.addAction(step)
 
         # add actions to view menu
@@ -292,20 +284,6 @@ class MainWindow(QMainWindow):
 
         qApp.quit()
 
-    def exportTable2(self):
-        path = QFileDialog.getSaveFileName(self,
-            'Export model results', 'model_results.csv', filter='CSV (*.csv)')
-
-        if path[0]:
-            self._main.tab2.exportTable(path[0])
-
-    def exportTable3(self):
-        path = QFileDialog.getSaveFileName(self,
-            'Export model results', 'model_results.csv', filter='CSV (*.csv)')
-
-        if path[0]:
-            self._main.tab3.exportTable(path[0])
-
     #region Importing, plotting
     def fileOpened(self):
         """Opens file dialog; sets flags and emits signals if file loaded.
@@ -334,60 +312,14 @@ class MainWindow(QMainWindow):
         # clear sheet names from previous file
         self._main.tab1.sideMenu.sheetSelect.clear()
         # add sheet names from new file
-        self._main.tab1.sideMenu.sheetSelect.addItems(self.data.sheetNames)
+        self._main.tab1.sideMenu.addSheets(self.data.sheetNames)
         # add spin boxes to tab 2 for each covariate, used for prediction
         self._main.tab2.sideMenu.updateEffortList(self.data.metricNames)
-        # add spin boxes to tab 4 for covariate costs
-        # to be added...
-
-        # # reset status of tool
-        # self.estimationComplete = False # estimation not complete since it just started running
-        # self.psseComplete = False       # must re-run PSSE after fitting new models
-        # self.selectedModelNames = []    # clear selected models, since none are selected when new models are fitted
-        # # need to block signals so update signal doesn't fire when list widgets are cleared
-        # self._main.tab2.sideMenu.modelListWidget.blockSignals(True)
-        # self._main.tab3.sideMenu.modelListWidget.blockSignals(True)
-        # self._main.tab2.sideMenu.modelListWidget.clear()    # clear tab 2 list containing
-        #                                                     # previously computed models,
-        #                                                     # only added when calculations complete
-        # self._main.tab3.sideMenu.modelListWidget.clear()
-        # self._main.tab4.sideMenu.modelListWidget.clear()
-
-        # # clear tables/dataframes
-        # self._main.tab2.table_model.clear()    # clear tab 2 dataframe
-        # self._main.tab3.tableModel.clear()  # clear tab 3 dataframe
-        # self._main.tab4.table.setRowCount(0)
-
-        # # clear figures
-        # self.ax2.clear()
-
-        # self.setDataView("view", self.dataViewIndex)
-
-        # self.changeSheet(self.dataViewIndex)
-
-    def redrawPlot(self, tabNumber):
-        """Redraws plot for the provided tab number.
-
-        Args:
-            tabNumber: Tab number (int) that contains the figure to redraw.
-        """
-        if tabNumber == 1:
-            self._main.tab1.plotAndTable.figure.canvas.draw()
-        elif tabNumber == 2:
-            # rescale plot: https://stackoverflow.com/questions/10944621/dynamically-updating-plot-in-matplotlib
-            self.ax2.relim()
-            self.ax2.autoscale_view()
-            self._main.tab2.plotAndTable.figure.canvas.draw()
-
-    def subsetData(self, slider_value):
-        # minimum subset is 5 data points
-        if slider_value < 5:
-            self._main.tab1.sideMenu.slider.setValue(5)
-        self.data.max_interval = slider_value
-        self.updateUI()
+        self.changeSheet(0)     # always show first sheet when loaded
 
     def changeSheet(self, index):
         """Changes the current sheet displayed.
+        Handles data that needs to be changed when sheet changes.
 
         Args:
             index: The index of the sheet (int).
@@ -395,10 +327,31 @@ class MainWindow(QMainWindow):
         self.data.currentSheet = index      # store
         self.data.max_interval = self.data.n
         self._main.tab1.sideMenu.updateSlider(self.data.n)
-        # self.setDataView("view", self.dataViewIndex)
-        self.updateUI()
-        self.redrawPlot(1)
+
+        self.createPlots()
+
+        self._main.tab1.updateTable(self.data.getData())
+
+        # display either MVF or intensity plots, depending on what is currently selected
+        self._main.tab1.plotAndTable.plotWidget.changePlotType(self.plotViewIndex)
+        self._main.tab2.plotAndTable.plotWidget.changePlotType(self.plotViewIndex)
+
         self.setMetricList()
+
+    def createPlots(self):
+        """
+        Called when data is loaded. Creates step/bar plots displaying imported data.
+        """
+
+        # tab 1 plots
+        x = self.data.getData()['T']    # time vector
+        cfc = self.data.getData()['CFC']    # cumulative failure count vector
+        fc = self.data.getData()['FC']  # failure count vector
+
+        self._main.tab1.plotAndTable.plotWidget.createPlots(x, cfc, fc)
+
+        # tab 2 plots
+        self._main.tab2.plotAndTable.plotWidget.createPlots(x, cfc, fc)
 
     def setMetricList(self):
         """Updates tab 1 list widget with metric names on current sheet."""
@@ -409,298 +362,106 @@ class MainWindow(QMainWindow):
             log.info("%d covariate metrics on this sheet: %s", self.data.numCovariates,
                                                                self.data.metricNames)
 
-    def setDataView(self, viewType, index):
-        """Sets the data to be displayed.
+    def subsetData(self, slider_value):
+        # minimum subset is 5 data points
+        if slider_value < 5:
+            self._main.tab1.sideMenu.slider.setValue(5)
+        self.data.max_interval = slider_value
 
-        Called whenever a menu item is changed, or when trend test changed.
-        Three options for viewType: "view", "trend", or "sheet". The index
-        controls which option of the selected viewType is selected.
+        ## new max interval, getData returns subset
+        ## mvf plots
+        x = self.data.getData()['T']   # setData does not accept dataframes or np arrays for some reason
+        y_mvf = self.data.getData()['CFC']
+        y_intensity = self.data.getData()['FC']
 
-        Args:
-            viewType: String that determines if plot type, trend test, or sheet
-                is set.
-            index: Index (int) that determines which plot type, trend test, or
-                sheet to display. Dependent on viewType.
-        """
+        self._main.tab1.plotAndTable.plotWidget.subsetPlots(x, y_mvf, y_intensity)
+        self._main.tab2.plotAndTable.plotWidget.subsetPlots(x, y_mvf, y_intensity)
 
-        # enable/disable confidence level spin box
-        if self.data.getData() is not None:
-            if viewType == "view":
-                self.setRawDataView(index)
-                self.dataViewIndex = index
-            elif viewType == "trend":
-                self.setTrendTest(index)
-            elif viewType == "sheet":
-                self.changeSheet(index)
-            # self.viewType = viewType
-                # removed since it would change the sheet displayed when
-                # changing display settings
-
-    def setRawDataView(self, index):
-        """Creates MVF or intensity plot, based on index.
+    def redrawPlot(self, tabNumber):
+        """Redraws plot for the provided tab number.
 
         Args:
-            index: Integer that controls which plot to create. 0 creates MVF
-                plot, 1 creates intensity plot.
+            tabNumber: Tab number (int) that contains the figure to redraw.
         """
-        self._main.tab1.plotAndTable.tableWidget.setModel(self.data.getDataModel())
-        dataframe = self.data.getData()
-        # self.plotSettings.plotType = "step"
-
-        if self.dataViewIndex == 0:
-            # MVF
-            self.mvf.setChecked(True)
-            self.createMVFPlot(dataframe)
-
-            # disable reliability spin box, enable failure spin box
-            self._main.tab2.sideMenu.reliabilitySpinBox.setDisabled(True)
-            self._main.tab2.sideMenu.failureSpinBox.setEnabled(True)
-
-        if self.dataViewIndex == 1:
-            # Intensity
-            self.intensity.setChecked(True)
-            self.createIntensityPlot(dataframe)
-
-            # disable failure spin box, enable reliability spin box
-            self._main.tab2.sideMenu.failureSpinBox.setDisabled(True)
-            self._main.tab2.sideMenu.reliabilitySpinBox.setEnabled(True)
-
-        # redraw figures
-        self.ax2.legend()
-        self.redrawPlot(1)
-        self.redrawPlot(2)
-
-
-
-
-
-
-
-
-
-
-
-    def create_plots(self):
-        # initial
-
-
-        # after model fitting
-        # create lines for each model
-
-        lines = []
-        for i in range(len(models)):
-            # - create the line -
-            line = x
-            lines.append(line)
-
-
-
-        # when selection changes:
-        ## detect differences
-        # add/remove lines depending on differences
-
-
-
-
-
-        # store matplotlib axes objects for tabs 1 and 2
-        # each is a dictionary, with one value corresponding to
-        # MVF plot, the other the intensity plot
-        self.ax = {}
-        self.ax2 = {}
-
-        # when data is loaded (?)
-        # create and store all plots
-        self.ax['MVF']
-        self.ax['Intensity']
-        self.ax2['MVF']
-        self.ax2['Intensity']
-
-
-
-
-
-    def createMVFPlot(self, dataframe):
-        """Creates MVF plots for tabs 1 and 2.
-
-        Creates step plot for imported data. Tab 2 plot only displayed if
-        estimation is complete. For fitted data, creates either a step or
-        smooth plot, depending on what has been specified by the user in the
-        menu bar. Called by setRawDataView method.
-        """
-        # self.plotSettings.plotType = "plot" # if continous
-        # self.plotSettings.plotType = "step" # if step
-
-        # save previous plot type, always want observed data to be step plot
-        previousPlotType = self.plotSettings.plotType
-
-        # tab 1 plot
-        self.plotSettings.plotType = "step"
-        self.ax = self.plotSettings.generatePlot(self.ax, dataframe['T'], dataframe["CFC"],
-                                                 title="", xLabel="Intervals", yLabel="Cumulative failures")
-
-        # tab 2 plot
-        if self.estimationComplete:
-            self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe['T'], dataframe["CFC"],
-                                                      title="", xLabel="Intervals", yLabel="Cumulative failures")
-
-            self.plotSettings.plotType = previousPlotType   # want model fits to be plot type specified by user
-
-            # add vertical line at last element of original data
-            self.ax2.axvline(x=dataframe['T'].iloc[-1], color='red', linestyle='dotted')
-
-
-            # TEMPORARY
-            # for displaying predictions in tab 2 table
-            prediction_list = [0]
-            model_name_list = ["Interval"]
-
-
-            # self.plotSettings.plotType = "step"
-            # model name and covariate combination
-            for modelName in self.selectedModelNames:
-                # add line for model if selected
-                model = self.estimationResults[modelName]
-
-                # check if prediction is specified
-                if self._main.tab2.sideMenu.failureSpinBox.value() > 0:
-                    x, mvf_array = self.runPredictionMVF(model, self._main.tab2.sideMenu.failureSpinBox.value())
-                    self.plotSettings.addLine(self.ax2, x, mvf_array, modelName)
-
-                    # TEMPORARY
-                    prediction_list[0] = x
-                    prediction_list.append(mvf_array)
-                    model_name_list.append(modelName)
-                else:
-                    self.plotSettings.addLine(self.ax2, model.t, model.mvf_array, modelName)
-
-            # TEMPORARY
-            # check if prediction is specified
-                if self._main.tab2.sideMenu.failureSpinBox.value() > 0:
-                    self._main.tab2.updateTable_prediction(prediction_list, model_name_list, 0)
-
-    def createIntensityPlot(self, dataframe):
-        """Creates intensity plots for tabs 1 and 2.
-
-        Creates step plot for imported data. Tab 2 plot only displayed if
-        estimation is complete. For fitted data, creates either a step or
-        smooth plot, depending on what has been specified by the user in the
-        menu bar. Called by setRawDataView method.
-        """
-        # need to change plot type to "bar" for intensity view, but want model result lines
-        # to use whatever plot type had been selected
-        # save the previous plot type, use it after bar plot created
-
-        previousPlotType = self.plotSettings.plotType
-        self.plotSettings.plotType = "bar"
-        # self.plotSettings.plotType = "step"
-
-        # disable trend tests when displaying imported data
-        # self._main.tab1.sideMenu.testSelect.setDisabled(True)
-        # self._main.tab1.sideMenu.confidenceSpinBox.setDisabled(True)
-
-        self.ax = self.plotSettings.generatePlot(self.ax, dataframe['T'], dataframe.iloc[:, 1],
-                                                 title="", xLabel="Intervals", yLabel="Failures")
-        if self.estimationComplete:
-            self.ax2 = self.plotSettings.generatePlot(self.ax2, dataframe['T'], dataframe['FC'],
-                                                      title="", xLabel="Intervals", yLabel="Failures")
-            self.plotSettings.plotType = previousPlotType
-
-
-            # TEMPORARY
-            # for displaying predictions in tab 2 table
-            prediction_list = [0]
-            model_name_list = ["Interval"]
-
-
-            # model name and covariate combination
-            for modelName in self.selectedModelNames:
-                # add line for model if selected
-                model = self.estimationResults[modelName]
-
-                # check if prediction is specified
-                if self._main.tab2.sideMenu.reliabilitySpinBox.value() > 0.0:
-                    x, intensity_array, interval = self.runPredictionIntensity(model, self._main.tab2.sideMenu.reliabilitySpinBox.value())
-                    self.plotSettings.addLine(self.ax2, x, intensity_array, modelName)
-
-                    # TEMPORARY
-                    prediction_list[0] = x
-                    prediction_list.append(intensity_array)
-                    model_name_list.append(modelName)
-                else:
-                    self.plotSettings.addLine(self.ax2, model.t, model.intensityList, modelName)
-
-            # TEMPORARY
-            # check if prediction is specified
-                if self._main.tab2.sideMenu.reliabilitySpinBox.value() > 0.0:
-                    self._main.tab2.updateTable_prediction(prediction_list, model_name_list, 1)
+        if tabNumber == 1:
+            self._main.tab1.plotAndTable.figure.canvas.draw()
+        elif tabNumber == 2:
+            self._main.tab2.plotAndTable.figure.canvas.draw()
 
     #region plot styles
-    def setPlotStyle(self, style='-o'):
-        """Updates plots with specified line style.
-
-        Args:
-            style: Matplotlib line style (string). Options included are line
-                ('-'), points ('o'), and line and points ('-o').
-        """
-        self.plotSettings.style = style
-        self.updateUI()
-
     def setLineView(self):
         """Sets plot style to line."""
-        self.setPlotStyle(style='-')
+        # self.setPlotStyle(style='-')
+        self._main.tab1.plotAndTable.plotWidget.setLineView()
+        self._main.tab2.plotAndTable.plotWidget.setLineView()
         log.info("Plot style set to line view.")
 
     def setPointsView(self):
         """Sets plot style to points."""
-        self.setPlotStyle(style='o')
+        # self.setPlotStyle(style='o')
+        self._main.tab1.plotAndTable.plotWidget.setPointsView()
+        self._main.tab2.plotAndTable.plotWidget.setPointsView()
         log.info("Plot style set to points view.")
 
     def setLineAndPointsView(self):
         """Sets plot style to line and points."""
-        self.setPlotStyle(style='-o')
+        # self.setPlotStyle(style='-o')
+        self._main.tab1.plotAndTable.plotWidget.setLineAndPointsView()
+        self._main.tab2.plotAndTable.plotWidget.setLineAndPointsView()
         log.info("Plot style set to line and points view.")
     #endregion
 
     #region plot types
-    def setPlotType(self, plotType="step"):
-        """Updates plot with specified plot type.
-
-        Args:
-            plotType: Matplotlib plot type (string). Options include 'step' and
-                'plot' (smooth curve).
-        """
-        self.plotSettings.plotType = plotType
-        self.updateUI()
-        # self.setDataView("view", self.dataViewIndex)
-
-    def setStepLine(self):
+    def setStepPlot(self):
         """Sets plot type to step plot."""
-        self.setPlotType(plotType="step")
+        self._main.tab1.plotAndTable.plotWidget.setStepPlot()
+        self._main.tab2.plotAndTable.plotWidget.setStepPlot()
         log.info("Line style set to 'step'.")
 
-    def setSmoothLine(self):
+    def setSmoothPlot(self):
         """Sets plot type to smooth line ('plot')"""
-        self.setPlotType(plotType="plot")
+        self._main.tab1.plotAndTable.plotWidget.setSmoothPlot()
+        self._main.tab2.plotAndTable.plotWidget.setSmoothPlot()
         log.info("Line style set to 'smooth'.")
     #endregion
 
     def setMVFView(self):
         """Sets all plots to MVF view."""
-        self.dataViewIndex = 0
+        self.plotViewIndex = 0
         log.info("Data plots set to MVF view.")
 
-        # self.setDataView("view", self.dataViewIndex)
-        self.updateUI()
-        # if self.dataLoaded:
-        #     self.setRawDataView(self.dataViewIndex)
+        if self.dataLoaded:
+            self._main.tab1.plotAndTable.plotWidget.changePlotType(self.plotViewIndex)
+            self._main.tab2.plotAndTable.plotWidget.changePlotType(self.plotViewIndex)
+
+        if self.estimationComplete:
+            # disable intensity spin box
+            self._main.tab2.sideMenu.reliabilitySpinBox.setDisabled(True)
+            # enable failure spin box
+            self._main.tab2.sideMenu.failureSpinBox.setEnabled(True)
+
+            # tab 2 table shows MVF
+            self._main.tab2.setTableModel(0)
 
     def setIntensityView(self):
         """Sets all plots to intensity view."""
-        self.dataViewIndex = 1
+        self.plotViewIndex = 1
         log.info("Data plots set to intensity view.")
+        # if self.dataLoaded:
+        #     self.setRawDataView(self.plotViewIndex)
+
         if self.dataLoaded:
-            self.setRawDataView(self.dataViewIndex)
+            self._main.tab1.plotAndTable.plotWidget.changePlotType(self.plotViewIndex)
+            self._main.tab2.plotAndTable.plotWidget.changePlotType(self.plotViewIndex)
+
+        if self.estimationComplete:
+            # disable failure spin box
+            self._main.tab2.sideMenu.failureSpinBox.setDisabled(True)
+            # enable intensity spin box
+            self._main.tab2.sideMenu.reliabilitySpinBox.setEnabled(True)
+
+            # tab 2 table shows intensity
+            self._main.tab2.setTableModel(1)
 
     def changePlot2AndUpdateComparisonTable(self, selectedModels):
         # Access Selected Items
@@ -727,17 +488,23 @@ class MainWindow(QMainWindow):
         ModelsList2.blockSignals(False)
         ModelsList3.blockSignals(False)
 
-        self.updateComparisonTable(selectedModels)
+        selectedNums = [x.split('. ', 1)[0] for x in selectedModels]
+        selectedNames = [x.split('. ', 1)[1] for x in selectedModels]
 
-        self.updateUI()
+        self.updateComparisonTable(selectedNums, selectedNames)
 
-    def updateComparisonTable(self, combinations):
-        selected_nums = [x.split('. ', 1)[0] for x in combinations]
-        selected_names = [x.split('. ', 1)[1] for x in combinations]
+        self._main.tab2.plotAndTable.plotWidget.updateLines(selectedNames)
 
-        self._main.tab3.updateTableView(selected_nums)
+        # pass selected nums to tab 2 tableView
+        # this way, we can show/hide columns depending on what is selected
+        self._main.tab2.updateTableView(selectedNums)
 
-        self.selectedModelNames = selected_names
+        self.selectedModelNames = selectedNames
+
+    def updateComparisonTable(self, selectedNums, selectedNames):
+
+        self._main.tab3.updateTableView(selectedNums)
+        self.selectedModelNums = selectedNums
 
     def changePlot2(self, selectedModels):
         """Updates plot 2 to show newly selected models to display.
@@ -747,13 +514,6 @@ class MainWindow(QMainWindow):
         """
         self.selectedModelNames = selectedModels
         self.updateUI()
-
-    def updateUI(self):
-        """Updates plots, tables, side menus.
-
-        Should be called explicitly.
-        """
-        self.setDataView("view", self.dataViewIndex)
 
     #endregion
 
@@ -777,12 +537,11 @@ class MainWindow(QMainWindow):
 
         # ******* NEED TO CLEAR PLOTS AND TABLES *******
 
-
-
         if self.data:
             self.estimationComplete = False # estimation not complete since it just started running
             self.psseComplete = False       # must re-run PSSE after fitting new models
             self.selectedModelNames = []    # clear selected models, since none are selected when new models are fitted
+
             # need to block signals so update signal doesn't fire when list widgets are cleared
             self._main.tab2.sideMenu.modelListWidget.blockSignals(True)
             self._main.tab3.sideMenu.modelListWidget.blockSignals(True)
@@ -791,9 +550,8 @@ class MainWindow(QMainWindow):
                                                                 # only added when calculations complete
             self._main.tab3.sideMenu.modelListWidget.clear()
             self._main.tab4.sideMenu.modelListWidget.clear()
+
             self.computeWidget = ComputeWidget(modelsToRun, metricNames, self.data)
-            # DON'T WANT TO DISPLAY RESULTS IN ANOTHER WINDOW
-            # WANT TO DISPLAY ON TAB 2/3
             self.computeWidget.results.connect(self.onEstimationComplete)   # signal emitted when estimation complete
 
     def onEstimationComplete(self, results):
@@ -807,14 +565,25 @@ class MainWindow(QMainWindow):
         """
         self.estimationComplete = True
         self.estimationResults = results
+
+        # run PSSE on data along with model fitting
+        self.runPSSE(self._main.tab3.sideMenu.psseParameterSpinBox.value())
+
         self._main.tab1.sideMenu.runButton.setEnabled(True)  # re-enable button, can run another estimation
-        self._main.tab3.sideMenu.psseButton.setEnabled(True)    # enable PSSE button now that we have fitted models
+        # self._main.tab3.sideMenu.psseButton.setEnabled(True)    # enable PSSE button now that we have fitted models
         self._main.tab4.sideMenu.allocation1Button.setEnabled(True)     # re-enable allocation buttons, can't run
         self._main.tab4.sideMenu.allocation2Button.setEnabled(True)     # if estimation not complete
-        # self.setDataView("view", self.dataViewIndex)
-        self.updateUI()
-        # set initial model selected
-        # set plot
+
+        if self.plotViewIndex == 0:
+            # enable failure spin box
+            self._main.tab2.sideMenu.failureSpinBox.setEnabled(True)
+        elif self.plotViewIndex == 1:
+            # enable intensity spin box
+            self._main.tab2.sideMenu.reliabilitySpinBox.setEnabled(True)
+
+        # create lines for each plot
+        self._main.tab1.plotAndTable.plotWidget.createLines(results)
+        self._main.tab2.plotAndTable.plotWidget.createLines(results)
 
         convergedNames = []
         nonConvergedNames = []
@@ -832,13 +601,7 @@ class MainWindow(QMainWindow):
         self._main.tab2.sideMenu.addSelectedModels(convergedNames)  # add models to tab 2 list
                                                                     # so they can be selected
 
-        # can re-enable signals for list widgets now
-        # self._main.tab2.sideMenu.modelListWidget.blockSignals(False)
-        # self._main.tab3.sideMenu.modelListWidget.blockSignals(False)
-
-        # show which models didn't converge
-        # self._main.tab2.sideMenu.addNonConvergedModels(nonConvergedNames)
-
+        self._main.tab2.updateModel(self.estimationResults)
 
         self._main.tab3.updateModel(self.estimationResults)   # add converged results to model containing all result data
         self._main.tab3.sideMenu.addSelectedModels(convergedNames)  # add models to tab 3 list
@@ -857,7 +620,11 @@ class MainWindow(QMainWindow):
 
         if self.estimationComplete:
             combinations = [item.text() for item in self._main.tab3.sideMenu.modelListWidget.selectedItems()]
-            self.updateComparisonTable(combinations)
+
+            selectedNums = [x.split('. ', 1)[0] for x in combinations]
+            selectedNames = [x.split('. ', 1)[1] for x in combinations]
+
+            self.updateComparisonTable(selectedNums, selectedNames)
 
     def runAllocation1(self, combinations):
         """Runs effort allocation on selected model/metric combinations.
@@ -874,7 +641,6 @@ class MainWindow(QMainWindow):
                 m = self.estimationResults[name]  # model indexed by the name
 
                 ## RUN PREDICTION USING SPECIFIED SUBSET OF COVARIATE DATA
-                ## for now, just passing full data
                 self.allocationResults[name] = [EffortAllocation(m, m.covariateData, 1, B), m]
 
         self._main.tab4.addResultsToTable(self.allocationResults, self.data, 1)
@@ -894,11 +660,85 @@ class MainWindow(QMainWindow):
                 m = self.estimationResults[name]  # model indexed by the name
 
                 ## RUN PREDICTION USING SPECIFIED SUBSET OF COVARIATE DATA
-                ## for now, just passing full data
                 self.allocationResults[name] = [EffortAllocation(m, m.covariateData, 2, f), m]
 
         # just add to table 2
         self._main.tab4.addResultsToTable(self.allocationResults, self.data, 2)
+
+    def updatePredictionPlotMVF(self):
+        if self.estimationComplete:
+            # TEMPORARY
+            # for displaying predictions in tab 2 table
+            prediction_list = [0]
+            model_name_list = ["Interval"]
+
+            # check if prediction is specified
+            if self._main.tab2.sideMenu.failureSpinBox.value() > 0:
+
+                for key, model in self.estimationResults.items():
+                    # add line for model if selected
+                    # model = self.estimationResults[modelName]
+                
+                    x, mvf_array = self.runPredictionMVF(model, self._main.tab2.sideMenu.failureSpinBox.value())
+                    self._main.tab2.plotAndTable.plotWidget.updateLineMVF(key, x, mvf_array)
+
+                    ## TABLE
+                    prediction_list[0] = x
+                    prediction_list.append(mvf_array)
+                    model_name_list.append(model.combinationName)
+                    
+            else:
+                # set plot and table back to model with no predictions
+                for key, model in self.estimationResults.items():
+                    self._main.tab2.plotAndTable.plotWidget.updateLineMVF(key, model.t, model.mvf_array)
+
+                    prediction_list[0] = model.t
+                    prediction_list.append(model.mvf_array)
+                    model_name_list.append(model.combinationName)
+
+            # 0 indicates MVF
+            self._main.tab2.updateTable_prediction(prediction_list, model_name_list, 0)
+
+
+    def updatePredictionPlotIntensity(self):
+        if self.estimationComplete:
+            # for displaying predictions in tab 2 table
+            prediction_list = [0]
+            model_name_list = ["Interval"]
+            max_x = 0
+
+            # check if prediction is specified
+            if self._main.tab2.sideMenu.reliabilitySpinBox.value() > 0.0:
+
+                for key, model in self.estimationResults.items():
+                    x, intensity_array, interval = self.runPredictionIntensity(model, self._main.tab2.sideMenu.reliabilitySpinBox.value())
+                    self._main.tab2.plotAndTable.plotWidget.updateLineIntensity(key, x, intensity_array)
+
+
+                    ## TABLE
+                    # make sure we don't get NaN for interval column
+                    # otherwise, if the last combination does not have the most intervals,
+                    # then the remaining values of the interval column will be NaN since
+                    # they were not defined
+                    if len(x) > max_x:
+                        prediction_list[0] = x
+                        max_x = len(x)
+
+                    prediction_list.append(intensity_array)
+                    model_name_list.append(model.combinationName)
+                    
+            else:
+                for key, model in self.estimationResults.items():
+                    self._main.tab2.plotAndTable.plotWidget.updateLineIntensity(key, model.t, model.intensityList)
+
+                    prediction_list[0] = model.t
+                    prediction_list.append(model.intensityList)
+                    model_name_list.append(model.combinationName)
+
+
+            # 1 indicates intensity
+            self._main.tab2.updateTable_prediction(prediction_list, model_name_list, 1)
+
 
     def runPredictionMVF(self, model, failures):
         """Runs predictions for future points according to model results.
@@ -916,11 +756,7 @@ class MainWindow(QMainWindow):
         return x, mvf_array#, intensity_array
 
     def runPredictionIntensity(self, model, intensity):
-
-        # m = self.estimationResults[modelName]  # model indexed by the name
-
         x, intensity_array, intervals = prediction.prediction_intensity(model, intensity, model.covariateData, self._main.tab2.sideMenu.effortSpinBoxDict)
-
         return x, intensity_array, intervals
 
     def runPSSE(self, fraction):
@@ -981,6 +817,20 @@ class MainWindow(QMainWindow):
         # enable PSSE weight spinbox
         self._main.tab3.sideMenu.psseSpinBox.setEnabled(True)
 
+    def exportTable2(self):
+        path = QFileDialog.getSaveFileName(self,
+            'Export model results', 'model_results.csv', filter='CSV (*.csv)')
+
+        if path[0]:
+            self._main.tab2.exportTable(path[0])
+
+    def exportTable3(self):
+        path = QFileDialog.getSaveFileName(self,
+            'Export model results', 'model_results.csv', filter='CSV (*.csv)')
+
+        if path[0]:
+            self._main.tab3.exportTable(path[0])
+
     #endregion
 
 
@@ -1003,7 +853,6 @@ class MainWidget(QWidget):
     def _initUI(self):
         """Initializes main widget UI elements."""
         layout = QVBoxLayout()
-        # self.tabs = Tabs()
 
         self._initTabs()
 
@@ -1027,33 +876,3 @@ class MainWidget(QWidget):
         self.tabs.addTab(self.tab4, "Effort Allocation")
 
         self.tabs.resize(300, 200)
-
-    # def keyPressEvent(self, e):
-    #     """
-    #     For copying tab 3 table
-
-    #     https://stackoverflow.com/questions/24971305/copy-pyqt-table-selection-including-column-and-row-headers
-    #     """
-    #     if (e.modifiers() & Qt.ControlModifier):
-    #         # selected = self.tab3.table.selectedIndexes()
-
-    #         selected1 = self.tab3.table.selectionModel()
-    #         print(selected1)
-    #         print(selected1.selection())
-
-    #         selected = selected1.selection()
-    #         print(selected)
-
-    #         if e.key() == Qt.Key_C: #copy
-    #             s = '\t'+"\t".join([str(self.table.horizontalHeaderItem(i).text()) for i in range(selected[0].index(), selected[-1].index()+1)])
-    #             s = s + '\n'
-
-    #             for r in range(selected[0].topRow(), selected[0].bottomRow()+1):
-    #                 s += self.table.verticalHeaderItem(r).text() + '\t'
-    #                 for c in range(selected[0].leftColumn(), selected[0].rightColumn()+1):
-    #                     try:
-    #                         s += str(self.table.item(r ,c).text()) + "\t"
-    #                     except AttributeError:
-    #                         s += "\t"
-    #                 s = s[:-1] + "\n" #eliminate last '\t'
-    #             self.clip.setText(s)

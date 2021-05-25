@@ -28,7 +28,7 @@ class Data:
         self.dataSet = {"None": None}
         # self._numCovariates = 0
         self.numCovariates = 0
-        self.n = 0
+        self._n = 0
         self.containsHeader = True
         self.metricNames = []
         self.metricNameCombinations = []
@@ -49,6 +49,11 @@ class Data:
             self._currentSheet = 0
             log.info("Cannot set sheet to index %d since the data does not contain a sheet with that index.\
                       Sheet index instead set to 0.", index)
+
+    @property
+    def n(self):
+        self._n = self.dataSet[self.sheetNames[self._currentSheet]]['FC'].size
+        return self._n
 
     @property
     def max_interval(self):
@@ -82,7 +87,6 @@ class Data:
             percentage: float between 0.0 and 1.0 indicating percentage of
                 data to return
         """
-
         intervals = math.floor(self.n * fraction)
 
         # need at least 5 data points
@@ -179,7 +183,7 @@ class Data:
         self._currentSheet = 0
         self.setData(data)
         self.setNumCovariates()
-        self.n = data[self.sheetNames[self._currentSheet]]['FC'].size
+        self._n = data[self.sheetNames[self._currentSheet]]['FC'].size
         # self.metricNames = self.dataSet[self.sheetNames[self._currentSheet]].columns.values[2:2+self.numCovariates]
         self.setMetricNames()
         self.getMetricNameCombinations()
@@ -407,3 +411,26 @@ class ProxyModel(QtCore.QSortFilterProxyModel):
 
     def sort(self, Ncol, order):
         self.sourceModel().sort(Ncol, order)
+
+class ProxyModel2(QtCore.QSortFilterProxyModel):
+    """
+    Tab 2 table, need to filter columns
+    Re-implement QSortFilterProxyModel to implement sorting by float/int
+    """
+    def __init__(self, parent=None):
+        QtCore.QSortFilterProxyModel.__init__(self, parent)
+
+    def sort(self, Ncol, order):
+        self.sourceModel().sort(Ncol, order)
+
+    def filterAcceptsColumn(self, source_column, source_parent):
+        """
+        source_column: int representing column index
+        source_parent:
+        """
+        # print(self.sourceModel()._data.columns[0])
+
+        if self.sourceModel()._data.columns[source_column]:
+            return True
+        else:
+            return False

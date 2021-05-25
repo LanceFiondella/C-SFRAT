@@ -19,109 +19,11 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a6bbf19f-7006-428c-b888-fe7ef84a9c94" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/Tests/Model Testing/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Tests/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/Covariate_Tool.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Covariate_Tool.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py" beforeDir="false" afterPath="$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py" afterDir="false" />
-    </list>
-    <ignored path="E:\UmassD\Resarch\Covariate_Tool\.idea\shelf/" />
-    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
-    <option name="TRACKING_ENABLED" value="true" />
+    <list default="true" id="a6bbf19f-7006-428c-b888-fe7ef84a9c94" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
-  </component>
-  <component name="FileEditorManager">
-    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="test_MLEs.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="138">
-              <caret line="127" column="16" selection-start-line="127" selection-start-column="16" selection-end-line="127" selection-end-column="16" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="main.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/main.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="222">
-              <caret line="54" column="17" lean-forward="true" selection-start-line="54" selection-start-column="17" selection-end-line="54" selection-end-column="17" />
-              <folding>
-                <element signature="e#763#814#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="codecs.py" pinned="false" current-in-tab="false">
-        <entry file="file://$USER_HOME$/anaconda3/Lib/codecs.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="8316">
-              <caret line="309" selection-start-line="309" selection-end-line="309" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="discreteWeibull2.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/models/discreteWeibull2.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="513">
-              <caret line="19" column="16" selection-start-line="19" selection-start-column="16" selection-end-line="19" selection-end-column="16" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="discreteWeibull_type3.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/models/discreteWeibull_type3.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="540">
-              <caret line="25" column="17" selection-start-line="25" selection-start-column="17" selection-end-line="25" selection-end-column="17" />
-              <folding>
-                <element signature="e#0#11#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="model.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/core/model.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1782">
-              <caret line="80" selection-start-line="80" selection-end-line="80" />
-              <folding>
-                <element signature="e#0#53#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="commonWidgets.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ui/commonWidgets.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="7101">
-              <caret line="282" column="30" selection-start-line="282" selection-start-column="30" selection-end-line="282" selection-end-column="30" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="dataClass.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/core/dataClass.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1539">
-              <caret line="67" selection-start-line="67" selection-end-line="67" />
-              <folding>
-                <element signature="e#0#21#0" expanded="true" />
-                <element signature="e#6269#7058#0" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-    </leaf>
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -196,68 +98,7 @@
       <recent name="C:\Users\Dragon\Covariate_Tool\Tests\GUI Testing" />
     </key>
   </component>
-  <component name="RunDashboard">
-    <option name="ruleStates">
-      <list>
-        <RuleState>
-          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
-        </RuleState>
-        <RuleState>
-          <option name="name" value="StatusDashboardGroupingRule" />
-        </RuleState>
-      </list>
-    </option>
-  </component>
-  <component name="RunManager" selected="Python.main">
-    <configuration name="main" type="PythonConfigurationType" factoryName="Python">
-      <module name="Covariate_Tool" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-    </configuration>
-    <configuration name="test_MLEs" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <module name="Covariate_Tool" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Tests/Model Testing" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-    </configuration>
-    <configuration name="Unittests for test_GUI.Covariatetest.test_defaults" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
-      <module name="Covariate_Tool" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Tests/GUI Testing" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test_GUI.Covariatetest.test_defaults&quot;" />
-      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
-    </configuration>
+  <component name="RunManager" selected="Python tests.pytest for test_GUI.Covariatetest.test_view">
     <configuration name="Unittests for test_GUI.Covariatetest.test_file" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
       <module name="Covariate_Tool" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -270,8 +111,9 @@
       <option name="_new_additionalArguments" value="&quot;&quot;" />
       <option name="_new_target" value="&quot;test_GUI.Covariatetest.test_file&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
     </configuration>
-    <configuration name="Unittests for test_GUI.Covariatetest.test_view" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+    <configuration name="pytest for test_GUI.Covariatetest.test_defaults" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
       <module name="Covariate_Tool" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -280,42 +122,79 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_GUI.Covariatetest.test_defaults&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="pytest for test_GUI.Covariatetest.test_view" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="Covariate_Tool" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Tests/GUI Testing" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
       <option name="_new_target" value="&quot;test_GUI.Covariatetest.test_view&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
     </configuration>
-    <configuration name="Unittests in test_GUI.py" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+    <configuration name="pytest for test_MLEs.test_DW_Omega_mle" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
       <module name="Covariate_Tool" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Tests/GUI Testing" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Tests/Model Testing" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;$PROJECT_DIR$/Tests/GUI Testing/test_GUI.py&quot;" />
+      <option name="_new_target" value="&quot;test_MLEs.test_DW_Omega_mle&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="pytest in test_MLEs.py" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="Covariate_Tool" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Tests/Model Testing" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py&quot;" />
       <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Python.main" />
-      <item itemvalue="Python.test_MLEs" />
-      <item itemvalue="Python tests.Unittests in test_GUI.py" />
-      <item itemvalue="Python tests.Unittests for test_GUI.Covariatetest.test_defaults" />
       <item itemvalue="Python tests.Unittests for test_GUI.Covariatetest.test_file" />
-      <item itemvalue="Python tests.Unittests for test_GUI.Covariatetest.test_view" />
+      <item itemvalue="Python tests.pytest for test_MLEs.test_DW_Omega_mle" />
+      <item itemvalue="Python tests.pytest in test_MLEs.py" />
+      <item itemvalue="Python tests.pytest for test_GUI.Covariatetest.test_defaults" />
+      <item itemvalue="Python tests.pytest for test_GUI.Covariatetest.test_view" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.test_MLEs" />
+        <item itemvalue="Python tests.pytest for test_GUI.Covariatetest.test_view" />
         <item itemvalue="Python tests.Unittests for test_GUI.Covariatetest.test_file" />
-        <item itemvalue="Python tests.Unittests for test_GUI.Covariatetest.test_view" />
-        <item itemvalue="Python tests.Unittests in test_GUI.py" />
-        <item itemvalue="Python tests.Unittests for test_GUI.Covariatetest.test_defaults" />
+        <item itemvalue="Python tests.pytest for test_GUI.Covariatetest.test_defaults" />
+        <item itemvalue="Python tests.pytest in test_MLEs.py" />
+        <item itemvalue="Python tests.pytest for test_MLEs.test_DW_Omega_mle" />
       </list>
     </recent_temporary>
   </component>
-  <component name="SpellCheckerSettings" BundledDictionaries="0" Folders="0" CustomDictionaries="0" Dictionaries="0" CorrectionsLimit="5" DefaultDictionary="application-level" UseSingleDictionary="true" />
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="false" />
   <component name="SvnConfiguration">
     <configuration />
   </component>
@@ -365,78 +244,15 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State>
-              <option name="RECENTLY_FILTERED_USER_GROUPS">
-                <collection />
-              </option>
-              <option name="RECENTLY_FILTERED_BRANCH_GROUPS">
-                <collection />
-              </option>
-            </State>
+            <State />
           </value>
         </entry>
       </map>
     </option>
-  </component>
-  <component name="VcsContentAnnotationSettings">
-    <option name="myLimit" value="2678400000" />
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <option name="LAST_COMMIT_MESSAGE" value="" />
-  </component>
-  <component name="WindowStateProjectService">
-    <state width="1899" height="382" key="GridCell.Tab.0.bottom" timestamp="1614026789520">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state width="1899" height="282" key="GridCell.Tab.0.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1609968157245" />
-    <state width="1899" height="382" key="GridCell.Tab.0.bottom/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614026789520" />
-    <state width="1899" height="382" key="GridCell.Tab.0.center" timestamp="1614026789520">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state width="1899" height="282" key="GridCell.Tab.0.center/0.0.1920.1040@0.0.1920.1040" timestamp="1609968157244" />
-    <state width="1899" height="382" key="GridCell.Tab.0.center/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614026789520" />
-    <state width="1899" height="382" key="GridCell.Tab.0.left" timestamp="1614026789520">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state width="1899" height="282" key="GridCell.Tab.0.left/0.0.1920.1040@0.0.1920.1040" timestamp="1609968157244" />
-    <state width="1899" height="382" key="GridCell.Tab.0.left/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614026789520" />
-    <state width="1899" height="382" key="GridCell.Tab.0.right" timestamp="1614026789520">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state width="1899" height="282" key="GridCell.Tab.0.right/0.0.1920.1040@0.0.1920.1040" timestamp="1609968157244" />
-    <state width="1899" height="382" key="GridCell.Tab.0.right/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614026789520" />
-    <state width="1899" height="369" key="GridCell.Tab.1.bottom" timestamp="1614026789513">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state width="1899" height="348" key="GridCell.Tab.1.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1609966733950" />
-    <state width="1899" height="369" key="GridCell.Tab.1.bottom/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614026789513" />
-    <state width="1899" height="369" key="GridCell.Tab.1.center" timestamp="1614026789513">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state width="1899" height="348" key="GridCell.Tab.1.center/0.0.1920.1040@0.0.1920.1040" timestamp="1609966733950" />
-    <state width="1899" height="369" key="GridCell.Tab.1.center/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614026789513" />
-    <state width="1899" height="369" key="GridCell.Tab.1.left" timestamp="1614026789513">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state width="1899" height="348" key="GridCell.Tab.1.left/0.0.1920.1040@0.0.1920.1040" timestamp="1609966733950" />
-    <state width="1899" height="369" key="GridCell.Tab.1.left/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614026789513" />
-    <state width="1899" height="369" key="GridCell.Tab.1.right" timestamp="1614026789513">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state width="1899" height="348" key="GridCell.Tab.1.right/0.0.1920.1040@0.0.1920.1040" timestamp="1609966733950" />
-    <state width="1899" height="369" key="GridCell.Tab.1.right/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614026789513" />
-    <state x="461" y="165" key="SettingsEditor" timestamp="1614017364089">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state x="461" y="165" key="SettingsEditor/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614017364089" />
-    <state x="769" y="434" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1609962483294">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state x="769" y="434" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/0.0.1920.1040@0.0.1920.1040" timestamp="1609962483294" />
-    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup" timestamp="1614018317956">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup/1920.91.1280.693/0.0.1920.1040@0.0.1920.1040" timestamp="1614018317956" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -453,8 +269,13 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/ui/mainWindow.py</url>
-          <line>786</line>
+          <line>545</line>
           <option name="timeStamp" value="39" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Tests/Model Testing/test_MLEs.py</url>
+          <line>83</line>
+          <option name="timeStamp" value="41" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -464,12 +285,13 @@
           </properties>
         </breakpoint>
       </default-breakpoints>
-      <option name="time" value="3" />
     </breakpoint-manager>
     <watches-manager>
       <configuration name="tests">
         <watch expression="self.form.minimumSize()" language="Python" />
         <watch expression="self.form.menu" language="Python" />
+        <watch expression="dic['DS1'][sheet.cell(i,1).value]" language="Python" />
+        <watch expression="sheet.cell(i,1).value" language="Python" />
       </configuration>
       <configuration name="PythonConfigurationType">
         <watch expression="selectedModels" language="Python" />

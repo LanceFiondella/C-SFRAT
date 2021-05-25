@@ -11,7 +11,6 @@ class Comparison():
     """
     For comparison of model goodness-of-fit measures
     """
-
     def __init__(self):
         self.meanOut = None
         self.medianOut = None
@@ -118,7 +117,8 @@ class Comparison():
         self.bestCombinations()
 
     def calcWeightSum(self, sideMenu):
-        return sideMenu.llfSpinBox.value() + sideMenu.aicSpinBox.value() + sideMenu.bicSpinBox.value() + sideMenu.sseSpinBox.value()
+        # added PSSE
+        return sideMenu.llfSpinBox.value() + sideMenu.aicSpinBox.value() + sideMenu.bicSpinBox.value() + sideMenu.sseSpinBox.value() + sideMenu.psseSpinBox.value()
 
     def ahp(self, measureArray, i, spinBox):
         # if spinbox value is 0, that measure is not being considered

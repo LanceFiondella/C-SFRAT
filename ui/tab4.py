@@ -210,23 +210,21 @@ class SideMenu4(QVBoxLayout):
     def _setupAllocation1Group(self, label):
         group = QGroupBox(label)
         groupLayout = QVBoxLayout()
+
         # Effort allocation to discover maximum number of faults within given budget 'B'
         description = QLabel("Maximize defect discovery within\nbudget.")
-        # description.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         groupLayout.addWidget(description)
-
         verticalSpacer = QSpacerItem(20, 20, QSizePolicy.Fixed, QSizePolicy.Expanding)
         groupLayout.addItem(verticalSpacer)
-
         groupLayout.addWidget(QLabel("Enter budget"))
+
         self.budgetSpinBox = QDoubleSpinBox()
-        # self.budgetSpinBox.setMaximumWidth(200)
-        self.budgetSpinBox.setRange(0.0, 999999.0)
+        self.budgetSpinBox.setRange(0.1, 999999.0)
         self.budgetSpinBox.setValue(20)
         groupLayout.addWidget(self.budgetSpinBox)
+
         self.allocation1Button = self._setupAllocationButton("Run Allocation 1", self._button1Pressed)
         groupLayout.addWidget(self.allocation1Button)
-
         group.setLayout(groupLayout)
 
         return group
@@ -236,7 +234,6 @@ class SideMenu4(QVBoxLayout):
         groupLayout = QVBoxLayout()
         # Effort allocation to expose 'k' number of additional faults with the smallest budget possible
         description = QLabel("Minimum budget (B) to discover\nspecified additonal defects")
-        # description.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         groupLayout.addWidget(description)
 
         verticalSpacer = QSpacerItem(20, 20, QSizePolicy.Fixed, QSizePolicy.Preferred)
@@ -244,12 +241,11 @@ class SideMenu4(QVBoxLayout):
 
         groupLayout.addWidget(QLabel("Enter number of additional defects"))
         self.failureSpinBox = QSpinBox()
-        # self.failureSpinBox.setMaximumWidth(200)
         self.failureSpinBox.setRange(1, 999999)
         groupLayout.addWidget(self.failureSpinBox)
+
         self.allocation2Button = self._setupAllocationButton("Run Allocation 2", self._button2Pressed)
         groupLayout.addWidget(self.allocation2Button)
-
         group.setLayout(groupLayout)
 
         return group
@@ -257,7 +253,7 @@ class SideMenu4(QVBoxLayout):
     def _setupAllocationButton(self, label, slot):
         """Creates the button that begins effort allocation."""
         button = QPushButton(label)
-        button.setEnabled(False) # begins disabled since no model has been run yet
+        button.setEnabled(False)    # begins disabled since no model has been run yet
         button.clicked.connect(slot)
 
         return button

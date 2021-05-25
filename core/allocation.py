@@ -1,3 +1,6 @@
+# For handling debug output
+import logging as log
+
 from scipy.optimize import shgo
 import numpy as np
 
@@ -28,11 +31,17 @@ class EffortAllocation:
         ##      optimal allocation of budget B      ##
         ##############################################
 
+        # lambda function we solve for
+        # the x values are the different covariate values obtained through SHGO
         cons = ({'type': 'ineq', 'fun': lambda x: self.B - sum([x[i] for i in range(self.model.numCovariates)])})
+        # restrict bounds to positive values
         bnds = tuple((0, None) for i in range(self.model.numCovariates))
 
         self.res = shgo(self.allocationFunction, args=(self.covariate_data,), bounds=bnds, constraints=cons)#, n=10000, iters=4)
+        # the result from SHGO is negative since it is a minimization function
+        # therefore, we negatate the value to find the maximum
         self.mvfVal = -self.res.fun
+        # number of estimated defects
         self.H = self.mvfVal - self.model.mvf_array[-1]   # predicted MVF value - last actual MVF value
 
     def allocationFunction(self, x, covariate_data):
@@ -87,5 +96,13 @@ class EffortAllocation:
     #     # we want to minimize, SHGO uses minimization
     #     return self.model.MVF(self.model.mle_array, omega, self.hazard_array, new_cov_data.shape[1] - 1, new_cov_data)
 
-    def organizeResults(self, results, budget):
-        return np.multiply(np.divide(results, budget), 100)
+    def organizeResults(self, results, effort):
+        # check to ensure that no NAN values are displayed
+        if effort > 0.0:
+            # return percentage
+            return np.multiply(np.divide(results, effort), 100)
+        else:
+            # avoid divide by 0
+            log.warning("Budget of 0.0 calculated for allocation")
+            print("hey")
+            return [0.0 for i in range(len(results))]

@@ -10,6 +10,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 # Local imports
 import models
 from ui.commonWidgets import PlotAndTable
+from core.dataClass import PandasModel
 
 
 class Tab1(QWidget):
@@ -38,6 +39,10 @@ class Tab1(QWidget):
 
         self.setLayout(horizontalLayout)
 
+    def updateTable(self, data):
+        model = PandasModel(data)
+        self.plotAndTable.tableWidget.setModel(model)
+
 
 class SideMenu1(QVBoxLayout):
     """Side menu for tab 1.
@@ -57,7 +62,7 @@ class SideMenu1(QVBoxLayout):
             metricListWidget.
         clearAllButton: QPushButton that de-selects all metrics in the
             metricListWidget.
-        viewChangedSignal: pyqtSignal, emits view type (string) and view index
+        sheetChangedSignal: pyqtSignal, emits view type (string) and view index
             (int) when view mode is changed.
         confidenceSignal: pyqtSignal, emits Laplace confidence interval (float)
             when confidence spin box changed.
@@ -66,9 +71,9 @@ class SideMenu1(QVBoxLayout):
     """
 
     # signals
-    viewChangedSignal = pyqtSignal(str, int)    # changes based on trend test select box
+    sheetChangedSignal = pyqtSignal(int)    # changes based on trend test select box
                                                 # for enabling/disabling confidence spin box
-    confidenceSignal = pyqtSignal(float)
+    # confidenceSignal = pyqtSignal(float)
     runModelSignal = pyqtSignal(dict)
     sliderSignal = pyqtSignal(int)
 
@@ -104,6 +109,14 @@ class SideMenu1(QVBoxLayout):
         self.slider.setValue(max_value)
         self.sliderLabel.setText(str(max_value))
         self.slider.blockSignals(False)
+
+    def addSheets(self, sheet_names):
+        """
+        """
+        # block signals when new sheets are added
+        self.sheetSelect.blockSignals(True)
+        self.sheetSelect.addItems(sheet_names)
+        self.sheetSelect.blockSignals(False)
 
     def _setupSideMenu(self):
         """Creates group box widgets and adds them to layout."""
@@ -232,7 +245,6 @@ class SideMenu1(QVBoxLayout):
 
         # if no models selected and/or no metrics selected, create message box
         # to display this warning
-
         elif self.modelListWidget.count() > 0 and self.metricListWidget.count() > 0:
             # data loaded but not selected
             log.warning("Must select at least one model.")
@@ -253,7 +265,8 @@ class SideMenu1(QVBoxLayout):
 
     def _emitSheetChangedSignal(self):
         """Emits signal indicating that selected sheet has changed."""
-        self.viewChangedSignal.emit("sheet", self.sheetSelect.currentIndex())
+        # self.sheetChangedSignal.emit("sheet", self.sheetSelect.currentIndex())
+        self.sheetChangedSignal.emit(self.sheetSelect.currentIndex())
 
     def _emitSliderSignal(self):
         self.sliderLabel.setText(str(self.slider.value()))

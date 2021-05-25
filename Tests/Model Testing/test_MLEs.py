@@ -8,7 +8,7 @@ from models.geometric import Geometric
 from models.negativeBinomial2 import NegativeBinomial2
 from core.dataClass import Data
 import configparser
-import xlrd
+import openpyxl
 import pandas as pd
 import logging
 
@@ -73,33 +73,33 @@ def listToString(s):
 
 def ExtractExpectedMLE(sheetNum):
     fname = 'MLEs.xlsx'
-    wb = xlrd.open_workbook(fname)
-    sheet = wb.sheet_by_index(sheetNum)
+    wb = openpyxl.load_workbook(fname)
+    sheet = wb[wb.sheetnames[sheetNum]]
     dic = {'DS1':{'-':{},'E':{},'F':{},'C':{},'EF':{},'FC':{},'EC':{},'EFC':{}},
            'DS2':{'-':{},'E':{},'F':{},'C':{},'EF':{},'FC':{},'EC':{},'EFC':{}}}
 
 
     ######## DS1 ###########
-    for i in range(2,10):
-        dic['DS1'][sheet.cell_value(i,0)]['Omega'] =  sheet.cell_value(i,1)
-        dic['DS1'][sheet.cell_value(i,0)]['b'] = sheet.cell_value(i,2)
-        dic['DS1'][sheet.cell_value(i,0)]['LL'] = sheet.cell_value(i,6)
-        if i > 2 and i < 6 :
-            dic['DS1'][sheet.cell_value(i, 0)]['Beta'] = [sheet.cell_value(i, 3)]
-        elif i > 6 and i < 9 :
-            dic['DS1'][sheet.cell_value(i, 0)]['Beta'] = [sheet.cell_value(i, 3),sheet.cell_value(i, 4)]
+    for i in range(3,11):
+        dic['DS1'][sheet.cell(i,1).value]['Omega'] =  sheet.cell(i,2).value
+        dic['DS1'][sheet.cell(i,1).value]['b'] = sheet.cell(i,3).value
+        dic['DS1'][sheet.cell(i,1).value]['LL'] = sheet.cell(i,7).value
+        if i > 3 and i < 7 :
+            dic['DS1'][sheet.cell(i, 1).value]['Beta'] = [sheet.cell(i, 4).value]
+        elif i > 7 and i < 10 :
+            dic['DS1'][sheet.cell(i, 1).value]['Beta'] = [sheet.cell(i, 4).value,sheet.cell(i, 5).value]
         else:
-            dic['DS1'][sheet.cell_value(i, 0)]['Beta'] = [sheet.cell_value(i, 3),sheet.cell_value(i, 4),sheet.cell_value(i, 5)]
-    for i in range(14,22):
-        dic['DS2'][sheet.cell_value(i,0)]['Omega'] =  sheet.cell_value(i,1)
-        dic['DS2'][sheet.cell_value(i,0)]['b'] = sheet.cell_value(i,2)
-        dic['DS2'][sheet.cell_value(i,0)]['LL'] = sheet.cell_value(i,6)
-        if i > 2 and i < 6 :
-            dic['DS2'][sheet.cell_value(i, 0)]['Beta'] = [sheet.cell_value(i, 3)]
-        elif i > 6 and i < 9 :
-            dic['DS2'][sheet.cell_value(i, 0)]['Beta'] = [sheet.cell_value(i, 3),sheet.cell_value(i, 4)]
+            dic['DS1'][sheet.cell(i, 1).value]['Beta'] = [sheet.cell(i, 4).value,sheet.cell(i, 5).value,sheet.cell(i, 6).value]
+    for i in range(15,23):
+        dic['DS2'][sheet.cell(i,1).value]['Omega'] =  sheet.cell(i,2).value
+        dic['DS2'][sheet.cell(i,1).value]['b'] = sheet.cell(i,3).value
+        dic['DS2'][sheet.cell(i,1).value]['LL'] = sheet.cell(i,7).value
+        if i > 3 and i < 7 :
+            dic['DS2'][sheet.cell(i, 1).value]['Beta'] = [sheet.cell(i, 4).value]
+        elif i > 7 and i < 10 :
+            dic['DS2'][sheet.cell(i, 1).value]['Beta'] = [sheet.cell(i, 4).value,sheet.cell(i, 5).value]
         else:
-            dic['DS2'][sheet.cell_value(i, 0)]['Beta'] = [sheet.cell_value(i, 3),sheet.cell_value(i, 4),sheet.cell_value(i, 5)]
+            dic['DS2'][sheet.cell(i, 1).value]['Beta'] = [sheet.cell(i, 4).value,sheet.cell(i, 5).value,sheet.cell(i, 6).value]
     return  dic
 
 
