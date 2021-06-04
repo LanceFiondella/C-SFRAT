@@ -9,12 +9,6 @@ from PyQt5.QtWidgets import QTableWidget, QAbstractScrollArea, QHeaderView
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtCore import Qt
 
-# Matplotlib imports for graphs/plots
-from matplotlib.backends.qt_compat import QtCore, QtWidgets, is_pyqt5
-from matplotlib.backends.backend_qt5agg import FigureCanvas, \
-                                    NavigationToolbar2QT as NavigationToolbar
-from matplotlib.figure import Figure
-
 from core.graphing import PlotWidget
 from core.prediction import prediction_psse
 from core.goodnessOfFit import PSSE
@@ -25,7 +19,6 @@ class PlotAndTable(QTabWidget):
 
     Attributes:
         plotWidget: PlotWidget object, contains plot and toolbar.
-        figure: Matplotlib Figure object, contains all plot elements.
         tableWidget: QTableView object, contains data in table format.
     """
 

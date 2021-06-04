@@ -11,6 +11,7 @@ import logging as log
 from PyQt5.QtWidgets import QMainWindow, qApp, QWidget, QTabWidget, \
                             QVBoxLayout, QAction, QActionGroup, QFileDialog
 from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtGui import QIcon
 
 # Local imports
 import models
@@ -133,6 +134,7 @@ class MainWindow(QMainWindow):
         self.setGeometry(left, top, width, height)
         self.setMinimumSize(minWidth, minHeight)
         self.statusBar().showMessage("")
+        self.setWindowIcon(QIcon('ui/C-SFRAT_logo_256.png'))
 
         # 0 indicates MVF plot, 1 indicates intensity plot
         self.plotViewIndex = 0
