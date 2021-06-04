@@ -12,11 +12,11 @@ Python can be installed from: https://www.python.org/downloads/.
 
 ### Libraries
 The Python libraries required to run C-SFRAT are:
-* Matplotlib
 * NumPy
 * openpyxl
 * pandas
 * PyQt5
+* pyqtgraph
 * SciPy
 * SymEngine
 * SymPy
