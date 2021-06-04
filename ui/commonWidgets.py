@@ -1,3 +1,6 @@
+# To check platform
+import sys
+
 # PyQt5 imports for UI elements
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QTableView, \
                             QProgressBar, QLabel
@@ -78,9 +81,21 @@ class TableTabs(QTabWidget):
 
         header = self.budgetTab.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        # provides bottom border for header
-        stylesheet = "::section{Background-color:rgb(250,250,250);}"
-        header.setStyleSheet(stylesheet)
+
+        # only want to change style sheet for Windows
+        # on other platforms with dark modes, creates light font on light background
+        if sys.platform == "win32":
+            # windows
+            # provides bottom border for header
+            stylesheet = "::section{Background-color:rgb(250,250,250);}"
+            header.setStyleSheet(stylesheet)
+        elif sys.platform == "darwin":
+            # macos
+            pass
+        elif sys.platform == "linux" or sys.platform == "linux2":
+            # linux
+            pass
+
         self.budgetTab.move(0, 0)
 
         self.addTab(self.budgetTab, table1Label)
@@ -96,9 +111,21 @@ class TableTabs(QTabWidget):
 
         header = self.failureTab.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        # provides bottom border for header
-        stylesheet = "::section{Background-color:rgb(250,250,250);}"
-        header.setStyleSheet(stylesheet)
+
+        # only want to change style sheet for Windows
+        # on other platforms with dark modes, creates light font on light background
+        if sys.platform == "win32":
+            # windows
+            # provides bottom border for header
+            stylesheet = "::section{Background-color:rgb(250,250,250);}"
+            header.setStyleSheet(stylesheet)
+        elif sys.platform == "darwin":
+            # macos
+            pass
+        elif sys.platform == "linux" or sys.platform == "linux2":
+            # linux
+            pass
+
         self.failureTab.move(0, 0)
 
         self.addTab(self.failureTab, table2Label)

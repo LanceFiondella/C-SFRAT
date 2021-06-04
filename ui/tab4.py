@@ -272,12 +272,10 @@ class SideMenu4(QVBoxLayout):
         allocation on. The signal is only emitted if at least one combination
         is selected.
         """
-        print(type(allocation_type))
         selectedCombinationNames = [item.text().split(". ", 1)[1] for item in self.modelListWidget.selectedItems()]
         if selectedCombinationNames:
             log.info("Selected for Allocation: %s", selectedCombinationNames)
 
-            print(allocation_type)
             if allocation_type == 1:
                 self.runAllocation1Signal.emit(selectedCombinationNames)
             else:

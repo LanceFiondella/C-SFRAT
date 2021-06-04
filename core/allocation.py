@@ -104,5 +104,4 @@ class EffortAllocation:
         else:
             # avoid divide by 0
             log.warning("Budget of 0.0 calculated for allocation")
-            print("hey")
             return [0.0 for i in range(len(results))]

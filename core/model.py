@@ -275,8 +275,8 @@ class Model(ABC):
 
         self.modelParameters = self.mle_array[:self.numParameters]
         self.betas = self.mle_array[self.numParameters:]
-        print("model parameters =", self.modelParameters)
-        print("betas =", self.betas)
+        log.info("model parameters =", self.modelParameters)
+        log.info("betas =", self.betas)
 
         hazard = np.array([self.hazardNumerical(i + 1, self.modelParameters) for i in range(self.n)])
         self.hazard_array = hazard    # for MVF prediction, don't want to calculate again
@@ -295,7 +295,7 @@ class Model(ABC):
         sol_object = scipy.optimize.root(fd, x0=B)
         solution = sol_object.x
         self.converged = sol_object.success
-        print("\t" + sol_object.message)
+        log.info("\t" + sol_object.message)
         
         return solution
 

@@ -1,3 +1,6 @@
+# To check platform
+import sys
+
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QGridLayout, \
                             QTableWidget, QTableWidgetItem, QAbstractScrollArea, \
                             QSpinBox, QSpacerItem, QSizePolicy, QHeaderView, QVBoxLayout, \
@@ -154,9 +157,20 @@ class Tab3(QWidget):
         table.setSortingEnabled(True)
         header = table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        # provides bottom border for header
-        stylesheet = "::section{Background-color:rgb(250,250,250);}"
-        header.setStyleSheet(stylesheet)
+        
+        # only want to change style sheet for Windows
+        # on other platforms with dark modes, creates light font on light background
+        if sys.platform == "win32":
+            # windows
+            # provides bottom border for header
+            stylesheet = "::section{Background-color:rgb(250,250,250);}"
+            header.setStyleSheet(stylesheet)
+        elif sys.platform == "darwin":
+            # macos
+            pass
+        elif sys.platform == "linux" or sys.platform == "linux2":
+            # linux
+            pass
 
         # proxy model used for sorting and filtering rows
         self.proxyModel = ProxyModel()
@@ -185,7 +199,6 @@ class Tab3(QWidget):
                 for row in range(self.tableModel.rowCount()):
                     rowdata = []
                     for column in range(self.tableModel.columnCount()):
-                        # print(self.tableModel.data(column))
                         item = self.tableModel._data.iloc[row][column]
                         if item is not None:
                             # rowdata.append(unicode(item.text()).encode('utf8'))

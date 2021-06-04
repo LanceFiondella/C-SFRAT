@@ -1,3 +1,5 @@
+import logging as log
+
 import numpy as np
 
 
@@ -78,12 +80,12 @@ def prediction_intensity(model, intensity, covariate_data, effortDict):
 
         mvf_list.append(model.MVF(model.mle_array, omega, hazard, total_points - 1, combined_array))
         calculated_intensity = mvf_list[-1] - mvf_list[-2]
-        print("calculated intensity:", calculated_intensity)
-        print("desired intensity:", intensity)
+        log.info("calculated intensity:", calculated_intensity)
+        log.info("desired intensity:", intensity)
         if calculated_intensity < intensity:
-            print("desired failure intensity reached in {0} intervals".format(i))
+            log.info("desired failure intensity reached in {0} intervals".format(i))
             x = np.concatenate((model.t, np.arange(model.n + 1, len(mvf_list) + 1)))
             return (x, model.intensityFit(mvf_list), i)
 
-    print("desired failure intensity not reached within 100 intervals")
+    log.info("desired failure intensity not reached within 100 intervals")
     return (model.t, model.intensityList, 0)
