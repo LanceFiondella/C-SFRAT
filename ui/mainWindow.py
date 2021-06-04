@@ -7,6 +7,9 @@ the UI elements. Able to reference all elements and the signals they emit.
 # For handling debug output
 import logging as log
 
+# for handling fonts
+import sys
+
 # PyQt5 imports for UI elements
 from PyQt5.QtWidgets import QMainWindow, qApp, QWidget, QTabWidget, \
                             QVBoxLayout, QAction, QActionGroup, QFileDialog
@@ -140,7 +143,15 @@ class MainWindow(QMainWindow):
         self.plotViewIndex = 0
 
         # setup font for entire application
-        self.setStyleSheet("QWidget {font: 12pt Segoe}")
+        if sys.platform == "win32":
+        	# windows
+        	self.setStyleSheet('QWidget {font: 12pt "Segoe"}')
+        elif sys.platform == "darwin":
+        	# macos
+        	self.setStyleSheet('QWidget {font: 12pt "Verdana"}')
+       	elif sys.platform == "linux" or sys.platform == "linux2":
+       		# linux
+       		self.setStyleSheet('QWidget {font: 12pt "Arial"}')
 
         self.show()
 
