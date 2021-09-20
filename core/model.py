@@ -198,15 +198,12 @@ class Model(ABC):
         prodlist = np.zeros(n)
         # store g calculations in an array, for easy retrieval
         glookups = np.zeros(n)
-        print(covariate_data)
-        print(betas)
         for i in range(n):
-            one_minus_hazard = (1 - self.hazardNumerical(i, hazard_params))
+            one_minus_hazard = (1 - self.hazardNumerical(i + 1, hazard_params))
             try:
                 if self.numCovariates == 0:
                     glookups[i] = 1;
                 else:
-                    print("num covariates is ", self.numCovariates, "array indexing is ", cov_data[0:,i])
                     glookups[i] = math.exp(np.dot(betas, cov_data[0:, i]))
             except OverflowError:
                return float('inf')
@@ -222,9 +219,6 @@ class Model(ABC):
         fourthTerm = np.sum(np.log(npfactorial(self.failures)))
         
         cv = (firstTerm + secondTerm + thirdTerm - fourthTerm)
-
-        if np.isnan(cv):
-            return float('inf')
 
         return cv
 
