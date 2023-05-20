@@ -1,13 +1,16 @@
+# For handling debug output
+import logging as log
+
 # To check platform
 import sys
 
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QGridLayout, \
+from PyQt6.QtWidgets import QWidget, QMessageBox, QHBoxLayout, QLabel, QGridLayout, \
                             QTableWidget, QTableWidgetItem, QAbstractScrollArea, \
                             QSpinBox, QSpacerItem, QSizePolicy, QHeaderView, QVBoxLayout, \
                             QListWidget, QAbstractItemView, QGroupBox, QListWidgetItem, \
                             QFrame, QTableView, QSlider, QDoubleSpinBox, QPushButton
-from PyQt5.QtCore import pyqtSignal, QSortFilterProxyModel, Qt
-from PyQt5.QtGui import QFont, QIntValidator
+from PyQt6.QtCore import pyqtSignal, QSortFilterProxyModel, Qt
+from PyQt6.QtGui import QFont, QIntValidator
 
 import pandas as pd
 
@@ -76,7 +79,7 @@ class Tab3(QWidget):
         regex_temp = '$|^'.join(indices)
         regex = '^' + regex_temp + '$'
 
-        self.proxyModel.setFilterRegExp(regex)
+        self.proxyModel.setFilterRegularExpression(regex)
 
     def updateModel(self, data):
         """
@@ -151,12 +154,12 @@ class Tab3(QWidget):
 
         table = QTableView()
 
-        table.setEditTriggers(QTableWidget.NoEditTriggers)     # make cells unable to be edited
-        table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+        table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)     # make cells unable to be edited
+        table.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
                                                                     # column width fit to contents
         table.setSortingEnabled(True)
         header = table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         
         # only want to change style sheet for Windows
         # on other platforms with dark modes, creates light font on light background
@@ -210,11 +213,11 @@ class Tab3(QWidget):
         except PermissionError:
             log.warning("File permission denied.")
             msgBox = QMessageBox()
-            msgBox.setIcon(QMessageBox.Warning)
+            msgBox.setIcon(QMessageBox.Icon.Warning)
             msgBox.setText("File permission denied")
             msgBox.setInformativeText("If there is a file with the same name ensure that it is closed.")
             msgBox.setWindowTitle("Warning")
-            msgBox.exec_()
+            msgBox.exec()
 
 
 class SideMenu3(QVBoxLayout):
@@ -267,7 +270,7 @@ class SideMenu3(QVBoxLayout):
 
         self.modelsGroup = QGroupBox("Select Model Results")
         # sets minumum size for side menu
-        self.modelsGroup.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        self.modelsGroup.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
         self.modelsGroup.setLayout(self._setupModelsGroup())
         
         self.addWidget(self.comparisonGroup, 2)
@@ -341,7 +344,7 @@ class SideMenu3(QVBoxLayout):
         modelGroupLayout = QVBoxLayout()
         self.modelListWidget = QListWidget()
         modelGroupLayout.addWidget(self.modelListWidget)
-        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)  # able to select multiple models
+        self.modelListWidget.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)  # able to select multiple models
         self.modelListWidget.itemSelectionChanged.connect(self._emitModelChangedSignal)
 
         return modelGroupLayout
@@ -356,7 +359,7 @@ class SideMenu3(QVBoxLayout):
             layout: The layout object that the label is added to.
         """
         label = QLabel(text)
-        label.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum))
+        label.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum))
         layout.addWidget(label, row, col)
 
     def _createSpinBox(self, minVal, maxVal, row, col, layout):

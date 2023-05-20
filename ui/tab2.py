@@ -4,12 +4,12 @@ import logging as log
 # To check platform
 import sys
 
-# PyQt5 imports for UI elements
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, \
+# PyQt6 imports for UI elements
+from PyQt6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, \
                             QGroupBox, QListWidget, QAbstractItemView, \
                             QSpinBox, QDoubleSpinBox, QScrollArea, QLabel, \
                             QFormLayout, QHeaderView, QMessageBox
-from PyQt5.QtCore import pyqtSignal
+from PyQt6.QtCore import pyqtSignal, QModelIndex
 
 import pandas as pd
 
@@ -57,7 +57,7 @@ class Tab2(QWidget):
         # tableWidget is a table view
         self.plotAndTable.tableWidget.setSortingEnabled(True)
         header = self.plotAndTable.tableWidget.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
 
         # only want to change style sheet for Windows
         # on other platforms with dark modes, creates light font on light background
@@ -77,7 +77,6 @@ class Tab2(QWidget):
         self.proxyModel = ProxyModel2()
         self.proxyModel.setSourceModel(self.modelMVF)
 
-        # self.plotAndTable.tableWidget.setModel(self.tableModel)
         self.plotAndTable.tableWidget.setModel(self.proxyModel)
 
     def updateTableView(self, comboNums):
@@ -189,7 +188,11 @@ class Tab2(QWidget):
 
     def exportTable(self, path):
         """
-        Export table to csv
+        Export table to csv file.
+
+        By referencing `proxyModel`, the data currently displayed in the table
+        will be exported regardless of whether MVF or intensity mode is
+        selected.
         """
         # TODO:
         # export to excel?
@@ -202,10 +205,11 @@ class Tab2(QWidget):
             with open(path, 'w', newline='') as stream:
                 writer = csv.writer(stream)
                 writer.writerow(self.column_names)
-                for row in range(self.tableModel.rowCount()):
+                for row in range(self.proxyModel.rowCount()):
                     rowdata = []
-                    for column in range(self.tableModel.columnCount()):
-                        item = self.tableModel._data.iloc[row][column]
+                    for column in range(self.proxyModel.columnCount()):
+                        QModelIndex()
+                        item = self.proxyModel.sourceModel()._data.iloc[row][column]
                         if item is not None:
                             # rowdata.append(unicode(item.text()).encode('utf8'))
                             rowdata.append(str(item))
@@ -216,11 +220,11 @@ class Tab2(QWidget):
         except PermissionError:
             log.warning("File permission denied.")
             msgBox = QMessageBox()
-            msgBox.setIcon(QMessageBox.Warning)
+            msgBox.setIcon(QMessageBox.Icon.Warning)
             msgBox.setText("File permission denied")
             msgBox.setInformativeText("If there is a file with the same name ensure that it is closed.")
             msgBox.setWindowTitle("Warning")
-            msgBox.exec_()
+            msgBox.exec()
 
 
 class SideMenu2(QVBoxLayout):
@@ -284,7 +288,7 @@ class SideMenu2(QVBoxLayout):
         modelGroupLayout = QVBoxLayout()
         self.modelListWidget = QListWidget()
         modelGroupLayout.addWidget(self.modelListWidget)
-        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)  # able to select multiple models
+        self.modelListWidget.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)  # able to select multiple models
         self.modelListWidget.itemSelectionChanged.connect(self._emitModelChangedSignal)
 
         return modelGroupLayout

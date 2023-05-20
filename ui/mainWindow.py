@@ -10,11 +10,11 @@ import logging as log
 # for handling fonts
 import sys
 
-# PyQt5 imports for UI elements
-from PyQt5.QtWidgets import QMainWindow, qApp, QWidget, QTabWidget, \
-                            QVBoxLayout, QAction, QActionGroup, QFileDialog
-from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtGui import QIcon
+# PyQt6 imports for UI elements
+from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QTabWidget, \
+                            QVBoxLayout, QFileDialog
+from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtGui import QIcon, QAction, QActionGroup
 
 # Local imports
 import models
@@ -144,14 +144,15 @@ class MainWindow(QMainWindow):
 
         # setup font for entire application
         if sys.platform == "win32":
-        	# windows
-        	self.setStyleSheet('QWidget {font: 12pt "Segoe"}')
+            # windows
+            self.setStyleSheet('QWidget {font: 12pt "Segoe"}')
+            print()
         elif sys.platform == "darwin":
-        	# macos
-        	self.setStyleSheet('QWidget {font: 12pt "Verdana"}')
-       	elif sys.platform == "linux" or sys.platform == "linux2":
-       		# linux
-       		self.setStyleSheet('QWidget {font: 12pt "Arial"}')
+            # macos
+            self.setStyleSheet('QWidget {font: 12pt "Verdana"}')
+        elif sys.platform == "linux" or sys.platform == "linux2":
+            # linux
+            self.setStyleSheet('QWidget {font: 12pt "Arial"}')
 
         self.show()
 
@@ -295,7 +296,7 @@ class MainWindow(QMainWindow):
             # or if computeTask not yet an attribute of computeWidget
             pass
 
-        qApp.quit()
+        QApplication.quit()
 
     #region Importing, plotting
     def fileOpened(self):

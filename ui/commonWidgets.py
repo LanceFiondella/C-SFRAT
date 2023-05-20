@@ -1,16 +1,16 @@
 # To check platform
 import sys
 
-# PyQt5 imports for UI elements
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QTableView, \
+# PyQt6 imports for UI elements
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QTableView, \
                             QProgressBar, QLabel
 #Temp Imports
 ##########################
-from PyQt5.QtWidgets import QTableWidget, QAbstractScrollArea, QHeaderView
+from PyQt6.QtWidgets import QTableWidget, QAbstractScrollArea, QHeaderView
 ##########################
 
-from PyQt5.QtCore import QThread, pyqtSignal
-from PyQt5.QtCore import Qt
+from PyQt6.QtCore import QThread, pyqtSignal
+from PyQt6.QtCore import Qt
 
 from core.graphing import PlotWidget
 from core.prediction import prediction_psse
@@ -54,8 +54,8 @@ class PlotAndTable(QTabWidget):
         """
         self.tableWidget = QTableView()
 
-        self.tableWidget.setEditTriggers(QTableWidget.NoEditTriggers)     # make cells unable to be edited
-        self.tableWidget.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+        self.tableWidget.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)     # make cells unable to be edited
+        self.tableWidget.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
                                                                     # column width fit to contents
 
         self.addTab(self.tableWidget, tableTabLabel)
@@ -72,15 +72,15 @@ class TableTabs(QTabWidget):
 
     def _setupTable1Tab(self, table1Label):
         self.budgetTab = QTableWidget()
-        self.budgetTab.setEditTriggers(QTableWidget.NoEditTriggers)  # make cells unable to be edited
-        self.budgetTab.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+        self.budgetTab.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)  # make cells unable to be edited
+        self.budgetTab.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
                                                             # column width fit to contents
         self.budgetTab.setRowCount(1)
         self.budgetTab.setColumnCount(3)
         self.budgetTab.setHorizontalHeaderLabels(["Model Name", "Covariates", "Est. Defects"])
 
         header = self.budgetTab.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
 
         # only want to change style sheet for Windows
         # on other platforms with dark modes, creates light font on light background
@@ -102,15 +102,15 @@ class TableTabs(QTabWidget):
 
     def _setupTable2Tab(self, table2Label):
         self.failureTab = QTableWidget()
-        self.failureTab.setEditTriggers(QTableWidget.NoEditTriggers)  # make cells unable to be edited
-        self.failureTab.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+        self.failureTab.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)  # make cells unable to be edited
+        self.failureTab.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
                                                             # column width fit to contents
         self.failureTab.setRowCount(1)
         self.failureTab.setColumnCount(3)
         self.failureTab.setHorizontalHeaderLabels(["Model Name", "Covariates", "Est. Budget"])
 
         header = self.failureTab.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
 
         # only want to change style sheet for Windows
         # on other platforms with dark modes, creates light font on light background
@@ -179,7 +179,7 @@ class ComputeWidget(QWidget):
 
         layout.addWidget(self._label)
         layout.addWidget(self._progressBar)
-        layout.setAlignment(Qt.AlignVCenter)
+        layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         self.setWindowTitle("Processing...")
 
         self.computeTask = TaskThread(modelsToRun, metricNames, data)

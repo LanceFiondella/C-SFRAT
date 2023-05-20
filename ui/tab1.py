@@ -1,11 +1,11 @@
 # For handling debug output
 import logging as log
 
-# PyQt5 imports for UI elements
-from PyQt5.QtWidgets import QMessageBox, QWidget, QHBoxLayout, QVBoxLayout, \
+# PyQt6 imports for UI elements
+from PyQt6.QtWidgets import QMessageBox, QWidget, QHBoxLayout, QVBoxLayout, \
                             QLabel, QGroupBox, QComboBox, QListWidget, QPushButton, \
                             QAbstractItemView, QDoubleSpinBox, QSlider
-from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt6.QtCore import pyqtSignal, Qt
 
 # Local imports
 import models
@@ -154,8 +154,8 @@ class SideMenu1(QVBoxLayout):
 
         sliderLayout = QHBoxLayout()
 
-        self.slider = QSlider(Qt.Horizontal)
-        self.slider.setTickPosition(QSlider.TicksBelow)
+        self.slider = QSlider(Qt.Orientation.Horizontal)
+        self.slider.setTickPosition(QSlider.TickPosition.TicksBelow)
         self.slider.setTickInterval(1)
         self.slider.setMinimum(1)
         self.slider.setMaximum(1)
@@ -188,7 +188,7 @@ class SideMenu1(QVBoxLayout):
         self.modelListWidget.setMinimumWidth(300)
 
         log.info("%d model(s) loaded: %s", len(loadedModels), loadedModels)
-        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)  # able to select multiple models
+        self.modelListWidget.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)  # able to select multiple models
         modelGroupLayout.addWidget(self.modelListWidget)
 
         return modelGroupLayout
@@ -201,7 +201,7 @@ class SideMenu1(QVBoxLayout):
         """
         metricsGroupLayout = QVBoxLayout()
         self.metricListWidget = QListWidget()   # metric names added dynamically from data when loaded
-        self.metricListWidget.setSelectionMode(QAbstractItemView.MultiSelection)     # able to select multiple metrics
+        self.metricListWidget.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)     # able to select multiple metrics
         metricsGroupLayout.addWidget(self.metricListWidget)
 
         buttonLayout = QHBoxLayout()
@@ -249,19 +249,19 @@ class SideMenu1(QVBoxLayout):
             # data loaded but not selected
             log.warning("Must select at least one model.")
             msgBox = QMessageBox()
-            msgBox.setIcon(QMessageBox.Warning)
+            msgBox.setIcon(QMessageBox.Icon.Warning)
             msgBox.setText("Model not selected")
             msgBox.setInformativeText("Please select at least one model and at least one metric option.")
             msgBox.setWindowTitle("Warning")
-            msgBox.exec_()
+            msgBox.exec()
         else:
             log.warning("No data found. Data must be loaded in CSV or Excel format.")
             msgBox = QMessageBox()
-            msgBox.setIcon(QMessageBox.Warning)
+            msgBox.setIcon(QMessageBox.Icon.Warning)
             msgBox.setText("No data found")
             msgBox.setInformativeText("Please load failure data as a .csv file or an Excel workbook (.xls, xlsx).")
             msgBox.setWindowTitle("Warning")
-            msgBox.exec_()
+            msgBox.exec()
 
     def _emitSheetChangedSignal(self):
         """Emits signal indicating that selected sheet has changed."""

@@ -1,13 +1,13 @@
 # For handling debug output
 import logging as log
 
-# PyQt5 imports for UI elements
-from PyQt5.QtWidgets import QWidget, QMessageBox, QHBoxLayout, QVBoxLayout, QLabel, \
+# PyQt6 imports for UI elements
+from PyQt6.QtWidgets import QWidget, QMessageBox, QHBoxLayout, QVBoxLayout, QLabel, \
                             QGroupBox, QListWidget, QPushButton, QAbstractItemView, \
                             QTableWidget, QTableWidgetItem, QAbstractScrollArea, \
                             QSpinBox, QDoubleSpinBox, QHeaderView, QRadioButton, \
                             QSpacerItem, QSizePolicy, QTabWidget
-from PyQt5.QtCore import pyqtSignal
+from PyQt6.QtCore import pyqtSignal
 
 #Temp Imports
 ##########################
@@ -202,7 +202,7 @@ class SideMenu4(QVBoxLayout):
         modelGroupLayout = QVBoxLayout()
         self.modelListWidget = QListWidget()
         modelGroupLayout.addWidget(self.modelListWidget)
-        self.modelListWidget.setSelectionMode(QAbstractItemView.MultiSelection)  # able to select multiple models
+        self.modelListWidget.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)  # able to select multiple models
 
         return modelGroupLayout
 
@@ -214,7 +214,7 @@ class SideMenu4(QVBoxLayout):
         # Effort allocation to discover maximum number of faults within given budget 'B'
         description = QLabel("Maximize defect discovery within\nbudget.")
         groupLayout.addWidget(description)
-        verticalSpacer = QSpacerItem(20, 20, QSizePolicy.Fixed, QSizePolicy.Expanding)
+        verticalSpacer = QSpacerItem(20, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
         groupLayout.addItem(verticalSpacer)
         groupLayout.addWidget(QLabel("Enter budget"))
 
@@ -236,7 +236,7 @@ class SideMenu4(QVBoxLayout):
         description = QLabel("Minimum budget (B) to discover\nspecified additonal defects")
         groupLayout.addWidget(description)
 
-        verticalSpacer = QSpacerItem(20, 20, QSizePolicy.Fixed, QSizePolicy.Preferred)
+        verticalSpacer = QSpacerItem(20, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
         groupLayout.addItem(verticalSpacer)
 
         groupLayout.addWidget(QLabel("Enter number of additional defects"))
@@ -287,8 +287,8 @@ class SideMenu4(QVBoxLayout):
         else:
             log.warning("Must select at least one model/metric combination for allocation.")
             msgBox = QMessageBox()
-            msgBox.setIcon(QMessageBox.Warning)
+            msgBox.setIcon(QMessageBox.Icon.Warning)
             msgBox.setText("No selection made for allocation")
             msgBox.setInformativeText("Please select at least one model/metric combination.")
             msgBox.setWindowTitle("Warning")
-            msgBox.exec_()
+            msgBox.exec()

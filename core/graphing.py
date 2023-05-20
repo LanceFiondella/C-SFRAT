@@ -1,5 +1,5 @@
-from PyQt5 import QtGui
-from PyQt5 import QtCore
+from PyQt6 import QtGui
+from PyQt6 import QtCore
 
 import pyqtgraph as pg
 #import logging as log
@@ -24,7 +24,7 @@ class PlotWidget(pg.PlotWidget):
         self.legendIntensity = self.createLegend()
 
         # store pen used for vertical line so we don't need to make it every time
-        self.penVerticalLine = pg.mkPen((255, 0, 0), width=2, style=QtCore.Qt.DashLine)
+        self.penVerticalLine = pg.mkPen((255, 0, 0), width=2, style=QtCore.Qt.PenStyle.DashLine)
 
         self.plotColor = PlotColor()
 
@@ -110,7 +110,7 @@ class PlotWidget(pg.PlotWidget):
         except:
             pass
 
-        pen = pg.mkPen((255, 0, 0), width=2, style=QtCore.Qt.DashLine)
+        pen = pg.mkPen((255, 0, 0), width=2, style=QtCore.Qt.PenStyle.DashLine)
 
         self.verticalLine1 = pg.InfiniteLine(pos=self.lastXpoint, angle=90, pen=pen)
         self.verticalLine2 = pg.InfiniteLine(pos=self.lastXpoint, angle=90, pen=pen)
@@ -122,7 +122,7 @@ class PlotWidget(pg.PlotWidget):
         self.intensityPlotItem.addItem(self.verticalLine2)
 
     def createVerticalLine(self):
-        pen = pg.mkPen((255, 0, 0), width=0, style=QtCore.Qt.DashLine)
+        pen = pg.mkPen((255, 0, 0), width=0, style=QtCore.Qt.PenStyle.DashLine)
 
         self.verticalLine1 = pg.InfiniteLine(pos=self.lastXpoint, angle=90, pen=pen)
         self.verticalLine2 = pg.InfiniteLine(pos=self.lastXpoint, angle=90, pen=pen)

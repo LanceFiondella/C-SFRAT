@@ -8,7 +8,7 @@ import numpy as np
 # for combinations of metric names
 from itertools import combinations, chain
 
-from PyQt5 import QtCore
+from PyQt6 import QtCore
 
 
 class Data:
@@ -278,7 +278,7 @@ class Data:
 
         # iterate over all columns of current sheet in dataset
         names_list = []
-        for (column_name, column_data) in self.dataSet[self.sheetNames[self._currentSheet]].iteritems():
+        for (column_name, column_data) in self.dataSet[self.sheetNames[self._currentSheet]].items():
             if column_name not in self.STATIC_NAMES:
                 names_list.append(column_name)  # column assumed to be covariate data
         self.metricNames = names_list
@@ -316,9 +316,9 @@ class PandasModel(QtCore.QAbstractTableModel):
         return len(self._data.columns)
         # return self._data.columns.size
 
-    def data(self, index, role=QtCore.Qt.DisplayRole):
+    def data(self, index, role=QtCore.Qt.ItemDataRole.DisplayRole):
         if index.isValid():
-            if role == QtCore.Qt.DisplayRole:
+            if role == QtCore.Qt.ItemDataRole.DisplayRole:
                 # credit: https://www.learnpyqt.com/courses/model-views/qtableview-modelviews-numpy-pandas/
                 # get raw value
                 value = self._data.values[index.row()][index.column()]
@@ -338,7 +338,7 @@ class PandasModel(QtCore.QAbstractTableModel):
         # Not valid
         return QtCore.QVariant()
 
-    def setData(self, index, value, role=QtCore.Qt.DisplayRole):
+    def setData(self, index, value, role=QtCore.Qt.ItemDataRole.DisplayRole):
         if index.isValid():
             self._data.iat[index.row(), index.column()] = value
 
@@ -348,13 +348,13 @@ class PandasModel(QtCore.QAbstractTableModel):
         return False
 
     def roundCell(self, value):
-        if isinstance(value, np.float):
+        if isinstance(value, float):
             return str(round(value, ndigits=6))
         else:
             return str(value)
 
-    def headerData(self, section, QtOrientation=QtCore.Qt.Horizontal, role=QtCore.Qt.DisplayRole):
-        if QtOrientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+    def headerData(self, section, QtOrientation=QtCore.Qt.Orientation.Horizontal, role=QtCore.Qt.ItemDataRole.DisplayRole):
+        if QtOrientation == QtCore.Qt.Orientation.Horizontal and role == QtCore.Qt.ItemDataRole.DisplayRole:
             columnNames = list(self._data)
             return QtCore.QVariant(str(columnNames[section]))
         return QtCore.QVariant()
@@ -369,7 +369,7 @@ class PandasModel(QtCore.QAbstractTableModel):
         data = self._data
         # self.data = self.data.sort_values(self.headers[Ncol], ascending=order == Qt.AscendingOrder)
         try:
-            self._data = data.sort_values(data.columns[Ncol], ascending=order == QtCore.Qt.AscendingOrder)
+            self._data = data.sort_values(data.columns[Ncol], ascending=order == QtCore.Qt.SortOrder.AscendingOrder)
         except IndexError:
             # occurs on startup, when dataframe contains no data
             pass

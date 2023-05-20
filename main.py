@@ -24,7 +24,7 @@ import argparse  # to handle command line arguments
 import logging as log  # to handle debug output
 import sys
 
-from PyQt5.QtWidgets import QApplication  # for UI
+from PyQt6.QtWidgets import QApplication  # for UI
 
 from ui.mainWindow import MainWindow
 
@@ -39,7 +39,7 @@ def main(debug):
     log.info("Starting C-SFRAT.")
     app = QApplication(sys.argv)
     mainWindow = MainWindow(debug)
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":

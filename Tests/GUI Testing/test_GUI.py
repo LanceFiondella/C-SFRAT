@@ -1,9 +1,9 @@
 import sys
 import unittest
-from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtTest import QTest
-from PyQt5.QtCore import Qt
+from PyQt6 import QtCore, QtGui
+from PyQt6.QtWidgets import QApplication
+from PyQt6.QtTest import QTest
+from PyQt6.QtCore import Qt
 
 
 ### Changes the curretnt working directory so the imports Work
@@ -64,4 +64,4 @@ class Covariatetest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-    app.exec_()
+    app.exec()
