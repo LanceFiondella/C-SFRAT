@@ -278,7 +278,7 @@ class Data:
 
         # iterate over all columns of current sheet in dataset
         names_list = []
-        for (column_name, column_data) in self.dataSet[self.sheetNames[self._currentSheet]].iteritems():
+        for (column_name, column_data) in self.dataSet[self.sheetNames[self._currentSheet]].items():
             if column_name not in self.STATIC_NAMES:
                 names_list.append(column_name)  # column assumed to be covariate data
         self.metricNames = names_list
@@ -348,7 +348,7 @@ class PandasModel(QtCore.QAbstractTableModel):
         return False
 
     def roundCell(self, value):
-        if isinstance(value, np.float):
+        if isinstance(value, float):
             return str(round(value, ndigits=6))
         else:
             return str(value)

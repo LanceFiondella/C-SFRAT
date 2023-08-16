@@ -131,6 +131,8 @@ class Tab2(QWidget):
         self.dataframeMVF.columns = column_names
         self.modelMVF.setAllData(self.dataframeMVF)
 
+        self.tableModel = PandasModel(self.dataframeMVF)
+
         temp_df = pd.DataFrame(intensity_list)
         self.dataframeIntensity = temp_df.transpose()
         self.dataframeIntensity.columns = column_names
