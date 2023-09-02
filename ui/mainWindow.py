@@ -3,6 +3,7 @@ Contains highest level UI elements. Connects all core modules and functions to
 the UI elements. Able to reference all elements and the signals they emit.
 """
 
+csfrat_version_string = "v1.1"  # shows in title, version of tool
 
 # For handling debug output
 import logging as log
@@ -124,7 +125,7 @@ class MainWindow(QMainWindow):
     def _initUI(self):
         """Sets window parameters, fonts, initializes UI elements."""
         # setup main window parameters
-        title = "C-SFRAT"
+        title = "C-SFRAT " + csfrat_version_string
         left = 100
         top = 100
         width = 1280
