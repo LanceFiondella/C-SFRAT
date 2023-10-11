@@ -190,48 +190,37 @@ class Model(ABC):
         return f, x
 
     def RLL(self, x, covariate_data):
-        # want everything to be array of length n
         cov_data = np.array(covariate_data)
+        n = len(self.failures)
+        # the vector x contains [b, beta1, beta2, beta3, beta4] so numParameters: is just the betas
+        betas = np.array(x[self.numParameters:len(x)])
+        hazard_params = x[0:self.numParameters]
+        prodlist = np.zeros(n)
+        # store g calculations in an array, for easy retrieval
+        glookups = np.zeros(n)
+        for i in range(n):
+            one_minus_hazard = (1 - self.hazardNumerical(i + 1, hazard_params))
+            try:
+                if self.numCovariates == 0:
+                    glookups[i] = 1;
+                else:
+                    glookups[i] = math.exp(np.dot(betas, cov_data[0:, i]))
+            except OverflowError:
+               return float('inf')
+            # calculate the sum of all gxib from 0 to i, then raise (1 - b) to that sum
+            exponent = np.sum(glookups[:i])
+            sum1 = 1 - (one_minus_hazard ** glookups[i])
+            prodlist[i] = (sum1 * (one_minus_hazard ** exponent))
 
-        # gives array with dimensions numCovariates x n, just want n
-        exponent_all = np.array([cov_data[i] * x[i + self.numParameters] for i in range(self.numCovariates)])
+        num_failures = np.sum(self.failures)
+        firstTerm = -num_failures  # Verified
+        secondTerm = num_failures * np.log(num_failures / np.sum(prodlist))
+        thirdTerm = np.dot(self.failures, np.log(prodlist))  # Verified
+        fourthTerm = np.sum(np.log(npfactorial(self.failures)))
+        
+        cv = (firstTerm + secondTerm + thirdTerm - fourthTerm)
 
-        # sum over numCovariates axis to get 1 x n array
-        exponent_array = np.exp(np.sum(exponent_all, axis=0))
-
-        h = np.array([self.hazardNumerical(i + 1, x[:self.numParameters]) for i in range(self.n)])
-
-        one_minus_hazard = (1 - h)
-        one_minus_h_i = np.power(one_minus_hazard, exponent_array)
-
-        one_minus_h_k = np.zeros(self.n)
-        for i in range(self.n):
-            k_term = np.array([one_minus_hazard[i] for k in range(i)])
-            
-            # exponent array is just 1 for 0 covariate case, cannot index
-            # have separate case for 0 covariates
-            if self.numCovariates == 0:
-                one_minus_h_k[i] = np.prod(np.array([one_minus_hazard[i]] * len(k_term)))
-            else:
-                exp_term = np.power((one_minus_hazard[i]), exponent_array[:][:len(k_term)])
-                one_minus_h_k[i] = np.prod(exp_term)
-
-        failure_sum = np.sum(self.failures)
-        product_array = (1.0 - (one_minus_h_i)) * one_minus_h_k
-
-        first_term = -failure_sum
-
-        second_num = failure_sum
-        second_denom = np.sum(product_array)
-
-        second_term = failure_sum * np.log(second_num / second_denom)
-
-        third_term = np.sum(np.log(product_array) * np.array(self.failures))
-
-        fourth_term = np.sum(np.log(npfactorial(self.failures)))
-
-        f = first_term + second_term + third_term - fourth_term
-        return f
+        return cv
 
     def RLL_minimize(self, x, covariate_data):
         return -self.RLL(x, covariate_data)
